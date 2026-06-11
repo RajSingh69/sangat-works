@@ -18,26 +18,96 @@
   </header>
 
   <main>
+
     <section class="hero">
       <p class="eyebrow">Community • Business • Support</p>
-      <h1>Find and support Sikh businesses, trades and professionals.</h1>
+
+      <h1>
+        Find and support Sikh businesses,
+        trades and professionals.
+      </h1>
+
       <p class="hero-text">
-        Sangat Works helps the Sikh community discover trusted services, skills and opportunities nearby.
+        Sangat Works helps the Sikh community discover trusted
+        services, skills and opportunities nearby.
       </p>
 
       <div class="hero-actions">
-        <a href="login.html" class="btn-primary">Join Sangat Works</a>
-        <a href="#directory" class="btn-secondary">Browse Directory</a>
+        <a href="login.html" class="btn-primary">
+          Join Sangat Works
+        </a>
+
+        <a href="#directory" class="btn-secondary">
+          Browse Directory
+        </a>
       </div>
     </section>
 
+    <!-- ADMIN DASHBOARD (ADMINS ONLY) -->
+
+    <section id="adminDashboardCard" class="admin-dashboard-card hidden">
+
+      <div>
+        <p class="eyebrow">Admin Overview</p>
+
+        <h2>Sangat Works Dashboard</h2>
+
+        <p>
+          Quick platform statistics and moderation overview.
+        </p>
+      </div>
+
+      <div class="admin-stats-grid">
+
+        <div>
+          <strong id="adminTotalUsers">0</strong>
+          <span>Total Users</span>
+        </div>
+
+        <div>
+          <strong id="adminPublicProfiles">0</strong>
+          <span>Public Profiles</span>
+        </div>
+
+        <div>
+          <strong id="adminVerifiedUsers">0</strong>
+          <span>Verified Users</span>
+        </div>
+
+        <div>
+          <strong id="adminPendingUsers">0</strong>
+          <span>Pending Verification</span>
+        </div>
+
+      </div>
+
+      <a href="admin.html" class="btn-primary">
+        Open Admin Panel
+      </a>
+
+    </section>
+
+    <!-- DIRECTORY -->
+
     <section class="search-section" id="directory">
+
       <h2>Find someone in the Sangat</h2>
-      <p>Search by trade, business type, skill, town or keyword.</p>
+
+      <p>
+        Search by trade, business type, skill,
+        town or keyword.
+      </p>
 
       <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Search electrician, plumber, accountant..." />
-        <button id="searchBtn">Search</button>
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search electrician, plumber, accountant..."
+        />
+
+        <button id="searchBtn">
+          Search
+        </button>
       </div>
 
       <div id="directoryResults" class="cards-grid">
@@ -45,7 +115,9 @@
           Profiles will appear here once members start joining.
         </div>
       </div>
+
     </section>
+
   </main>
 
   <footer>
@@ -54,6 +126,7 @@
 
   <script type="module" src="js/nav.js"></script>
   <script type="module" src="js/directory.js"></script>
+  <script type="module" src="js/admin-dashboard.js"></script>
 
 </body>
 </html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin | Sangat Works</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo">Sangat Works</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="map.html">Map</a>
+    <a href="admin.html">Admin</a>
+    <div id="accountArea"></div>
+  </nav>
+</header>
+
+<main class="page-wrap">
+  <section class="form-card wide">
+    <h1>Admin Panel</h1>
+    <p>Verify Sangat Works members and manage trust badges.</p>
+
+    <div id="adminStatus" class="empty-state">Checking admin access...</div>
+
+    <div id="adminUsers" class="admin-users hidden"></div>
+  </section>
+</main>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/admin.js"></script>
+
+</body>
+</html>
