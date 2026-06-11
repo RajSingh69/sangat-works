@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sangat Works</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="logo">Sangat Works</div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="map.html">Map</a>
+      <div id="accountArea"></div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">Community • Business • Support</p>
+      <h1>Find and support Sikh businesses, trades and professionals.</h1>
+      <p class="hero-text">
+        Sangat Works helps the Sikh community discover trusted services, skills and opportunities nearby.
+      </p>
+
+      <div class="hero-actions">
+        <a href="login.html" class="btn-primary">Join Sangat Works</a>
+        <a href="#directory" class="btn-secondary">Browse Directory</a>
+      </div>
+    </section>
+
+    <section class="search-section" id="directory">
+      <h2>Find someone in the Sangat</h2>
+      <p>Search by trade, business type, skill, town or keyword.</p>
+
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search electrician, plumber, accountant..." />
+        <button id="searchBtn">Search</button>
+      </div>
+
+      <div id="directoryResults" class="cards-grid">
+        <div class="empty-state">
+          Profiles will appear here once members start joining.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Sangat Works — built for community support.</p>
+  </footer>
+
+  <script type="module" src="js/nav.js"></script>
+  <script type="module" src="js/directory.js"></script>
+
+</body>
+</html>

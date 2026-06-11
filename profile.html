@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Profile | Sangat Works</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo">Sangat Works</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="map.html">Map</a>
+    <a href="profile.html" class="btn-small">My Profile</a>
+  </nav>
+</header>
+
+<main class="page-wrap">
+  <section class="form-card wide">
+    <h1>Your Sangat Works Profile</h1>
+    <p>Share your skills, business, community links and how you can help the Sangat.</p>
+
+    <form id="profileForm" class="profile-form">
+      <h2>Basic Info</h2>
+
+      <div class="upload-row">
+        <label>
+          Profile Photo
+          <input type="file" id="profilePhoto" accept="image/*" />
+        </label>
+
+        <label>
+          Business Logo
+          <input type="file" id="businessLogo" accept="image/*" />
+        </label>
+      </div>
+
+      <input type="text" id="fullName" placeholder="Full name" required />
+      <input type="text" id="businessName" placeholder="Business name" />
+      <input type="text" id="serviceTitle" placeholder="What do you do? e.g. Electrician" required />
+
+      <textarea id="description" placeholder="Tell people who you are and what you offer"></textarea>
+      <textarea id="whyContact" placeholder="Why should the Sangat contact you?"></textarea>
+
+      <input type="text" id="tags" placeholder="Tags e.g. electrician, rewiring, emergency, Woking" />
+
+      <h2>Trust & Experience</h2>
+
+      <input type="number" id="yearsExperience" placeholder="Years in industry" min="0" />
+      <textarea id="specialistWork" placeholder="Specialist work / projects e.g. extensions, commercial wiring, tax returns, tutoring GCSE maths"></textarea>
+      <input type="url" id="googleReviews" placeholder="Google Reviews link" />
+
+      <h2>Community</h2>
+
+      <input type="text" id="associatedGurdwara" placeholder="Associated Gurdwara / Sangat" />
+      <select id="communityDiscount">
+        <option value="not-specified">Community discount preference</option>
+        <option value="yes">Yes, I can offer Sangat/community rates where possible</option>
+        <option value="sometimes">Sometimes, depending on the job</option>
+        <option value="no">No discount, but happy to support with fair pricing</option>
+      </select>
+
+      <h2>Fun Facts</h2>
+
+      <input type="text" id="funFactOne" placeholder="Fun fact 1" />
+      <input type="text" id="funFactTwo" placeholder="Fun fact 2" />
+
+      <h2>Contact & Links</h2>
+
+      <input type="tel" id="phone" placeholder="Phone number" />
+      <input type="email" id="email" placeholder="Public email" />
+      <input type="url" id="website" placeholder="Website link" />
+      <input type="url" id="linkedin" placeholder="LinkedIn link" />
+
+      <h2>Location</h2>
+
+      <input type="text" id="town" placeholder="Town / city" required />
+      <input type="text" id="postcode" placeholder="Postcode area e.g. GU21" />
+      <input type="text" id="serviceArea" placeholder="Service area e.g. Woking, Surrey, West London, Nationwide" />
+
+      <h2>Profile Style</h2>
+
+      <div class="two-col">
+        <select id="layoutStyle">
+          <option value="classic">Classic Layout</option>
+          <option value="minimal">Minimal Layout</option>
+          <option value="bold">Bold Layout</option>
+        </select>
+
+        <select id="themeColour">
+          <option value="gold">Gold</option>
+          <option value="green">Green</option>
+          <option value="blue">Blue</option>
+          <option value="purple">Purple</option>
+        </select>
+      </div>
+
+      <h2>Privacy</h2>
+
+      <label class="check-row">
+        <input type="checkbox" id="isPublic" checked />
+        Show my profile publicly
+      </label>
+
+      <label class="check-row">
+        <input type="checkbox" id="showPhone" />
+        Show my phone number publicly
+      </label>
+
+      <label class="check-row">
+        <input type="checkbox" id="showEmail" />
+        Show my email publicly
+      </label>
+
+      <label class="check-row">
+        <input type="checkbox" id="showPostcode" />
+        Show my postcode publicly
+      </label>
+
+      <label class="check-row">
+        <input type="checkbox" id="showGurdwara" checked />
+        Show my associated Gurdwara publicly
+      </label>
+
+      <label class="check-row">
+        <input type="checkbox" id="showGoogleReviews" checked />
+        Show my Google Reviews link publicly
+      </label>
+
+      <button type="submit" class="btn-primary full">Save Profile</button>
+    </form>
+
+    <p id="profileMessage" class="message"></p>
+  </section>
+</main>
+
+<script type="module" src="js/profile.js"></script>
+</body>
+</html>
