@@ -24,33 +24,27 @@ document.querySelectorAll(".checkout-btn").forEach((button) => {
         ? YEARLY_PRICE_ID
         : MONTHLY_PRICE_ID;
 
-    try {
-      const checkoutSessionRef = await addDoc(
-        collection(db, "customers", user.uid, "checkout_sessions"),
-        {
-          price: selectedPrice,
-          success_url: window.location.origin + "/success.html",
-          cancel_url: window.location.origin + "/cancel.html"
-        }
-      );
+    const checkoutSessionRef = await addDoc(
+      collection(db, "customers", user.uid, "checkout_sessions"),
+      {
+        price: selectedPrice,
+        success_url: window.location.origin + "/success.html",
+        cancel_url: window.location.origin + "/cancel.html"
+      }
+    );
 
-      onSnapshot(checkoutSessionRef, (snap) => {
-        const data = snap.data();
+    onSnapshot(checkoutSessionRef, (snap) => {
+      const data = snap.data();
 
-        if (!data) return;
+      if (!data) return;
 
-        if (data.error) {
-          console.error("Stripe checkout error:", data.error);
-          alert(data.error.message || "Something went wrong.");
-        }
+      if (data.error) {
+        alert(data.error.message || "Something went wrong.");
+      }
 
-        if (data.url) {
-          window.location.assign(data.url);
-        }
-      });
-    } catch (error) {
-      console.error("Checkout error:", error);
-      alert("Could not start checkout. Check the console.");
-    }
+      if (data.url) {
+        window.location.assign(data.url);
+      }
+    });
   });
 });
