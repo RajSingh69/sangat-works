@@ -15,6 +15,8 @@ document.querySelectorAll(".checkout-btn").forEach((button) => {
 
     const user = auth.currentUser;
 
+    console.log("Current user:", user);
+
     if (!user) {
       alert("Please log in first.");
       window.location.href = "login.html";
@@ -26,7 +28,11 @@ document.querySelectorAll(".checkout-btn").forEach((button) => {
         ? YEARLY_PRICE_ID
         : MONTHLY_PRICE_ID;
 
+    console.log("Selected price:", selectedPrice);
+
     try {
+      console.log("Calling function...");
+
       const response = await fetch(FUNCTION_URL, {
         method: "POST",
         headers: {
@@ -39,7 +45,11 @@ document.querySelectorAll(".checkout-btn").forEach((button) => {
         })
       });
 
+      console.log("Response received:", response.status);
+
       const data = await response.json();
+
+      console.log("Function returned:", data);
 
       if (data.error) {
         alert(data.error);
@@ -49,8 +59,9 @@ document.querySelectorAll(".checkout-btn").forEach((button) => {
       if (data.url) {
         window.location.href = data.url;
       }
+
     } catch (error) {
-      console.error(error);
+      console.error("Checkout error:", error);
       alert("Checkout failed.");
     }
   });
