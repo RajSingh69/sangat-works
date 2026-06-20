@@ -1,18 +1,19 @@
-import { auth, db } from "./firebase.js";
+import { auth, app } from "./firebase.js";
 
 import {
+  getFirestore,
   collection,
   addDoc,
   onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+const db = getFirestore(app);
 
 const YEARLY_PRICE_ID = "price_1TkRE3DUGpJNp57jibUQGKDf";
 const MONTHLY_PRICE_ID = "price_1TkREoDUGpJNp57jw98RTUIU";
 
-document.querySelectorAll(".checkout-btn").forEach(button => {
-
+document.querySelectorAll(".checkout-btn").forEach((button) => {
   button.addEventListener("click", async () => {
-
     const user = auth.currentUser;
 
     if (!user) {
@@ -26,36 +27,32 @@ document.querySelectorAll(".checkout-btn").forEach(button => {
         ? YEARLY_PRICE_ID
         : MONTHLY_PRICE_ID;
 
-    const checkoutSessionRef = await addDoc(
-      collection(
-        db,
-        "customers",
-        user.uid,
-        "checkout_sessions"
-      ),
-      {
-        price: selectedPrice,
-        success_url: window.location.origin + "/success.html",
-        cancel_url: window.location.origin + "/cancel.html"
-      }
-    );
+    try {
+      const checkoutSessionRef = await addDoc(
+        collection(db, "customers", user.uid, "checkout_sessions"),
+        {
+          price: selectedPrice,
+          success_url: window.location.origin + "/success.html",
+          cancel_url: window.location.origin + "/cancel.html"
+        }
+      );
 
-    onSnapshot(checkoutSessionRef, (snap) => {
+      onSnapshot(checkoutSessionRef, (snap) => {
+        const data = snap.data();
 
-      const data = snap.data();
+        if (!data) return;
 
-      if (!data) return;
+        if (data.error) {
+          alert(data.error.message || "Something went wrong.");
+        }
 
-      if (data.error) {
-        alert(data.error.message);
-      }
-
-      if (data.url) {
-        window.location.assign(data.url);
-      }
-
-    });
-
+        if (data.url) {
+          window.location.assign(data.url);
+        }
+      });
+    } catch (error) {
+      console.error("Checkout error:", error);
+      alert("Could not start checkout. Check the console.");
+    }
   });
-
 });
