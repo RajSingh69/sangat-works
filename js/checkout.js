@@ -1,13 +1,10 @@
-import { auth, app } from "./firebase.js";
+import { auth, db } from "./firebase.js";
 
 import {
-  getFirestore,
   collection,
   addDoc,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
-const db = getFirestore(app);
 
 const YEARLY_PRICE_ID = "price_1TkRE3DUGpJNp57jibUQGKDf";
 const MONTHLY_PRICE_ID = "price_1TkREoDUGpJNp57jw98RTUIU";
@@ -43,6 +40,7 @@ document.querySelectorAll(".checkout-btn").forEach((button) => {
         if (!data) return;
 
         if (data.error) {
+          console.error("Stripe checkout error:", data.error);
           alert(data.error.message || "Something went wrong.");
         }
 
