@@ -9,6 +9,9 @@ import {
 const YEARLY_PRICE_ID = "price_1TkRE3DUGpJNp57jibUQGKDf";
 const MONTHLY_PRICE_ID = "price_1TkREoDUGpJNp57jw98RTUIU";
 
+console.log("checkout.js loaded");
+console.log("Checkout buttons found:", document.querySelectorAll(".checkout-btn").length);
+
 document.querySelectorAll(".checkout-btn").forEach((button) => {
   button.addEventListener("click", async () => {
     const user = auth.currentUser;
