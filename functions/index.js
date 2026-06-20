@@ -1,6 +1,8 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
-const cors = require("cors")({ origin: true });
+const cors = require("cors")({
+  origin: ["https://sangatworks.co.uk"]
+});
 const Stripe = require("stripe");
 
 const stripeSecret = defineSecret("STRIPE_SECRET_KEY");
