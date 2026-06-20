@@ -70,6 +70,13 @@ registerForm.addEventListener("submit", async (e) => {
       uid: userCredential.user.uid,
       fullName,
       email,
+
+      membershipPlan: "founding-free-year",
+      membershipStatus: "active",
+      isFoundingMember: true,
+      memberNumber: null,
+      featuredListing: false,
+
       createdAt: serverTimestamp()
     });
 

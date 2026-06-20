@@ -43,11 +43,33 @@ function renderUserCard(user) {
       <p><strong>Town:</strong> ${user.town || "Not provided"}</p>
       <p><strong>Account:</strong> ${user.accountType || "member"}</p>
 
+      <p><strong>Membership:</strong> ${user.membershipPlan || "not set"}</p>
+      <p><strong>Status:</strong> ${user.membershipStatus || "not set"}</p>
+      <p><strong>Member Number:</strong> ${user.memberNumber || "not assigned"}</p>
+
+      <div class="admin-member-controls">
+        <input 
+          type="number" 
+          class="member-number-input" 
+          data-uid="${user.uid}" 
+          value="${user.memberNumber || ""}" 
+          placeholder="Member number"
+        />
+
+        <button 
+          class="btn-small save-member-number-btn" 
+          data-uid="${user.uid}"
+        >
+          Save Member Number
+        </button>
+      </div>
+
       <div class="admin-badge-controls">
         ${badgeCheckbox(user, "emailVerifiedBadge", "Email Verified")}
         ${badgeCheckbox(user, "communityVerified", "Community Verified")}
         ${badgeCheckbox(user, "businessVerified", "Business Verified")}
         ${badgeCheckbox(user, "gurdwaraVerified", "Gurdwara Verified")}
+        ${badgeCheckbox(user, "featuredListing", "Featured Listing")}
       </div>
 
       <div class="card-links">
@@ -77,6 +99,34 @@ async function loadUsers() {
   adminUsers.classList.remove("hidden");
 
   adminStatus.textContent = `${users.length} user profile${users.length === 1 ? "" : "s"} loaded.`;
+
+
+  
+  document.querySelectorAll(".save-member-number-btn").forEach(button => {
+    button.addEventListener("click", async (e) => {
+      const uid = e.target.dataset.uid;
+      const input = document.querySelector(`.member-number-input[data-uid="${uid}"]`);
+      const memberNumber = Number(input.value);
+
+      if (!memberNumber) {
+        adminStatus.textContent = "Please enter a valid member number.";
+        return;
+      }
+
+      await updateDoc(doc(db, "users", uid), {
+        memberNumber,
+        isFoundingMember: memberNumber <= 150,
+        membershipPlan: memberNumber <= 150 ? "founding-free-year" : "paid-required",
+        membershipStatus: memberNumber <= 150 ? "active" : "pending-payment"
+      });
+
+      adminStatus.textContent = `Member number ${memberNumber} saved.`;
+    });
+  });
+
+
+
+
 
   document.querySelectorAll(".admin-check input").forEach(input => {
     input.addEventListener("change", async (e) => {

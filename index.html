@@ -8,125 +8,145 @@
 </head>
 <body>
 
-  <header class="site-header">
-    <div class="logo">Sangat Works</div>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="map.html">Map</a>
-      <div id="accountArea"></div>
-    </nav>
-  </header>
+<header class="site-header">
+  <div class="logo">Sangat Works</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="directory.html">Directory</a>
+    <a href="map.html">Map</a>
+    <a href="pricing.html">Pricing</a>
+    <div id="accountArea"></div>
+  </nav>
+</header>
 
-  <main>
+<main>
 
-    <section class="hero">
-      <p class="eyebrow">Community • Business • Support</p>
+  <section class="hero">
+    <p class="eyebrow">Sangat • Business • Community</p>
 
-      <h1>
-        Find and support Sikh businesses,
-        trades and professionals.
-      </h1>
+    <h1>Support Sikh businesses, trades and professionals.</h1>
 
-      <p class="hero-text">
-        Sangat Works helps the Sikh community discover trusted
-        services, skills and opportunities nearby.
-      </p>
+    <p class="hero-text">
+      Sangat Works helps Sikhs find, support and recommend one another’s services,
+      businesses and skills across the UK.
+    </p>
 
-      <div class="hero-actions">
-        <a href="login.html" class="btn-primary">
-          Join Sangat Works
-        </a>
+    <div class="hero-actions">
+      <a href="login.html" class="btn-primary">Join as a Founding Member</a>
+      <a href="directory.html" class="btn-secondary">Browse Directory</a>
+    </div>
+  </section>
 
-        <a href="#directory" class="btn-secondary">
-          Browse Directory
-        </a>
+  <section id="adminDashboardCard" class="admin-dashboard-card hidden">
+    <div>
+      <p class="eyebrow">Admin Overview</p>
+      <h2>Sangat Works Dashboard</h2>
+      <p>Quick platform statistics and moderation overview.</p>
+    </div>
+
+    <div class="admin-stats-grid">
+      <div>
+        <strong id="adminTotalUsers">0</strong>
+        <span>Total Users</span>
       </div>
-    </section>
-
-    <!-- ADMIN DASHBOARD (ADMINS ONLY) -->
-
-    <section id="adminDashboardCard" class="admin-dashboard-card hidden">
 
       <div>
-        <p class="eyebrow">Admin Overview</p>
-
-        <h2>Sangat Works Dashboard</h2>
-
-        <p>
-          Quick platform statistics and moderation overview.
-        </p>
+        <strong id="adminPublicProfiles">0</strong>
+        <span>Public Profiles</span>
       </div>
 
-      <div class="admin-stats-grid">
-
-        <div>
-          <strong id="adminTotalUsers">0</strong>
-          <span>Total Users</span>
-        </div>
-
-        <div>
-          <strong id="adminPublicProfiles">0</strong>
-          <span>Public Profiles</span>
-        </div>
-
-        <div>
-          <strong id="adminVerifiedUsers">0</strong>
-          <span>Verified Users</span>
-        </div>
-
-        <div>
-          <strong id="adminPendingUsers">0</strong>
-          <span>Pending Verification</span>
-        </div>
-
+      <div>
+        <strong id="adminVerifiedUsers">0</strong>
+        <span>Verified Users</span>
       </div>
 
-      <a href="admin.html" class="btn-primary">
-        Open Admin Panel
-      </a>
+      <div>
+        <strong id="adminPendingUsers">0</strong>
+        <span>Pending Verification</span>
+      </div>
+    </div>
 
-    </section>
+    <a href="admin.html" class="btn-primary">Open Admin Panel</a>
+  </section>
 
-    <!-- DIRECTORY -->
+  <section class="info-section">
+    <h2>What is Sangat Works?</h2>
+    <p>
+      A community platform built to help Sikhs discover trusted businesses,
+      professionals, tradespeople and services within the Sangat.
+    </p>
 
-    <section class="search-section" id="directory">
-
-      <h2>Find someone in the Sangat</h2>
-
-      <p>
-        Search by trade, business type, skill,
-        town or keyword.
-      </p>
-
-      <div class="search-box">
-        <input
-          type="text"
-          id="searchInput"
-          placeholder="Search electrician, plumber, accountant..."
-        />
-
-        <button id="searchBtn">
-          Search
-        </button>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h3>Find trusted services</h3>
+        <p>Search electricians, plumbers, tutors, accountants, developers and more.</p>
       </div>
 
-      <div id="directoryResults" class="cards-grid">
-        <div class="empty-state">
-          Profiles will appear here once members start joining.
-        </div>
+      <div class="feature-card">
+        <h3>Support Sikh businesses</h3>
+        <p>Keep opportunities, referrals and work circulating within the community.</p>
       </div>
 
-    </section>
+      <div class="feature-card">
+        <h3>Reviews & verification</h3>
+        <p>Use community reviews and admin verification badges to build trust.</p>
+      </div>
+    </div>
+  </section>
 
-  </main>
+  <section class="pricing-section">
+    <p class="eyebrow">Founding Members</p>
+    <h2>First 150 members join free for 1 year.</h2>
 
-  <footer>
-    <p>Sangat Works — built for community support.</p>
-  </footer>
 
-  <script type="module" src="js/nav.js"></script>
-  <script type="module" src="js/directory.js"></script>
-  <script type="module" src="js/admin-dashboard.js"></script>
+    <div class="founding-counter-box">
+      <strong id="foundingClaimed">0</strong>
+      <span>/ 150 founding places claimed</span>
+
+      <div class="strength-bar">
+        <div id="foundingCounterFill"></div>
+      </div>
+
+      <p id="foundingRemaining">150 spaces remaining</p>
+    </div>
+
+
+
+    <p>
+      After the founding member spaces are filled, membership will move to
+      £25 per year or £2.99 per month.
+    </p>
+
+    <div class="pricing-grid">
+      <div class="pricing-card highlighted">
+        <h3>Founding Member</h3>
+        <strong>Free Forever</strong>
+        <p>Available for the first 150 members only.</p>
+      </div>
+
+      <div class="pricing-card">
+        <h3>Standard Member</h3>
+        <strong>£25/year</strong>
+        <p>Profile, directory listing, reviews, map visibility and verification eligibility.</p>
+      </div>
+
+      <div class="pricing-card">
+        <h3>Monthly Member</h3>
+        <strong>£2.99/month</strong>
+        <p>Flexible monthly access for members who prefer not to pay yearly.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>Sangat Works — built for community support.</p>
+</footer>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/admin-dashboard.js"></script>
+<script type="module" src="js/founding-counter.js"></script>
 
 </body>
 </html>

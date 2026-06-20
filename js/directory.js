@@ -29,10 +29,18 @@ function renderDirectoryProfile(profile) {
   const visibleTags = tags.slice(0, 6);
   const tagsHtml = visibleTags.map(tag => `<span class="tag">${tag}</span>`).join("");
 
+  const featuredBadge = profile.featuredListing
+  ? `<span class="trust-badge featured-badge">★ Featured</span>`
+  : "";
+
   return `
     <div class="profile-card theme-${profile.themeColour || "gold"}">
       <h3>${profile.businessName || profile.fullName}</h3>
       <p class="service">${profile.serviceTitle || ""}</p>
+
+      <div class="badges-row">
+        ${featuredBadge}
+      </div>
 
       ${profile.yearsExperience ? `<p><strong>Experience:</strong> ${profile.yearsExperience} years</p>` : ""}
       <p><strong>Location:</strong> ${profile.town || "Location not provided"}</p>
@@ -119,6 +127,10 @@ async function loadDirectory() {
       `;
       return;
     }
+
+    allProfiles.sort((a, b) => {
+      return (b.featuredListing === true) - (a.featuredListing === true);
+    });
 
     filterProfiles();
   } catch (error) {

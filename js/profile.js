@@ -24,6 +24,84 @@ const publicProfile = document.getElementById("publicProfile");
 let currentUser = null;
 let existingProfile = {};
 
+const profileStrengthPercent = document.getElementById("profileStrengthPercent");
+const profileStrengthFill = document.getElementById("profileStrengthFill");
+const profileStrengthChecklist = document.getElementById("profileStrengthChecklist");
+
+function calculateProfileStrength(profile) {
+  const checks = [
+    {
+      label: "Add a profile photo",
+      complete: !!profile.profilePhotoUrl
+    },
+    {
+      label: "Add a business logo",
+      complete: !!profile.businessLogoUrl
+    },
+    {
+      label: "Add your business or profile name",
+      complete: !!profile.businessName || !!profile.fullName
+    },
+    {
+      label: "Add a service title",
+      complete: !!profile.serviceTitle
+    },
+    {
+      label: "Add a description",
+      complete: !!profile.description
+    },
+    {
+      label: "Add tags",
+      complete: (profile.tags || []).length > 0
+    },
+    {
+      label: "Add your town/location",
+      complete: !!profile.town
+    },
+    {
+      label: "Add years of experience",
+      complete: !!profile.yearsExperience
+    },
+    {
+      label: "Add specialist work/projects",
+      complete: !!profile.specialistWork
+    },
+    {
+      label: "Add Gurdwara/Sangat association",
+      complete: !!profile.associatedGurdwara
+    },
+    {
+      label: "Add website or LinkedIn",
+      complete: !!profile.website || !!profile.linkedin
+    },
+    {
+      label: "Add 2 fun facts",
+      complete: !!profile.funFactOne && !!profile.funFactTwo
+    }
+  ];
+
+  const completed = checks.filter(check => check.complete).length;
+  const percent = Math.round((completed / checks.length) * 100);
+
+  if (profileStrengthPercent) {
+    profileStrengthPercent.textContent = `${percent}%`;
+  }
+
+  if (profileStrengthFill) {
+    profileStrengthFill.style.width = `${percent}%`;
+  }
+
+  if (profileStrengthChecklist) {
+    profileStrengthChecklist.innerHTML = checks
+      .map(check => `
+        <li class="${check.complete ? "complete" : ""}">
+          ${check.complete ? "✓" : "○"} ${check.label}
+        </li>
+      `)
+      .join("");
+  }
+}
+
 function getTags(tagsString) {
   return tagsString
     .split(",")
@@ -91,6 +169,10 @@ function renderProfile(profile) {
   const tags = profile.tags || [];
   const tagsHtml = tags.map(tag => `<span class="tag">${tag}</span>`).join("");
 
+  const membershipBadge = profile.isFoundingMember
+  ? `<span class="trust-badge verified">★ Founding Member #${profile.memberNumber || ""} — Free 1 Year</span>`
+  : "";
+
   const discountText = {
     yes: "Offers Sangat/community rates where possible",
     sometimes: "May offer community rates depending on the job",
@@ -108,6 +190,10 @@ function renderProfile(profile) {
 
       <h1>${profile.businessName || profile.fullName}</h1>
       <p class="service">${profile.serviceTitle || ""}</p>
+
+      <div class="badges-row">
+        ${membershipBadge}
+      </div>
 
       <p>${profile.description || ""}</p>
 
@@ -161,6 +247,7 @@ if (profileForm) {
     if (userSnap.exists()) {
       existingProfile = userSnap.data();
       fillForm(existingProfile);
+      calculateProfileStrength(existingProfile);
     } else {
       existingProfile = {
         fullName: user.displayName || "",
@@ -245,6 +332,7 @@ if (profileForm) {
       await setDoc(doc(db, "users", currentUser.uid), profile, { merge: true });
 
       existingProfile = profile;
+      calculateProfileStrength(existingProfile);
       profileMessage.textContent = "Profile saved successfully.";
     } catch (error) {
       profileMessage.textContent = error.message;
