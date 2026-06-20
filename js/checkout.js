@@ -36,7 +36,7 @@ document.querySelectorAll(".checkout-btn").forEach((button) => {
       const response = await fetch(FUNCTION_URL, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "text/plain"
         },
         body: JSON.stringify({
           priceId: selectedPrice,

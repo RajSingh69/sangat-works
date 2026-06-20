@@ -10,6 +10,7 @@ const MONTHLY_PRICE_ID = "price_1TkREoDUGpJNp57jw98RTUIU";
 exports.createCheckoutSession = onRequest(
   {
     region: "europe-west1",
+    cors: true,
     secrets: [stripeSecret],
     maxInstances: 10
   },
