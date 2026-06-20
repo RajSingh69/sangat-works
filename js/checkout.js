@@ -10,6 +10,9 @@ console.log("checkout.js loaded");
 
 document.querySelectorAll(".checkout-btn").forEach((button) => {
   button.addEventListener("click", async () => {
+
+    console.log("Checkout button clicked");
+
     const user = auth.currentUser;
 
     if (!user) {
