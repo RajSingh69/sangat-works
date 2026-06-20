@@ -1,16 +1,12 @@
-import { auth, db } from "./firebase.js";
-
-import {
-  collection,
-  addDoc,
-  onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { auth } from "./firebase.js";
 
 const YEARLY_PRICE_ID = "price_1TkRE3DUGpJNp57jibUQGKDf";
 const MONTHLY_PRICE_ID = "price_1TkREoDUGpJNp57jw98RTUIU";
 
+const FUNCTION_URL =
+  "https://createcheckoutsession-azgck6mz5a-ew.a.run.app";
+
 console.log("checkout.js loaded");
-console.log("Checkout buttons found:", document.querySelectorAll(".checkout-btn").length);
 
 document.querySelectorAll(".checkout-btn").forEach((button) => {
   button.addEventListener("click", async () => {
@@ -27,27 +23,32 @@ document.querySelectorAll(".checkout-btn").forEach((button) => {
         ? YEARLY_PRICE_ID
         : MONTHLY_PRICE_ID;
 
-    const checkoutSessionRef = await addDoc(
-      collection(db, "customers", user.uid, "checkout_sessions"),
-      {
-        price: selectedPrice,
-        success_url: window.location.origin + "/success.html",
-        cancel_url: window.location.origin + "/cancel.html"
-      }
-    );
+    try {
+      const response = await fetch(FUNCTION_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          priceId: selectedPrice,
+          uid: user.uid,
+          email: user.email
+        })
+      });
 
-    onSnapshot(checkoutSessionRef, (snap) => {
-      const data = snap.data();
-
-      if (!data) return;
+      const data = await response.json();
 
       if (data.error) {
-        alert(data.error.message || "Something went wrong.");
+        alert(data.error);
+        return;
       }
 
       if (data.url) {
-        window.location.assign(data.url);
+        window.location.href = data.url;
       }
-    });
+    } catch (error) {
+      console.error(error);
+      alert("Checkout failed.");
+    }
   });
 });

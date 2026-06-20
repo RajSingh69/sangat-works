@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@emnapi/core": "^1.11.1",
+    "@emnapi/runtime": "^1.11.1",
+    "@emnapi/wasi-threads": "^1.2.2"
+  }
+}
