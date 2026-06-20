@@ -4,7 +4,7 @@ const YEARLY_PRICE_ID = "price_1TkRE3DUGpJNp57jibUQGKDf";
 const MONTHLY_PRICE_ID = "price_1TkREoDUGpJNp57jw98RTUIU";
 
 const FUNCTION_URL =
-  "https://createcheckoutsession-azgck6mz5a-ew.a.run.app";
+  "https://europe-west1-sangat-works.cloudfunctions.net/createCheckoutSession";
 
 console.log("checkout.js loaded");
 
