@@ -46,23 +46,31 @@
         <h3>Founding Member</h3>
         <strong>Free for 1 year</strong>
         <p>For the first 150 members who help shape Sangat Works from the beginning.</p>
+        <a href="login.html" class="btn-primary full">Join as Founding Member</a>
       </div>
 
       <div class="pricing-card">
         <h3>Yearly Member</h3>
         <strong>£25/year</strong>
         <p>Includes your profile, directory listing, map visibility, reviews and verification eligibility.</p>
+        <button class="btn-primary full checkout-btn" data-plan="yearly">
+          Choose Yearly
+        </button>
       </div>
 
       <div class="pricing-card">
         <h3>Monthly Member</h3>
         <strong>£2.99/month</strong>
         <p>Flexible monthly access for members who prefer not to pay yearly.</p>
+        <button class="btn-primary full checkout-btn" data-plan="monthly">
+          Choose Monthly
+        </button>
       </div>
     </div>
 
+    <p id="checkoutMessage" class="message"></p>
+
     <div class="hero-actions">
-      <a href="login.html" class="btn-primary">Join Sangat Works</a>
       <a href="directory.html" class="btn-secondary">Browse Directory</a>
     </div>
   </section>
@@ -75,6 +83,7 @@
 
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/founding-counter.js"></script>
+<script type="module" src="js/checkout.js"></script>
 
 </body>
 </html>
