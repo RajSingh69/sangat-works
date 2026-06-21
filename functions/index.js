@@ -2,10 +2,27 @@ const { onRequest } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const Stripe = require("stripe");
 
+const admin = require("firebase-admin");
+
+admin.initializeApp();
+
 const stripeSecret = defineSecret("STRIPE_SECRET_KEY");
+const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 
 const YEARLY_PRICE_ID = "price_1Tkm1gDbE6tXsxNU9veTZwPE";
 const MONTHLY_PRICE_ID = "price_1Tkm19DbE6tXsxNUxU6b7NUI";
+
+function getPlanFromPriceId(priceId) {
+  if (priceId === YEARLY_PRICE_ID) {
+    return "yearly";
+  }
+
+  if (priceId === MONTHLY_PRICE_ID) {
+    return "monthly";
+  }
+
+  return "unknown";
+}
 
 exports.createCheckoutSession = onRequest(
   {
@@ -72,6 +89,79 @@ exports.createCheckoutSession = onRequest(
       return res.status(500).json({
         error: error.message || "Stripe checkout failed"
       });
+    }
+  }
+);
+
+exports.stripeWebhook = onRequest(
+  {
+    region: "europe-west1",
+    secrets: [stripeSecret, stripeWebhookSecret],
+    maxInstances: 10
+  },
+  async (req, res) => {
+    const stripe = Stripe(stripeSecret.value());
+
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.rawBody,
+        req.headers["stripe-signature"],
+        stripeWebhookSecret.value()
+      );
+    } catch (error) {
+      console.error("Webhook signature verification failed:", error.message);
+      return res.status(400).send(`Webhook Error: ${error.message}`);
+    }
+
+    try {
+      if (event.type === "checkout.session.completed") {
+        const session = event.data.object;
+
+        const uid = session.metadata?.uid;
+        const email = session.metadata?.email;
+
+        if (!uid) {
+          console.error("No uid found in checkout session metadata");
+          return res.status(200).send("No uid metadata");
+        }
+
+        const subscription = await stripe.subscriptions.retrieve(
+          session.subscription
+        );
+
+        const priceId = subscription.items.data[0]?.price?.id || "";
+        const plan = getPlanFromPriceId(priceId);
+
+        const expiresAt = subscription.current_period_end
+          ? admin.firestore.Timestamp.fromMillis(
+              subscription.current_period_end * 1000
+            )
+          : null;
+
+        await admin.firestore().collection("users").doc(uid).set(
+          {
+            hasSubscription: true,
+            subscriptionStatus: "active",
+            subscriptionPlan: plan,
+            subscriptionExpiresAt: expiresAt,
+            stripeCustomerId: session.customer || "",
+            stripeSubscriptionId: session.subscription || "",
+            stripePriceId: priceId,
+            subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            email: email || session.customer_details?.email || ""
+          },
+          { merge: true }
+        );
+
+        console.log(`Subscription activated for user ${uid}`);
+      }
+
+      return res.status(200).send("Webhook received");
+    } catch (error) {
+      console.error("Webhook processing error:", error);
+      return res.status(500).send("Webhook processing failed");
     }
   }
 );

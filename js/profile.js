@@ -28,6 +28,10 @@ const profileStrengthPercent = document.getElementById("profileStrengthPercent")
 const profileStrengthFill = document.getElementById("profileStrengthFill");
 const profileStrengthChecklist = document.getElementById("profileStrengthChecklist");
 
+const membershipPlan = document.getElementById("membershipPlan");
+const membershipStatus = document.getElementById("membershipStatus");
+const membershipDays = document.getElementById("membershipDays");
+
 function calculateProfileStrength(profile) {
   const checks = [
     {
@@ -101,6 +105,57 @@ function calculateProfileStrength(profile) {
       .join("");
   }
 }
+
+
+function formatSubscriptionPlan(profile) {
+  if (profile.isFoundingMember === true) {
+    return "Founding Member";
+  }
+
+  if (profile.subscriptionPlan === "yearly") {
+    return "Yearly Member";
+  }
+
+  if (profile.subscriptionPlan === "monthly") {
+    return "Monthly Member";
+  }
+
+  if (profile.hasSubscription === true) {
+    return "Active Member";
+  }
+
+  return "Free";
+}
+
+function calculateDaysRemaining(profile) {
+  if (!profile.subscriptionExpiresAt) {
+    return profile.hasSubscription === true ? "Active" : "0";
+  }
+
+  const expiryDate = profile.subscriptionExpiresAt.toDate
+    ? profile.subscriptionExpiresAt.toDate()
+    : new Date(profile.subscriptionExpiresAt);
+
+  const today = new Date();
+  const diffMs = expiryDate - today;
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  return diffDays > 0 ? diffDays : 0;
+}
+
+function renderMembershipStatus(profile) {
+  if (!membershipPlan || !membershipStatus || !membershipDays) return;
+
+  const isActive =
+    profile.hasSubscription === true ||
+    profile.subscriptionStatus === "active" ||
+    profile.isFoundingMember === true;
+
+  membershipPlan.textContent = formatSubscriptionPlan(profile);
+  membershipStatus.textContent = isActive ? "Active" : "Inactive";
+  membershipDays.textContent = calculateDaysRemaining(profile);
+}
+
 
 function getTags(tagsString) {
   return tagsString
@@ -248,6 +303,7 @@ if (profileForm) {
       existingProfile = userSnap.data();
       fillForm(existingProfile);
       calculateProfileStrength(existingProfile);
+      renderMembershipStatus(existingProfile);
     } else {
       existingProfile = {
         fullName: user.displayName || "",
@@ -333,6 +389,7 @@ if (profileForm) {
 
       existingProfile = profile;
       calculateProfileStrength(existingProfile);
+      renderMembershipStatus(existingProfile);
       profileMessage.textContent = "Profile saved successfully.";
     } catch (error) {
       profileMessage.textContent = error.message;
