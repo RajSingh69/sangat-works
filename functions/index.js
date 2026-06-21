@@ -4,8 +4,8 @@ const Stripe = require("stripe");
 
 const stripeSecret = defineSecret("STRIPE_SECRET_KEY");
 
-const YEARLY_PRICE_ID = "price_1TkRE3DUGpJNp57jibUQGKDf";
-const MONTHLY_PRICE_ID = "price_1TkREoDUGpJNp57jw98RTUIU";
+const YEARLY_PRICE_ID = "price_1Tkm1gDbE6tXsxNU9veTZwPE";
+const MONTHLY_PRICE_ID = "price_1Tkm19DbE6tXsxNUxU6b7NUI";
 
 exports.createCheckoutSession = onRequest(
   {
@@ -28,7 +28,10 @@ exports.createCheckoutSession = onRequest(
         return res.status(405).json({ error: "Method not allowed" });
       }
 
-      const { priceId, uid, email } = req.body;
+      const body =
+        typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+
+      const { priceId, uid, email } = body;
 
       if (!priceId || !uid || !email) {
         return res.status(400).json({
