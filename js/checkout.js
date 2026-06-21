@@ -1,7 +1,7 @@
 import { auth } from "./firebase.js";
 
-const YEARLY_PRICE_ID = "price_1TkRE3DUGpJNp57jibUQGKDf";
-const MONTHLY_PRICE_ID = "price_1TkREoDUGpJNp57jw98RTUIU";
+const YEARLY_PRICE_ID = "price_1Tkm1gDbE6tXsxNU9veTZwPE";
+const MONTHLY_PRICE_ID = "price_1Tkm19DbE6tXsxNUxU6b7NUI";
 
 const FUNCTION_URL =
   "https://europe-west1-sangat-works.cloudfunctions.net/createCheckoutSession";
