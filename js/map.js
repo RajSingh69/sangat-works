@@ -1,4 +1,5 @@
 import { db } from "./firebase.js";
+import { protectPage } from "./subscription-guard.js";
 
 import {
   collection,
@@ -159,15 +160,19 @@ async function loadMapProfiles() {
   renderMarkers();
 }
 
-if (mapElement) {
-  map = L.map("map").setView([54.5, -3.2], 6);
+protectPage({
+  onAllowed: () => {
+    if (mapElement) {
+      map = L.map("map").setView([54.5, -3.2], 6);
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "&copy; OpenStreetMap contributors"
-  }).addTo(map);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
 
-  loadMapProfiles();
-}
+      loadMapProfiles();
+    }
+  }
+});
 
 if (mapSearchBtn) {
   mapSearchBtn.addEventListener("click", renderMarkers);

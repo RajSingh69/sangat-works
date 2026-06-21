@@ -1,4 +1,5 @@
 import { db } from "./firebase.js";
+import { protectPage } from "./subscription-guard.js";
 
 import {
   collection,
@@ -150,4 +151,8 @@ if (searchInput) {
   searchInput.addEventListener("keyup", filterProfiles);
 }
 
-loadDirectory();
+protectPage({
+  onAllowed: () => {
+    loadDirectory();
+  }
+});
