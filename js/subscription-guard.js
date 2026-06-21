@@ -1,3 +1,4 @@
+console.log("subscription-guard.js loaded");
 import { auth, db } from "./firebase.js";
 
 import {
@@ -46,6 +47,9 @@ export function protectPage(options = {}) {
       }
 
       const userData = userSnap.data();
+
+      console.log("Subscription check:", userData);
+      console.log("Has active subscription:", hasActiveSubscription(userData));
 
       if (!hasActiveSubscription(userData)) {
         window.location.href = redirectTo;
