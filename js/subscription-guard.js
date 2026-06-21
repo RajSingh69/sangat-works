@@ -1,4 +1,5 @@
 console.log("subscription-guard.js loaded");
+
 import { auth, db } from "./firebase.js";
 
 import {
@@ -13,19 +14,7 @@ import {
 export function hasActiveSubscription(userData) {
   if (!userData) return false;
 
-  if (userData.hasSubscription === true) {
-    return true;
-  }
-
-  if (userData.subscriptionStatus === "active") {
-    return true;
-  }
-
-  if (userData.isFoundingMember === true) {
-    return true;
-  }
-
-  return false;
+  return userData.hasSubscription === true;
 }
 
 export function protectPage(options = {}) {
@@ -47,11 +36,13 @@ export function protectPage(options = {}) {
       }
 
       const userData = userSnap.data();
+      const allowed = hasActiveSubscription(userData);
 
       console.log("Subscription check:", userData);
-      console.log("Has active subscription:", hasActiveSubscription(userData));
+      console.log("hasSubscription value:", userData.hasSubscription);
+      console.log("Allowed:", allowed);
 
-      if (!hasActiveSubscription(userData)) {
+      if (!allowed) {
         window.location.href = redirectTo;
         return;
       }
