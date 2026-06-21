@@ -10,11 +10,14 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+import {
+  hasActiveSubscription
+} from "./subscription-guard.js";
+
 const accountArea = document.getElementById("accountArea");
 
 if (accountArea) {
   onAuthStateChanged(auth, async (user) => {
-
     if (!user) {
       accountArea.innerHTML = `
         <a href="login.html" class="btn-small">Login</a>
@@ -23,6 +26,8 @@ if (accountArea) {
     }
 
     let adminButton = "";
+    let premiumLinks = "";
+    let membershipBadge = `<span class="account-email">Free</span>`;
 
     try {
       const userRef = doc(db, "users", user.uid);
@@ -30,6 +35,17 @@ if (accountArea) {
 
       if (userSnap.exists()) {
         const userData = userSnap.data();
+
+        if (hasActiveSubscription(userData)) {
+          premiumLinks = `
+            <a href="directory.html">Directory</a>
+            <a href="map.html">Map</a>
+          `;
+
+          membershipBadge = `
+            <span class="account-email">Member</span>
+          `;
+        }
 
         if (
           userData.accountType === "admin" ||
@@ -45,7 +61,12 @@ if (accountArea) {
     }
 
     accountArea.innerHTML = `
+      ${premiumLinks}
+
+      <a href="pricing.html">Pricing</a>
+
       <span class="account-email">${user.email}</span>
+      ${membershipBadge}
 
       ${adminButton}
 
