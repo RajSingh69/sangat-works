@@ -5,12 +5,51 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 import {
+  collection,
   doc,
-  getDoc
+  getDoc,
+  getDocs,
+  query,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const userGurdwaraName = document.getElementById("userGurdwaraName");
+const skillsPoolsList = document.getElementById("skillsPoolsList");
 const skillsNetworkMessage = document.getElementById("skillsNetworkMessage");
+
+async function loadPools() {
+  if (!skillsPoolsList) return;
+
+  skillsPoolsList.innerHTML = "Loading pools...";
+
+  const poolsQuery = query(
+    collection(db, "pools"),
+    orderBy("name", "asc")
+  );
+
+  const snapshot = await getDocs(poolsQuery);
+
+  if (snapshot.empty) {
+    skillsPoolsList.innerHTML = `<p>No pools found yet.</p>`;
+    return;
+  }
+
+  skillsPoolsList.innerHTML = "";
+
+  snapshot.forEach((docSnap) => {
+    const pool = docSnap.data();
+
+    const card = document.createElement("a");
+    card.href = `pool.html?id=${docSnap.id}`;
+    card.className = "dashboard-stat";
+    card.innerHTML = `
+      <span class="dashboard-number">${pool.name || "Unnamed Pool"}</span>
+      <span class="dashboard-label">${pool.description || ""}</span>
+    `;
+
+    skillsPoolsList.appendChild(card);
+  });
+}
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -38,6 +77,8 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     userGurdwaraName.textContent = profile.gurdwaraName || profile.associatedGurdwara;
+
+    await loadPools();
 
   } catch (error) {
     userGurdwaraName.textContent = "Could not load your Gurdwara.";
