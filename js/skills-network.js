@@ -12,7 +12,6 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -82,9 +81,8 @@ async function loadPools(profile) {
 
   const poolsQuery = query(
     collection(db, "pools"),
-    where("gurdwaraId", "==", profile.gurdwaraId),
-    orderBy("name", "asc")
-  );
+    where("gurdwaraId", "==", profile.gurdwaraId)
+);
 
   const snapshot = await getDocs(poolsQuery);
 
@@ -97,7 +95,13 @@ async function loadPools(profile) {
   emptyPoolsBox.style.display = "none";
   skillsPoolsList.innerHTML = "";
 
-  snapshot.forEach((docSnap) => {
+  const sortedDocs = snapshot.docs.sort((a, b) => {
+    const nameA = (a.data().name || "").toLowerCase();
+    const nameB = (b.data().name || "").toLowerCase();
+    return nameA.localeCompare(nameB);
+    });
+
+    sortedDocs.forEach((docSnap) => {
     const pool = docSnap.data();
 
     const card = document.createElement("a");
