@@ -30,6 +30,7 @@ const profileStrengthChecklist = document.getElementById("profileStrengthCheckli
 
 const membershipPlan = document.getElementById("membershipPlan");
 const membershipStatus = document.getElementById("membershipStatus");
+const membershipExpiry = document.getElementById("membershipExpiry");
 const membershipDays = document.getElementById("membershipDays");
 
 function calculateProfileStrength(profile) {
@@ -143,8 +144,30 @@ function calculateDaysRemaining(profile) {
   return diffDays > 0 ? diffDays : 0;
 }
 
+
+function formatExpiryDate(profile) {
+  if (!profile.subscriptionExpiresAt) {
+    return "-";
+  }
+
+  const expiryDate = profile.subscriptionExpiresAt.toDate
+    ? profile.subscriptionExpiresAt.toDate()
+    : new Date(profile.subscriptionExpiresAt);
+
+  if (Number.isNaN(expiryDate.getTime())) {
+    return "-";
+  }
+
+  return expiryDate.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+}
+
+
 function renderMembershipStatus(profile) {
-  if (!membershipPlan || !membershipStatus || !membershipDays) return;
+  if (!membershipPlan || !membershipStatus || !membershipExpiry || !membershipDays) return;
 
   const isActive =
     profile.hasSubscription === true ||
@@ -153,7 +176,9 @@ function renderMembershipStatus(profile) {
 
   membershipPlan.textContent = formatSubscriptionPlan(profile);
   membershipStatus.textContent = isActive ? "Active" : "Inactive";
+  membershipExpiry.textContent = formatExpiryDate(profile);
   membershipDays.textContent = calculateDaysRemaining(profile);
+
 }
 
 
