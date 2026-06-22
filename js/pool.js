@@ -5,17 +5,142 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 import {
+  collection,
+  addDoc,
   doc,
-  getDoc
+  getDoc,
+  getDocs,
+  query,
+  where,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const poolName = document.getElementById("poolName");
 const poolDescription = document.getElementById("poolDescription");
+const emptyRolesBox = document.getElementById("emptyRolesBox");
+const createStarterRolesBtn = document.getElementById("createStarterRolesBtn");
+const rolesList = document.getElementById("rolesList");
 const poolMessage = document.getElementById("poolMessage");
 
 const params = new URLSearchParams(window.location.search);
 const gurdwaraId = params.get("gurdwaraId");
 const poolId = params.get("poolId");
+
+const STARTER_ROLES_BY_POOL = {
+  construction: [
+    { name: "Builder", description: "Building work, repairs and general construction" },
+    { name: "Architect", description: "Plans, drawings and design advice" },
+    { name: "Electrician", description: "Electrical work, wiring and installations" },
+    { name: "Plumber", description: "Plumbing, heating and water systems" },
+    { name: "Labourer", description: "General labouring and site support" },
+    { name: "Surveyor", description: "Surveys, valuations and property checks" },
+    { name: "Project Manager", description: "Managing construction work and contractors" }
+  ],
+  software: [
+    { name: "Front End Developer", description: "Websites, interfaces and user-facing systems" },
+    { name: "Back End Developer", description: "Databases, APIs and server-side systems" },
+    { name: "Cloud Engineer", description: "Cloud hosting, storage and infrastructure" },
+    { name: "UI/UX Designer", description: "Design, layouts and user experience" },
+    { name: "Database Developer", description: "Data structure, queries and database support" }
+  ],
+  healthcare: [
+    { name: "Doctor", description: "Medical advice and clinical support" },
+    { name: "Pharmacist", description: "Medicine, pharmacy and prescription advice" },
+    { name: "Physiotherapist", description: "Movement, injury and rehabilitation support" },
+    { name: "Dentist", description: "Dental care and oral health services" },
+    { name: "Mental Health Professional", description: "Wellbeing, counselling and mental health support" }
+  ],
+  legal: [
+    { name: "Solicitor", description: "Legal advice and representation" },
+    { name: "Immigration Adviser", description: "Visa, immigration and settlement support" },
+    { name: "Family Law Specialist", description: "Family, divorce and child-related legal matters" },
+    { name: "Commercial Lawyer", description: "Business, contracts and commercial law" }
+  ],
+  property: [
+    { name: "Estate Agent", description: "Buying, selling and property advice" },
+    { name: "Mortgage Broker", description: "Mortgage advice and finance support" },
+    { name: "Surveyor", description: "Property surveys and valuations" },
+    { name: "Landlord", description: "Rental property and accommodation support" },
+    { name: "Property Manager", description: "Managing rental and investment properties" }
+  ]
+};
+
+async function createStarterRoles(pool, user) {
+  const starterRoles = STARTER_ROLES_BY_POOL[poolId] || [];
+
+  if (starterRoles.length === 0) {
+    poolMessage.textContent = "No starter roles are available for this pool yet.";
+    return;
+  }
+
+  createStarterRolesBtn.disabled = true;
+  createStarterRolesBtn.textContent = "Creating roles...";
+  poolMessage.textContent = "";
+
+  for (const role of starterRoles) {
+    await addDoc(collection(db, "roles"), {
+      name: role.name,
+      description: role.description,
+      poolId,
+      poolName: pool.name || "",
+      gurdwaraId,
+      gurdwaraName: pool.gurdwaraName || "",
+      createdBy: user.uid,
+      createdAt: serverTimestamp()
+    });
+  }
+
+  poolMessage.textContent = "Starter roles created successfully.";
+  await loadRoles();
+}
+
+
+async function loadRoles() {
+  if (!rolesList || !emptyRolesBox) return;
+
+  rolesList.innerHTML = "Loading roles...";
+  emptyRolesBox.style.display = "none";
+
+  const rolesQuery = query(
+    collection(db, "roles"),
+    where("gurdwaraId", "==", gurdwaraId),
+    where("poolId", "==", poolId)
+  );
+
+  const snapshot = await getDocs(rolesQuery);
+
+  if (snapshot.empty) {
+    rolesList.innerHTML = "";
+    emptyRolesBox.style.display = "block";
+    return;
+  }
+
+  emptyRolesBox.style.display = "none";
+  rolesList.innerHTML = "";
+
+  const sortedDocs = snapshot.docs.sort((a, b) => {
+    const nameA = (a.data().name || "").toLowerCase();
+    const nameB = (b.data().name || "").toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
+
+  sortedDocs.forEach((docSnap) => {
+    const role = docSnap.data();
+
+    const card = document.createElement("div");
+    card.className = "pool-card";
+    card.innerHTML = `
+      <span class="dashboard-number">${role.name || "Unnamed Role"}</span>
+      <span class="dashboard-label">${role.description || ""}</span>
+    `;
+
+    rolesList.appendChild(card);
+  });
+}
+
+
+
+
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -55,6 +180,14 @@ onAuthStateChanged(auth, async (user) => {
 
     poolName.textContent = pool.name || "Unnamed Pool";
     poolDescription.textContent = pool.description || "";
+
+    await loadRoles();
+
+    if (createStarterRolesBtn) {
+    createStarterRolesBtn.onclick = async () => {
+        await createStarterRoles(pool, user);
+    };
+    }
 
   } catch (error) {
     poolName.textContent = "Error loading pool";
