@@ -14,7 +14,8 @@ const poolDescription = document.getElementById("poolDescription");
 const poolMessage = document.getElementById("poolMessage");
 
 const params = new URLSearchParams(window.location.search);
-const poolId = params.get("id");
+const gurdwaraId = params.get("gurdwaraId");
+const poolId = params.get("poolId");
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -22,23 +23,35 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  if (!poolId) {
+  if (!gurdwaraId || !poolId) {
     poolName.textContent = "Pool not found";
-    poolMessage.textContent = "No pool was selected.";
+    poolMessage.textContent = "No Gurdwara or pool was selected.";
     return;
-  }
+}
+
+
+
 
   try {
-    const poolRef = doc(db, "pools", poolId);
+    const poolRef = doc(db, "gurdwaras", gurdwaraId, "pools", poolId);
     const poolSnap = await getDoc(poolRef);
 
-    if (!poolSnap.exists()) {
-      poolName.textContent = "Pool not found";
-      poolMessage.textContent = "This pool does not exist.";
-      return;
+    let pool = null;
+
+    if (poolSnap.exists()) {
+    pool = poolSnap.data();
+    } else {
+    const templateRef = doc(db, "pools", poolId);
+    const templateSnap = await getDoc(templateRef);
+
+    if (!templateSnap.exists()) {
+        poolName.textContent = "Pool not found";
+        poolMessage.textContent = "This pool does not exist.";
+        return;
     }
 
-    const pool = poolSnap.data();
+    pool = templateSnap.data();
+    }
 
     poolName.textContent = pool.name || "Unnamed Pool";
     poolDescription.textContent = pool.description || "";
