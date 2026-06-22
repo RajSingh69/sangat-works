@@ -26,7 +26,6 @@ if (accountArea) {
     }
 
     let adminButton = "";
-    let premiumLinks = "";
     let membershipBadge = `<span class="account-email">Free</span>`;
 
     try {
@@ -37,11 +36,6 @@ if (accountArea) {
         const userData = userSnap.data();
 
         if (hasActiveSubscription(userData)) {
-          premiumLinks = `
-            <a href="directory.html">Directory</a>
-            <a href="map.html">Map</a>
-          `;
-
           membershipBadge = `
             <span class="account-email">Member</span>
           `;
@@ -61,9 +55,6 @@ if (accountArea) {
     }
 
     accountArea.innerHTML = `
-      ${premiumLinks}
-
-      <a href="pricing.html">Pricing</a>
 
       <span class="account-email">${user.email}</span>
       ${membershipBadge}
