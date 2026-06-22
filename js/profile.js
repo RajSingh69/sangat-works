@@ -5,12 +5,17 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 import {
+  collection,
+  addDoc,
   doc,
   getDoc,
+  getDocs,
   setDoc,
   updateDoc,
   increment,
-  serverTimestamp
+  serverTimestamp,
+  query,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 import {
@@ -23,6 +28,10 @@ const profileForm = document.getElementById("profileForm");
 const profileMessage = document.getElementById("profileMessage");
 const publicProfile = document.getElementById("publicProfile");
 
+const gurdwaraSelect = document.getElementById("gurdwaraSelect");
+const newGurdwaraName = document.getElementById("newGurdwaraName");
+const associatedGurdwaraInput = document.getElementById("associatedGurdwara");
+
 let currentUser = null;
 let existingProfile = {};
 
@@ -34,6 +43,16 @@ const membershipPlan = document.getElementById("membershipPlan");
 const membershipStatus = document.getElementById("membershipStatus");
 const membershipExpiry = document.getElementById("membershipExpiry");
 const membershipDays = document.getElementById("membershipDays");
+
+const dashboardReviews = document.getElementById("dashboardReviews");
+const dashboardRecommendations = document.getElementById("dashboardRecommendations");
+const dashboardViews = document.getElementById("dashboardViews");
+const dashboardTrustScore = document.getElementById("dashboardTrustScore");
+const dashboardMemberLevel = document.getElementById("dashboardMemberLevel");
+
+const dashboardWebsiteClicks = document.getElementById("dashboardWebsiteClicks");
+const dashboardLinkedInClicks = document.getElementById("dashboardLinkedInClicks");
+const dashboardGoogleClicks = document.getElementById("dashboardGoogleClicks");
 
 function calculateProfileStrength(profile) {
   const checks = [
@@ -184,6 +203,59 @@ function renderMembershipStatus(profile) {
 }
 
 
+function renderMemberDashboard(profile) {
+  if (
+    !dashboardReviews ||
+    !dashboardRecommendations ||
+    !dashboardViews ||
+    !dashboardTrustScore ||
+    !dashboardMemberLevel
+  ) {
+    return;
+  }
+
+  const reviews = profile.reviewCount || 0;
+  const recommendations = profile.recommendationCount || 0;
+  const views = profile.profileViews || 0;
+
+  const trustScore = Math.min(
+    100,
+    Math.round(
+      reviews * 10 +
+      recommendations * 6 +
+      views * 0.2
+    )
+  );
+
+  dashboardReviews.textContent = reviews;
+  dashboardRecommendations.textContent = recommendations;
+  dashboardViews.textContent = views;
+  dashboardTrustScore.textContent = trustScore;
+
+  if (dashboardWebsiteClicks) {
+    dashboardWebsiteClicks.textContent = profile.websiteClicks || 0;
+  }
+
+  if (dashboardLinkedInClicks) {
+    dashboardLinkedInClicks.textContent = profile.linkedinClicks || 0;
+  }
+
+  if (dashboardGoogleClicks) {
+    dashboardGoogleClicks.textContent = profile.googleReviewClicks || 0;
+  }
+
+  if (trustScore >= 80) {
+    dashboardMemberLevel.textContent = "Highly Trusted Member";
+  } else if (trustScore >= 50) {
+    dashboardMemberLevel.textContent = "Trusted Member";
+  } else if (trustScore >= 20) {
+    dashboardMemberLevel.textContent = "Growing Community Member";
+  } else {
+    dashboardMemberLevel.textContent = "Community Member";
+  }
+}
+
+
 function getTags(tagsString) {
   return tagsString
     .split(",")
@@ -197,6 +269,51 @@ function value(id) {
 
 function checked(id) {
   return document.getElementById(id)?.checked || false;
+}
+
+async function loadGurdwaras(selectedGurdwaraId = "") {
+  if (!gurdwaraSelect) return;
+
+  gurdwaraSelect.innerHTML = `
+    <option value="">Select your Gurdwara</option>
+    <option value="add-new">+ Add New Gurdwara</option>
+  `;
+
+  const gurdwarasQuery = query(
+    collection(db, "gurdwaras"),
+    orderBy("name", "asc")
+  );
+
+  const snapshot = await getDocs(gurdwarasQuery);
+
+  snapshot.forEach((docSnap) => {
+    const gurdwara = docSnap.data();
+
+    const option = document.createElement("option");
+    option.value = docSnap.id;
+    option.textContent = gurdwara.name || "Unnamed Gurdwara";
+
+    gurdwaraSelect.insertBefore(option, gurdwaraSelect.querySelector('option[value="add-new"]'));
+  });
+
+  if (selectedGurdwaraId) {
+    gurdwaraSelect.value = selectedGurdwaraId;
+  }
+}
+
+function setupGurdwaraSelect() {
+  if (!gurdwaraSelect || !newGurdwaraName) return;
+
+  gurdwaraSelect.addEventListener("change", () => {
+    if (gurdwaraSelect.value === "add-new") {
+      newGurdwaraName.style.display = "block";
+      newGurdwaraName.required = true;
+    } else {
+      newGurdwaraName.style.display = "none";
+      newGurdwaraName.required = false;
+      newGurdwaraName.value = "";
+    }
+  });
 }
 
 async function uploadImage(file, folder, uid) {
@@ -221,7 +338,13 @@ function fillForm(profile) {
   document.getElementById("specialistWork").value = profile.specialistWork || "";
   document.getElementById("googleReviews").value = profile.googleReviews || "";
 
-  document.getElementById("associatedGurdwara").value = profile.associatedGurdwara || "";
+  if (gurdwaraSelect) {
+    gurdwaraSelect.value = profile.gurdwaraId || "";
+  }
+
+  if (associatedGurdwaraInput) {
+    associatedGurdwaraInput.value = profile.gurdwaraName || profile.associatedGurdwara || "";
+  }
   document.getElementById("communityDiscount").value = profile.communityDiscount || "not-specified";
 
   document.getElementById("funFactOne").value = profile.funFactOne || "";
@@ -306,9 +429,9 @@ function renderProfile(profile) {
       ${profile.showEmail ? `<p><strong>Email:</strong> ${profile.email || "Not provided"}</p>` : ""}
 
       <div class="card-links">
-        ${profile.website ? `<a href="${profile.website}" target="_blank">Website</a>` : ""}
-        ${profile.linkedin ? `<a href="${profile.linkedin}" target="_blank">LinkedIn</a>` : ""}
-        ${profile.showGoogleReviews && profile.googleReviews ? `<a href="${profile.googleReviews}" target="_blank">Google Reviews</a>` : ""}
+        ${profile.website ? `<a href="${profile.website}" target="_blank" class="tracked-link" data-click-type="websiteClicks">Website</a>` : ""}
+        ${profile.linkedin ? `<a href="${profile.linkedin}" target="_blank" class="tracked-link" data-click-type="linkedinClicks">LinkedIn</a>` : ""}
+        ${profile.showGoogleReviews && profile.googleReviews ? `<a href="${profile.googleReviews}" target="_blank" class="tracked-link" data-click-type="googleReviewClicks">Google Reviews</a>` : ""}
       </div>
     </div>
   `;
@@ -323,21 +446,30 @@ if (profileForm) {
 
     currentUser = user;
 
+    setupGurdwaraSelect();
+
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
 
     if (userSnap.exists()) {
       existingProfile = userSnap.data();
+      await loadGurdwaras(existingProfile.gurdwaraId || "");
       fillForm(existingProfile);
       calculateProfileStrength(existingProfile);
       renderMembershipStatus(existingProfile);
+      renderMemberDashboard(existingProfile);
+
+
     } else {
       existingProfile = {
         fullName: user.displayName || "",
         email: user.email || ""
       };
+      await loadGurdwaras();
       fillForm(existingProfile);
     }
+
+
   });
 
   profileForm.addEventListener("submit", async (e) => {
@@ -367,6 +499,34 @@ if (profileForm) {
         businessLogoUrl = await uploadImage(businessLogoFile, "businessLogos", currentUser.uid);
       }
 
+
+      let selectedGurdwaraId = "";
+      let selectedGurdwaraName = "";
+
+      if (gurdwaraSelect) {
+        if (gurdwaraSelect.value === "add-new") {
+          const newName = value("newGurdwaraName");
+
+          if (!newName) {
+            profileMessage.textContent = "Please enter the new Gurdwara name.";
+            return;
+          }
+
+          const newGurdwaraRef = await addDoc(collection(db, "gurdwaras"), {
+            name: newName,
+            createdBy: currentUser.uid,
+            createdAt: serverTimestamp()
+          });
+
+          selectedGurdwaraId = newGurdwaraRef.id;
+          selectedGurdwaraName = newName;
+        } else if (gurdwaraSelect.value) {
+          selectedGurdwaraId = gurdwaraSelect.value;
+          selectedGurdwaraName = gurdwaraSelect.options[gurdwaraSelect.selectedIndex].textContent;
+        }
+      }
+
+
       const profile = {
         uid: currentUser.uid,
 
@@ -384,7 +544,9 @@ if (profileForm) {
         specialistWork: value("specialistWork"),
         googleReviews: value("googleReviews"),
 
-        associatedGurdwara: value("associatedGurdwara"),
+        gurdwaraId: selectedGurdwaraId,
+        gurdwaraName: selectedGurdwaraName,
+        associatedGurdwara: selectedGurdwaraName,
         communityDiscount: value("communityDiscount"),
 
         funFactOne: value("funFactOne"),
@@ -414,10 +576,18 @@ if (profileForm) {
 
       await setDoc(doc(db, "users", currentUser.uid), profile, { merge: true });
 
-      existingProfile = profile;
+      existingProfile = {
+        ...existingProfile,
+        ...profile
+      };
+
       calculateProfileStrength(existingProfile);
       renderMembershipStatus(existingProfile);
+      renderMemberDashboard(existingProfile);
       profileMessage.textContent = "Profile saved successfully.";
+
+
+
     } catch (error) {
       profileMessage.textContent = error.message;
     }
@@ -459,6 +629,25 @@ if (publicProfile) {
       }
 
       publicProfile.innerHTML = renderProfile(profile);
+
+
+      document.querySelectorAll(".tracked-link").forEach((link) => {
+      link.addEventListener("click", async () => {
+        const clickType = link.dataset.clickType;
+
+        if (!clickType) return;
+
+        try {
+          await updateDoc(userRef, {
+            [clickType]: increment(1)
+          });
+        } catch (error) {
+          console.error("Failed to track contact click:", error);
+        }
+      });
+    });
+
+
     } catch (error) {
       publicProfile.innerHTML = `<div class="empty-state">Error loading profile: ${error.message}</div>`;
     }

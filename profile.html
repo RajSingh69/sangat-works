@@ -76,6 +76,26 @@
         <span class="dashboard-label">Trust Score</span>
       </div>
 
+
+      <div class="dashboard-stat">
+        <span class="dashboard-number" id="dashboardWebsiteClicks">0</span>
+        <span class="dashboard-label">Website Clicks</span>
+      </div>
+
+      <div class="dashboard-stat">
+        <span class="dashboard-number" id="dashboardLinkedInClicks">0</span>
+        <span class="dashboard-label">LinkedIn Clicks</span>
+      </div>
+
+      <div class="dashboard-stat">
+        <span class="dashboard-number" id="dashboardGoogleClicks">0</span>
+        <span class="dashboard-label">Google Clicks</span>
+      </div>
+
+
+
+
+
     </div>
 
     <hr style="margin: 1rem 0; opacity: 0.15;">
@@ -123,7 +143,21 @@
 
       <h2>Community</h2>
 
-      <input type="text" id="associatedGurdwara" placeholder="Associated Gurdwara / Sangat" />
+      <select id="gurdwaraSelect">
+        <option value="">Select your Gurdwara</option>
+        <option value="add-new">+ Add New Gurdwara</option>
+      </select>
+
+      <input
+        type="text"
+        id="newGurdwaraName"
+        placeholder="Enter new Gurdwara name"
+        style="display:none;"
+      />
+
+      <input type="hidden" id="associatedGurdwara" />
+
+      
       <select id="communityDiscount">
         <option value="not-specified">Community discount preference</option>
         <option value="yes">Yes, I can offer Sangat/community rates where possible</option>
