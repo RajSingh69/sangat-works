@@ -14,19 +14,21 @@
     <a href="index.html">Home</a>
     <div id="accountArea"></div>
   </nav>
-</header> 
+</header>
 
 <main>
 
   <section class="hero small-hero">
     <p class="eyebrow">Membership</p>
-    <h1>Simple pricing for the Sangat.</h1>
+    <h1>Choose how you want to support and use Sangat Works.</h1>
     <p class="hero-text">
-      The first 150 members join free for 1 year. After that, members can choose yearly or monthly access.
+      Join as a founding member if spaces are still available, choose an auto-renewing membership,
+      or buy one-off access without being tied into a subscription.
     </p>
   </section>
 
   <section class="pricing-section">
+
     <div class="founding-counter-box">
       <strong id="foundingClaimed">0</strong>
       <span>/ 150 founding places claimed</span>
@@ -39,30 +41,92 @@
     </div>
 
     <div class="pricing-grid">
+
       <div class="pricing-card highlighted">
+        <p class="eyebrow">Limited Offer</p>
         <h3>Founding Member</h3>
         <strong>Free for 1 year</strong>
-        <p>For the first 150 members who help shape Sangat Works from the beginning.</p>
+        <p>
+          For the first 150 members who help shape Sangat Works from the beginning.
+          Includes profile, directory access, map visibility and member features.
+        </p>
         <a href="login.html" class="btn-primary full">Join as Founding Member</a>
       </div>
 
+    </div>
+
+    <div class="section-heading">
+      <p class="eyebrow">Auto-Renewing Membership</p>
+      <h2>Set it once and keep your access active.</h2>
+      <p>
+        These plans renew automatically through Stripe. You can cancel your subscription
+        from your Stripe/customer account when you no longer want it.
+      </p>
+    </div>
+
+    <div class="pricing-grid">
+
       <div class="pricing-card">
-        <h3>Yearly Member</h3>
+        <h3>Yearly Subscription</h3>
         <strong>£25/year</strong>
-        <p>Includes your profile, directory listing, map visibility, reviews and verification eligibility.</p>
-        <button class="btn-primary full checkout-btn" data-plan="yearly">
-          Choose Yearly
+        <p>
+          Best value for members who want continuous access to the directory, map,
+          reviews, profile features and verification eligibility.
+        </p>
+        <button class="btn-primary full checkout-btn" data-plan="yearly_subscription">
+          Subscribe Yearly
         </button>
       </div>
 
       <div class="pricing-card">
-        <h3>Monthly Member</h3>
+        <h3>Monthly Subscription</h3>
         <strong>£3.99/month</strong>
-        <p>Flexible monthly access for members who prefer not to pay yearly.</p>
-        <button class="btn-primary full checkout-btn" data-plan="monthly">
-          Choose Monthly
+        <p>
+          Flexible auto-renewing monthly access. Useful if you want to stay active
+          without paying yearly upfront.
+        </p>
+        <button class="btn-primary full checkout-btn" data-plan="monthly_subscription">
+          Subscribe Monthly
         </button>
       </div>
+
+    </div>
+
+    <div class="section-heading">
+      <p class="eyebrow">One-Off Access</p>
+      <h2>Pay once. No automatic renewal.</h2>
+      <p>
+        These passes give you access for a fixed period only. Your profile will show
+        how many days you have left, and you can renew manually whenever you choose.
+      </p>
+    </div>
+
+    <div class="pricing-grid">
+
+      <div class="pricing-card">
+        <h3>1 Year Pass</h3>
+        <strong>£25 one-off</strong>
+        <p>
+          365 days of access with no automatic renewal. Ideal if you want yearly access
+          but prefer to stay in control of future payments.
+        </p>
+        <button class="btn-primary full checkout-btn" data-plan="yearly_pass">
+          Buy 1 Year Pass
+        </button>
+      </div>
+
+      <div class="pricing-card">
+        <h3>30 Day Pass</h3>
+        <strong>£3.99 one-off</strong>
+        <p>
+          30 days of access with no automatic renewal. Good for trying the platform
+          before choosing a longer membership.
+        </p>
+        <button class="btn-primary full checkout-btn" data-plan="monthly_pass">
+          Buy 30 Day Pass
+        </button>
+      </div>
+
     </div>
 
     <p id="checkoutMessage" class="message"></p>
@@ -70,6 +134,7 @@
     <div class="hero-actions">
       <a href="directory.html" class="btn-secondary">Browse Directory</a>
     </div>
+
   </section>
 
 </main>
@@ -80,7 +145,7 @@
 
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/founding-counter.js"></script>
-<script type="module" src="./js/checkout.js?v=1005"></script>
+<script type="module" src="./js/checkout.js?v=1006"></script>
 
 </body>
 </html>
