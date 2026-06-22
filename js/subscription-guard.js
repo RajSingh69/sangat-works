@@ -11,10 +11,47 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+function getExpiryDate(userData) {
+  if (!userData || !userData.subscriptionExpiresAt) {
+    return null;
+  }
+
+  const expiryDate = userData.subscriptionExpiresAt.toDate
+    ? userData.subscriptionExpiresAt.toDate()
+    : new Date(userData.subscriptionExpiresAt);
+
+  if (Number.isNaN(expiryDate.getTime())) {
+    return null;
+  }
+
+  return expiryDate;
+}
+
 export function hasActiveSubscription(userData) {
   if (!userData) return false;
 
-  return userData.hasSubscription === true;
+  if (userData.isFoundingMember === true) {
+    return true;
+  }
+
+  if (userData.hasSubscription !== true) {
+    return false;
+  }
+
+  if (
+    userData.subscriptionStatus &&
+    userData.subscriptionStatus !== "active"
+  ) {
+    return false;
+  }
+
+  const expiryDate = getExpiryDate(userData);
+
+  if (!expiryDate) {
+    return false;
+  }
+
+  return expiryDate > new Date();
 }
 
 export function protectPage(options = {}) {
@@ -40,6 +77,8 @@ export function protectPage(options = {}) {
 
       console.log("Subscription check:", userData);
       console.log("hasSubscription value:", userData.hasSubscription);
+      console.log("subscriptionStatus value:", userData.subscriptionStatus);
+      console.log("subscriptionExpiresAt value:", userData.subscriptionExpiresAt);
       console.log("Allowed:", allowed);
 
       if (!allowed) {
