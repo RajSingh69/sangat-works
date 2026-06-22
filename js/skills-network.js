@@ -40,7 +40,7 @@ async function loadPools() {
     const pool = docSnap.data();
 
     const card = document.createElement("a");
-    card.href = `pool.html?id=${docSnap.id}`;
+    card.href = `pool.html?gurdwaraId=${profile.gurdwaraId}&poolId=${docSnap.id}`;
     card.className = "pool-card";
     card.innerHTML = `
       <span class="dashboard-number">${pool.name || "Unnamed Pool"}</span>
