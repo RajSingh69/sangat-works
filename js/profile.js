@@ -8,6 +8,8 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
+  increment,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -442,6 +444,14 @@ if (publicProfile) {
       }
 
       const profile = userSnap.data();
+
+      try {
+        await updateDoc(userRef, {
+          profileViews: increment(1)
+        });
+      } catch (error) {
+        console.error("Failed to track profile view:", error);
+      }
 
       if (profile.isPublic === false) {
         publicProfile.innerHTML = `<div class="empty-state">This profile is not public.</div>`;
