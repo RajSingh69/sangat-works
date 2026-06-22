@@ -413,7 +413,9 @@ function renderProfile(profile) {
       ${profile.yearsExperience ? `<p><strong>Experience:</strong> ${profile.yearsExperience} years</p>` : ""}
       ${profile.specialistWork ? `<p><strong>Specialist work:</strong> ${profile.specialistWork}</p>` : ""}
 
-      ${profile.showGurdwara && profile.associatedGurdwara ? `<p><strong>Associated Sangat/Gurdwara:</strong> ${profile.associatedGurdwara}</p>` : ""}
+      ${profile.showGurdwara && (profile.gurdwaraName || profile.associatedGurdwara) ? `
+      <p><strong>Local Gurdwara:</strong> ${profile.gurdwaraName || profile.associatedGurdwara}</p>
+    ` : ""}
 
       <p><strong>Community support:</strong> ${discountText[profile.communityDiscount] || "Not specified"}</p>
 
