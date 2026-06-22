@@ -66,7 +66,8 @@ const STARTER_ROLES_BY_POOL = {
 };
 
 async function createStarterRoles(pool, user) {
-  const starterRoles = STARTER_ROLES_BY_POOL[poolId] || [];
+  const poolKey = (pool.name || "").toLowerCase().trim();
+  const starterRoles = STARTER_ROLES_BY_POOL[poolKey] || [];
 
   if (starterRoles.length === 0) {
     poolMessage.textContent = "No starter roles are available for this pool yet.";
