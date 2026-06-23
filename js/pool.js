@@ -25,6 +25,7 @@ const rolesList = document.getElementById("rolesList");
 const selectedRoleBox = document.getElementById("selectedRoleBox");
 const selectedRoleName = document.getElementById("selectedRoleName");
 const selectedRoleDescription = document.getElementById("selectedRoleDescription");
+const roleMembersList = document.getElementById("roleMembersList");
 const joinRoleBtn = document.getElementById("joinRoleBtn");
 const joinRoleMessage = document.getElementById("joinRoleMessage");
 
@@ -107,6 +108,45 @@ async function createStarterRoles(pool, user) {
 }
 
 
+
+async function loadRoleMembers(roleId) {
+  if (!roleMembersList) return;
+
+  roleMembersList.innerHTML = "Loading members...";
+
+  const membersQuery = query(
+    collection(db, "roleMembers"),
+    where("roleId", "==", roleId)
+  );
+
+  const snapshot = await getDocs(membersQuery);
+
+  if (snapshot.empty) {
+    roleMembersList.innerHTML = "<p>No members have joined this role yet.</p>";
+    return;
+  }
+
+  roleMembersList.innerHTML = "";
+
+  snapshot.docs.forEach((docSnap) => {
+    const member = docSnap.data();
+
+    const memberCard = document.createElement("a");
+    memberCard.className = "pool-card";
+    memberCard.href = `view.html?id=${member.userId}`;
+
+    memberCard.innerHTML = `
+      <span class="dashboard-number">${member.userName || "Unnamed Member"}</span>
+      <span class="dashboard-label">${member.businessName || ""}</span>
+      <span class="dashboard-label">${member.serviceTitle || ""}</span>
+    `;
+
+    roleMembersList.appendChild(memberCard);
+  });
+}
+
+
+
 async function loadRoles() {
   if (!rolesList || !emptyRolesBox) return;
 
@@ -136,14 +176,24 @@ async function loadRoles() {
     return nameA.localeCompare(nameB);
   });
 
-  sortedDocs.forEach((docSnap) => {
+  for (const docSnap of sortedDocs) {
     const role = docSnap.data();
+
+    const membersQuery = query(
+      collection(db, "roleMembers"),
+      where("roleId", "==", docSnap.id)
+    );
+
+    const membersSnapshot = await getDocs(membersQuery);
+    const memberCount = membersSnapshot.size;
 
     const card = document.createElement("div");
     card.className = "pool-card";
+
     card.innerHTML = `
       <span class="dashboard-number">${role.name || "Unnamed Role"}</span>
       <span class="dashboard-label">${role.description || ""}</span>
+      <span class="dashboard-label">${memberCount} member${memberCount === 1 ? "" : "s"}</span>
     `;
 
     card.style.cursor = "pointer";
@@ -158,16 +208,14 @@ async function loadRoles() {
       selectedRoleName.textContent = role.name || "Unnamed Role";
       selectedRoleDescription.textContent = role.description || "";
       joinRoleMessage.textContent = "";
+      joinRoleBtn.disabled = false;
+      joinRoleBtn.textContent = "Join This Role";
+      loadRoleMembers(docSnap.id);
     };
 
     rolesList.appendChild(card);
-
-
-
-  });
+  }
 }
-
-
 
 async function joinSelectedRole(user) {
   if (!selectedRole) {
@@ -179,15 +227,33 @@ async function joinSelectedRole(user) {
   joinRoleBtn.textContent = "Joining...";
   joinRoleMessage.textContent = "";
 
+  const existingMembershipQuery = query(
+    collection(db, "roleMembers"),
+    where("roleId", "==", selectedRole.id),
+    where("userId", "==", user.uid)
+  );
+
+  const existingMembership = await getDocs(existingMembershipQuery);
+
+  if (!existingMembership.empty) {
+    joinRoleMessage.textContent = "You are already a member of this role.";
+    joinRoleBtn.disabled = false;
+    joinRoleBtn.textContent = "Join This Role";
+    return;
+  }
+
   await addDoc(collection(db, "roleMembers"), {
     roleId: selectedRole.id,
     roleName: selectedRole.name || "",
     roleDescription: selectedRole.description || "",
     poolId,
+    poolIdName: selectedRole.poolName || "",
     gurdwaraId,
+    gurdwaraName: selectedRole.gurdwaraName || "",
     userId: user.uid,
     userName:
       currentUserProfile?.fullName ||
+      currentUserProfile?.name ||
       user.displayName ||
       user.email ||
       "Unnamed Member",
@@ -198,11 +264,9 @@ async function joinSelectedRole(user) {
 
   joinRoleMessage.textContent = "You have joined this role.";
   joinRoleBtn.textContent = "Joined";
+
+  await loadRoles();
 }
-
-
-
-
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -214,13 +278,9 @@ onAuthStateChanged(auth, async (user) => {
     poolName.textContent = "Pool not found";
     poolMessage.textContent = "No Gurdwara or pool was selected.";
     return;
-}
-
-
-
+  }
 
   try {
-
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
 
@@ -228,25 +288,24 @@ onAuthStateChanged(auth, async (user) => {
       currentUserProfile = userSnap.data();
     }
 
-
     const poolRef = doc(db, "gurdwaras", gurdwaraId, "pools", poolId);
     const poolSnap = await getDoc(poolRef);
 
     let pool = null;
 
     if (poolSnap.exists()) {
-    pool = poolSnap.data();
+      pool = poolSnap.data();
     } else {
-    const templateRef = doc(db, "pools", poolId);
-    const templateSnap = await getDoc(templateRef);
+      const templateRef = doc(db, "pools", poolId);
+      const templateSnap = await getDoc(templateRef);
 
-    if (!templateSnap.exists()) {
+      if (!templateSnap.exists()) {
         poolName.textContent = "Pool not found";
         poolMessage.textContent = "This pool does not exist.";
         return;
-    }
+      }
 
-    pool = templateSnap.data();
+      pool = templateSnap.data();
     }
 
     poolName.textContent = pool.name || "Unnamed Pool";
@@ -255,9 +314,9 @@ onAuthStateChanged(auth, async (user) => {
     await loadRoles();
 
     if (createStarterRolesBtn) {
-    createStarterRolesBtn.onclick = async () => {
+      createStarterRolesBtn.onclick = async () => {
         await createStarterRoles(pool, user);
-    };
+      };
     }
 
     if (joinRoleBtn) {
