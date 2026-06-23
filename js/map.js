@@ -11,6 +11,12 @@ import {
 const mapElement = document.getElementById("map");
 const mapSearchInput = document.getElementById("mapSearchInput");
 const mapSearchBtn = document.getElementById("mapSearchBtn");
+const serviceFilter = document.getElementById("serviceFilter");
+const townFilter = document.getElementById("townFilter");
+const gurdwaraFilter = document.getElementById("gurdwaraFilter");
+const featuredOnlyFilter = document.getElementById("featuredOnlyFilter");
+const mapResetBtn = document.getElementById("mapResetBtn");
+const mapResultsCount = document.getElementById("mapResultsCount");
 
 let map;
 let allProfiles = [];
@@ -32,16 +38,57 @@ const townCoordinates = {
   gravesend: [51.4419, 0.3708],
   nottingham: [52.9548, -1.1581],
   derby: [52.9225, -1.4746],
-  luton: [51.8787, -0.4200],
-  bradford: [53.7950, -1.7594],
-  huddersfield: [53.6458, -1.7850],
-  smethwick: [52.4960, -1.9730]
+  luton: [51.8787, -0.42],
+  bradford: [53.795, -1.7594],
+  huddersfield: [53.6458, -1.785],
+  smethwick: [52.496, -1.973],
+  camberley: [51.3402, -0.7426],
+  frimley: [51.3167, -0.7454],
+  bisley: [51.3262, -0.631],
+  "west end": [51.343, -0.636],
+  guildford: [51.2362, -0.5704],
+  farnborough: [51.2869, -0.7526],
+  aldershot: [51.2482, -0.7639],
+  feltham: [51.4462, -0.4139],
+  hounslow: [51.47, -0.361],
+  hayes: [51.5129, -0.4211],
+  uxbridge: [51.5463, -0.4796],
+  ilford: [51.5577, 0.0728],
+  romford: [51.5775, 0.1786],
+  croydon: [51.3762, -0.0982],
+  watford: [51.6565, -0.3903],
+  swindon: [51.5558, -1.7797],
+  oxford: [51.752, -1.2577],
+  bristol: [51.4545, -2.5879],
+  cardiff: [51.4816, -3.1791],
+  newcastle: [54.9783, -1.6178],
+  edinburgh: [55.9533, -3.1883]
 };
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function normalize(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function titleCase(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
 
 function getTownCoords(town) {
   if (!town) return null;
 
-  const key = town.trim().toLowerCase();
+  const key = normalize(town);
 
   if (townCoordinates[key]) {
     return townCoordinates[key];
@@ -55,31 +102,200 @@ function clearMarkers() {
   markers = [];
 }
 
-function profileMatchesSearch(profile, searchText) {
-  const searchableText = `
+function getProfileService(profile) {
+  return (
+    profile.serviceTitle ||
+    profile.primaryService ||
+    profile.businessType ||
+    profile.category ||
+    ""
+  );
+}
+
+function getProfileTown(profile) {
+  return profile.town || profile.serviceAreaTown || "";
+}
+
+function getProfileGurdwara(profile) {
+  return (
+    profile.associatedGurdwara ||
+    profile.gurdwara ||
+    profile.organisation ||
+    profile.affiliation ||
+    ""
+  );
+}
+
+function isFeatured(profile) {
+  return Boolean(
+    profile.isFeatured ||
+    profile.featured ||
+    profile.featuredListing ||
+    profile.isFoundingMember
+  );
+}
+
+function getRating(profile) {
+  const rating =
+    profile.ratingAverage ??
+    profile.averageRating ??
+    profile.reviewAverage ??
+    profile.rating ??
+    null;
+
+  const count =
+    profile.reviewCount ??
+    profile.totalReviews ??
+    profile.reviewsCount ??
+    0;
+
+  return {
+    rating: Number(rating || 0),
+    count: Number(count || 0)
+  };
+}
+
+function getVerificationBadges(profile) {
+  const badges = [];
+
+  if (profile.emailVerified || profile.isEmailVerified) {
+    badges.push("Email verified");
+  }
+
+  if (profile.isVerified || profile.communityVerified || profile.isCommunityVerified) {
+    badges.push("Community verified");
+  }
+
+  if (profile.businessVerified || profile.isBusinessVerified) {
+    badges.push("Business verified");
+  }
+
+  if (profile.gurdwaraVerified || profile.isGurdwaraVerified) {
+    badges.push("Gurdwara verified");
+  }
+
+  return badges;
+}
+
+function getSearchableText(profile) {
+  return `
     ${profile.fullName || ""}
     ${profile.businessName || ""}
-    ${profile.serviceTitle || ""}
+    ${getProfileService(profile)}
     ${profile.description || ""}
     ${profile.whyContact || ""}
     ${profile.specialistWork || ""}
-    ${profile.associatedGurdwara || ""}
+    ${getProfileGurdwara(profile)}
     ${profile.serviceArea || ""}
     ${(profile.tags || []).join(" ")}
-    ${profile.town || ""}
+    ${getProfileTown(profile)}
   `.toLowerCase();
+}
 
-  return searchableText.includes(searchText);
+function profileMatchesFilters(profile) {
+  const searchText = normalize(mapSearchInput?.value);
+  const selectedService = normalize(serviceFilter?.value);
+  const selectedTown = normalize(townFilter?.value);
+  const selectedGurdwara = normalize(gurdwaraFilter?.value);
+  const featuredOnly = Boolean(featuredOnlyFilter?.checked);
+
+  const profileService = normalize(getProfileService(profile));
+  const profileTown = normalize(getProfileTown(profile));
+  const profileGurdwara = normalize(getProfileGurdwara(profile));
+
+  if (searchText && !getSearchableText(profile).includes(searchText)) {
+    return false;
+  }
+
+  if (selectedService && profileService !== selectedService) {
+    return false;
+  }
+
+  if (selectedTown && profileTown !== selectedTown) {
+    return false;
+  }
+
+  if (selectedGurdwara && profileGurdwara !== selectedGurdwara) {
+    return false;
+  }
+
+  if (featuredOnly && !isFeatured(profile)) {
+    return false;
+  }
+
+  return true;
+}
+
+function createImageHtml(profile) {
+  const profilePhotoUrl = profile.profilePhotoUrl || profile.photoUrl || "";
+  const businessLogoUrl = profile.businessLogoUrl || profile.logoUrl || "";
+
+  if (!profilePhotoUrl && !businessLogoUrl) {
+    return "";
+  }
+
+  return `
+    <div class="map-popup-top">
+      ${
+        profilePhotoUrl
+          ? `<img src="${escapeHtml(profilePhotoUrl)}" class="map-popup-photo" alt="Profile photo">`
+          : ""
+      }
+      ${
+        businessLogoUrl
+          ? `<img src="${escapeHtml(businessLogoUrl)}" class="map-popup-logo" alt="Business logo">`
+          : ""
+      }
+    </div>
+  `;
+}
+
+function createRatingHtml(profile) {
+  const { rating, count } = getRating(profile);
+
+  if (!rating || rating <= 0) {
+    return `<div class="map-popup-rating">No reviews yet</div>`;
+  }
+
+  const roundedRating = Math.round(rating * 10) / 10;
+  const fullStars = Math.max(1, Math.min(5, Math.round(rating)));
+  const stars = "★".repeat(fullStars) + "☆".repeat(5 - fullStars);
+
+  return `
+    <div class="map-popup-rating">
+      <span class="map-popup-stars">${stars}</span><br>
+      ${roundedRating}/5 ${count ? `(${count} review${count === 1 ? "" : "s"})` : ""}
+    </div>
+  `;
+}
+
+function createBadgesHtml(profile) {
+  const badges = getVerificationBadges(profile);
+
+  if (isFeatured(profile)) {
+    badges.unshift("Featured");
+  }
+
+  if (!badges.length) {
+    return "";
+  }
+
+  return `
+    <div class="map-popup-badges">
+      ${badges.map(badge => `
+        <span class="map-popup-badge ${badge === "Featured" ? "map-popup-featured" : ""}">
+          ${escapeHtml(badge)}
+        </span>
+      `).join("")}
+    </div>
+  `;
 }
 
 function createPopup(profile) {
-  const photo = profile.profilePhotoUrl
-    ? `<img src="${profile.profilePhotoUrl}" class="map-popup-photo" alt="Profile photo">`
-    : "";
-
-  const logo = profile.businessLogoUrl
-    ? `<img src="${profile.businessLogoUrl}" class="map-popup-logo" alt="Business logo">`
-    : "";
+  const name = profile.businessName || profile.fullName || "Sangat Member";
+  const service = getProfileService(profile);
+  const town = getProfileTown(profile);
+  const gurdwara = getProfileGurdwara(profile);
 
   const discountText = {
     yes: "Community rates available",
@@ -90,23 +306,81 @@ function createPopup(profile) {
 
   return `
     <div class="map-popup">
-      <div class="map-popup-images">
-        ${photo}
-        ${logo}
+      ${createImageHtml(profile)}
+
+      <h3>${escapeHtml(name)}</h3>
+
+      ${
+        service
+          ? `<p class="map-popup-service">${escapeHtml(service)}</p>`
+          : ""
+      }
+
+      ${createRatingHtml(profile)}
+      ${createBadgesHtml(profile)}
+
+      <div class="map-popup-meta">
+        <div><strong>Town:</strong> ${escapeHtml(town || "Not provided")}</div>
+
+        ${
+          gurdwara
+            ? `<div><strong>Gurdwara:</strong> ${escapeHtml(gurdwara)}</div>`
+            : ""
+        }
+
+        ${
+          profile.yearsExperience
+            ? `<div><strong>Experience:</strong> ${escapeHtml(profile.yearsExperience)} years</div>`
+            : ""
+        }
+
+        ${
+          profile.communityDiscount && discountText[profile.communityDiscount]
+            ? `<div><strong>Community:</strong> ${escapeHtml(discountText[profile.communityDiscount])}</div>`
+            : ""
+        }
       </div>
 
-      <h3>${profile.businessName || profile.fullName || "Sangat Member"}</h3>
-      <p class="map-popup-service">${profile.serviceTitle || ""}</p>
-      <p><strong>Town:</strong> ${profile.town || "Not provided"}</p>
-
-      ${profile.yearsExperience ? `<p><strong>Experience:</strong> ${profile.yearsExperience} years</p>` : ""}
-      ${profile.communityDiscount && discountText[profile.communityDiscount] ? `
-        <p><strong>Community:</strong> ${discountText[profile.communityDiscount]}</p>
-      ` : ""}
-
-      <a href="view.html?id=${profile.uid}" class="map-popup-link">View Profile</a>
+      <a href="view.html?id=${encodeURIComponent(profile.uid || profile.id)}" class="map-popup-link">
+        View Profile
+      </a>
     </div>
   `;
+}
+
+function getMarkerCoords(profile, index) {
+  const town = getProfileTown(profile);
+  const coords = getTownCoords(town);
+
+  if (!coords) return null;
+
+  const offset = (index % 8) * 0.002;
+
+  return [
+    coords[0] + offset,
+    coords[1] + offset
+  ];
+}
+
+function updateResultsCount(filteredCount, mappedCount) {
+  if (!mapResultsCount) return;
+
+  if (!allProfiles.length) {
+    mapResultsCount.textContent = "No public members found yet.";
+    return;
+  }
+
+  if (!filteredCount) {
+    mapResultsCount.textContent = "No members match these filters.";
+    return;
+  }
+
+  if (!mappedCount) {
+    mapResultsCount.textContent = `${filteredCount} member${filteredCount === 1 ? "" : "s"} found, but none have a supported town for map placement yet.`;
+    return;
+  }
+
+  mapResultsCount.textContent = `${mappedCount} member${mappedCount === 1 ? "" : "s"} shown on the map.`;
 }
 
 function renderMarkers() {
@@ -114,16 +388,11 @@ function renderMarkers() {
 
   clearMarkers();
 
-  const searchText = mapSearchInput.value.toLowerCase().trim();
-
-  const filteredProfiles = allProfiles.filter(profile => {
-    return !searchText || profileMatchesSearch(profile, searchText);
-  });
-
+  const filteredProfiles = allProfiles.filter(profileMatchesFilters);
   const bounds = [];
 
-  filteredProfiles.forEach(profile => {
-    const coords = getTownCoords(profile.town);
+  filteredProfiles.forEach((profile, index) => {
+    const coords = getMarkerCoords(profile, index);
 
     if (!coords) return;
 
@@ -135,12 +404,65 @@ function renderMarkers() {
     bounds.push(coords);
   });
 
+  updateResultsCount(filteredProfiles.length, bounds.length);
+
   if (bounds.length > 0) {
     map.fitBounds(bounds, {
-      padding: [40, 40],
+      padding: [45, 45],
       maxZoom: 10
     });
+  } else {
+    map.setView([54.5, -3.2], 6);
   }
+}
+
+function setSelectOptions(selectElement, values, defaultLabel) {
+  if (!selectElement) return;
+
+  const currentValue = selectElement.value;
+
+  selectElement.innerHTML = `
+    <option value="">${defaultLabel}</option>
+    ${values.map(value => `
+      <option value="${escapeHtml(value)}">${escapeHtml(titleCase(value))}</option>
+    `).join("")}
+  `;
+
+  selectElement.value = currentValue;
+}
+
+function populateFilters() {
+  const services = new Set();
+  const towns = new Set();
+  const gurdwaras = new Set();
+
+  allProfiles.forEach(profile => {
+    const service = getProfileService(profile);
+    const town = getProfileTown(profile);
+    const gurdwara = getProfileGurdwara(profile);
+
+    if (service) services.add(service.trim());
+    if (town) towns.add(town.trim());
+    if (gurdwara) gurdwaras.add(gurdwara.trim());
+  });
+
+  setSelectOptions(
+    serviceFilter,
+    [...services].sort((a, b) => a.localeCompare(b)),
+    "All services"
+  );
+
+  setSelectOptions(
+    townFilter,
+    [...towns].sort((a, b) => a.localeCompare(b)),
+    "All towns"
+  );
+
+  setSelectOptions(
+    gurdwaraFilter,
+    [...gurdwaras].sort((a, b) => a.localeCompare(b)),
+    "All Gurdwaras"
+  );
 }
 
 async function loadMapProfiles() {
@@ -151,33 +473,70 @@ async function loadMapProfiles() {
   allProfiles = [];
 
   snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+
     allProfiles.push({
       id: docSnap.id,
-      ...docSnap.data()
+      uid: data.uid || docSnap.id,
+      ...data
     });
   });
+
+  populateFilters();
+  renderMarkers();
+}
+
+function resetFilters() {
+  if (mapSearchInput) mapSearchInput.value = "";
+  if (serviceFilter) serviceFilter.value = "";
+  if (townFilter) townFilter.value = "";
+  if (gurdwaraFilter) gurdwaraFilter.value = "";
+  if (featuredOnlyFilter) featuredOnlyFilter.checked = false;
 
   renderMarkers();
 }
 
+function attachFilterListeners() {
+  if (mapSearchBtn) {
+    mapSearchBtn.addEventListener("click", renderMarkers);
+  }
+
+  if (mapSearchInput) {
+    mapSearchInput.addEventListener("keyup", renderMarkers);
+  }
+
+  if (serviceFilter) {
+    serviceFilter.addEventListener("change", renderMarkers);
+  }
+
+  if (townFilter) {
+    townFilter.addEventListener("change", renderMarkers);
+  }
+
+  if (gurdwaraFilter) {
+    gurdwaraFilter.addEventListener("change", renderMarkers);
+  }
+
+  if (featuredOnlyFilter) {
+    featuredOnlyFilter.addEventListener("change", renderMarkers);
+  }
+
+  if (mapResetBtn) {
+    mapResetBtn.addEventListener("click", resetFilters);
+  }
+}
+
 protectPage({
   onAllowed: () => {
-    if (mapElement) {
-      map = L.map("map").setView([54.5, -3.2], 6);
+    if (!mapElement) return;
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors"
-      }).addTo(map);
+    map = L.map("map").setView([54.5, -3.2], 6);
 
-      loadMapProfiles();
-    }
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    attachFilterListeners();
+    loadMapProfiles();
   }
 });
-
-if (mapSearchBtn) {
-  mapSearchBtn.addEventListener("click", renderMarkers);
-}
-
-if (mapSearchInput) {
-  mapSearchInput.addEventListener("keyup", renderMarkers);
-}
