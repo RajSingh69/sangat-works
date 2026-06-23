@@ -71,10 +71,11 @@ registerForm.addEventListener("submit", async (e) => {
       fullName,
       email,
 
-      membershipPlan: "founding-free-year",
-      membershipStatus: "active",
-      isFoundingMember: true,
+      membershipPlan: "pending",
+      membershipStatus: "pending-payment",
+      isFoundingMember: false,
       memberNumber: null,
+
       featuredListing: false,
 
       createdAt: serverTimestamp()

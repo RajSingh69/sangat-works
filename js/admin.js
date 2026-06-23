@@ -115,9 +115,9 @@ async function loadUsers() {
 
       await updateDoc(doc(db, "users", uid), {
         memberNumber,
-        isFoundingMember: memberNumber <= 150,
-        membershipPlan: memberNumber <= 150 ? "founding-free-year" : "paid-required",
-        membershipStatus: memberNumber <= 150 ? "active" : "pending-payment"
+        isFoundingMember: memberNumber <= 30,
+        membershipPlan: memberNumber <= 30 ? "founding-free-year" : "paid-required",
+        membershipStatus: memberNumber <= 30 ? "active" : "pending-payment"
       });
 
       adminStatus.textContent = `Member number ${memberNumber} saved.`;
