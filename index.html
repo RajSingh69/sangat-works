@@ -31,6 +31,19 @@
       <a href="signup.html" class="btn-primary">Join as a Founding Member</a>
       <a href="directory.html" class="btn-secondary">Browse Directory</a>
     </div>
+
+    <div class="hero-actions" style="margin-top:16px;">
+      <a href="map.html" class="btn-secondary">View Map</a>
+      <a href="directory.html" class="btn-secondary">View Directory</a>
+      <a href="skills-network.html" class="btn-secondary">Skills Network</a>
+      <a href="faq.html" class="btn-secondary">FAQs</a>
+    </div>
+
+    <div class="hero-actions" style="margin-top:14px;">
+      <button id="restartWalkthroughBtn" class="btn-secondary">
+        Restart Walkthrough
+      </button>
+    </div>
   </section>
 
   <section id="adminDashboardCard" class="admin-dashboard-card hidden">
@@ -198,6 +211,32 @@
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/admin-dashboard.js"></script>
 <script type="module" src="js/founding-counter.js"></script>
+<script type="module" src="js/onboarding.js"></script>
+
+<script type="module">
+  import { auth, db } from "./js/firebase.js";
+  import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  const restartWalkthroughBtn = document.getElementById("restartWalkthroughBtn");
+
+  if (restartWalkthroughBtn) {
+    restartWalkthroughBtn.addEventListener("click", async () => {
+      const user = auth.currentUser;
+
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      await updateDoc(doc(db, "users", user.uid), {
+        hasSeenIntro: false
+      });
+
+      window.location.reload();
+    });
+  }
+</script>
+
 
 </body>
 </html>
