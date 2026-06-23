@@ -17,14 +17,25 @@ import {
 
 const poolName = document.getElementById("poolName");
 const poolDescription = document.getElementById("poolDescription");
+
 const emptyRolesBox = document.getElementById("emptyRolesBox");
 const createStarterRolesBtn = document.getElementById("createStarterRolesBtn");
 const rolesList = document.getElementById("rolesList");
+
+const selectedRoleBox = document.getElementById("selectedRoleBox");
+const selectedRoleName = document.getElementById("selectedRoleName");
+const selectedRoleDescription = document.getElementById("selectedRoleDescription");
+const joinRoleBtn = document.getElementById("joinRoleBtn");
+const joinRoleMessage = document.getElementById("joinRoleMessage");
+
 const poolMessage = document.getElementById("poolMessage");
 
 const params = new URLSearchParams(window.location.search);
 const gurdwaraId = params.get("gurdwaraId");
 const poolId = params.get("poolId");
+
+let selectedRole = null;
+let currentUserProfile = null;
 
 const STARTER_ROLES_BY_POOL = {
   construction: [
@@ -135,8 +146,58 @@ async function loadRoles() {
       <span class="dashboard-label">${role.description || ""}</span>
     `;
 
+    card.style.cursor = "pointer";
+
+    card.onclick = () => {
+      selectedRole = {
+        id: docSnap.id,
+        ...role
+      };
+
+      selectedRoleBox.style.display = "block";
+      selectedRoleName.textContent = role.name || "Unnamed Role";
+      selectedRoleDescription.textContent = role.description || "";
+      joinRoleMessage.textContent = "";
+    };
+
     rolesList.appendChild(card);
+
+
+
   });
+}
+
+
+
+async function joinSelectedRole(user) {
+  if (!selectedRole) {
+    joinRoleMessage.textContent = "Please select a role first.";
+    return;
+  }
+
+  joinRoleBtn.disabled = true;
+  joinRoleBtn.textContent = "Joining...";
+  joinRoleMessage.textContent = "";
+
+  await addDoc(collection(db, "roleMembers"), {
+    roleId: selectedRole.id,
+    roleName: selectedRole.name || "",
+    roleDescription: selectedRole.description || "",
+    poolId,
+    gurdwaraId,
+    userId: user.uid,
+    userName:
+      currentUserProfile?.fullName ||
+      user.displayName ||
+      user.email ||
+      "Unnamed Member",
+    businessName: currentUserProfile?.businessName || "",
+    serviceTitle: currentUserProfile?.serviceTitle || "",
+    joinedAt: serverTimestamp()
+  });
+
+  joinRoleMessage.textContent = "You have joined this role.";
+  joinRoleBtn.textContent = "Joined";
 }
 
 
@@ -159,6 +220,15 @@ onAuthStateChanged(auth, async (user) => {
 
 
   try {
+
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists()) {
+      currentUserProfile = userSnap.data();
+    }
+
+
     const poolRef = doc(db, "gurdwaras", gurdwaraId, "pools", poolId);
     const poolSnap = await getDoc(poolRef);
 
@@ -188,6 +258,12 @@ onAuthStateChanged(auth, async (user) => {
     createStarterRolesBtn.onclick = async () => {
         await createStarterRoles(pool, user);
     };
+    }
+
+    if (joinRoleBtn) {
+      joinRoleBtn.onclick = async () => {
+        await joinSelectedRole(user);
+      };
     }
 
   } catch (error) {
