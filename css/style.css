@@ -1,6 +1,6 @@
 :root {
-  --cream: #fff7e6;
-  --cream-2: #f8edd4;
+  --cream: #f3e7cf;
+  --cream-2: #ead8b5;
   --white: #ffffff;
 
   --gold: #d6a11f;
@@ -40,9 +40,14 @@ html {
 body {
   font-family: Arial, sans-serif;
   background:
-    radial-gradient(circle at top left, rgba(255, 122, 24, 0.18), transparent 28%),
-    radial-gradient(circle at top right, rgba(18, 60, 105, 0.18), transparent 24%),
-    linear-gradient(180deg, var(--cream), #fffaf0 45%, #f3ead6);
+    radial-gradient(circle at top left, rgba(255, 122, 24, 0.20), transparent 30%),
+    radial-gradient(circle at top right, rgba(18, 60, 105, 0.20), transparent 26%),
+    linear-gradient(
+      180deg,
+      #f0e1c4 0%,
+      #ead8b5 45%,
+      #dfcba6 100%
+    );
   color: var(--text);
   line-height: 1.65;
   min-height: 100vh;
