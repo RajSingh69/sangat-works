@@ -17,7 +17,37 @@ import {
 const adminStatus = document.getElementById("adminStatus");
 const adminUsers = document.getElementById("adminUsers");
 
-let currentAdmin = null;
+const statTotalUsers = document.getElementById("statTotalUsers");
+const statNewUsers = document.getElementById("statNewUsers");
+const statFoundingMembers = document.getElementById("statFoundingMembers");
+const statPendingFaqs = document.getElementById("statPendingFaqs");
+
+const adminQuestions = document.getElementById("adminQuestions");
+const adminFeatures = document.getElementById("adminFeatures");
+
+function getDateFromTimestamp(value) {
+  if (!value) return null;
+
+  const date = value.toDate ? value.toDate() : new Date(value);
+
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date;
+}
+
+function daysAgo(value) {
+  const date = getDateFromTimestamp(value);
+
+  if (!date) return "Unknown";
+
+  const diffMs = new Date() - date;
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (days === 0) return "Joined today";
+  if (days === 1) return "Joined 1 day ago";
+
+  return `Joined ${days} days ago`;
+}
 
 function badgeCheckbox(user, field, label) {
   return `
@@ -33,57 +63,104 @@ function badgeCheckbox(user, field, label) {
   `;
 }
 
-function renderUserCard(user) {
+function renderUserRow(user) {
+  const name = user.businessName || user.fullName || user.email || "Unnamed user";
+
+  return `
+    <details class="admin-user-card">
+      <summary>
+        <strong>${name}</strong>
+        <span>${daysAgo(user.createdAt)}</span>
+      </summary>
+
+      <div class="admin-user-expanded">
+        <p><strong>Name:</strong> ${user.fullName || "Not provided"}</p>
+        <p><strong>Email:</strong> ${user.email || "Not provided"}</p>
+        <p><strong>Service:</strong> ${user.serviceTitle || "Not provided"}</p>
+        <p><strong>Town:</strong> ${user.town || "Not provided"}</p>
+        <p><strong>Account:</strong> ${user.accountType || "member"}</p>
+
+        <p><strong>Membership:</strong> ${user.membershipPlan || "not set"}</p>
+        <p><strong>Status:</strong> ${user.membershipStatus || "not set"}</p>
+        <p><strong>Member Number:</strong> ${user.memberNumber || "not assigned"}</p>
+
+        <div class="admin-member-controls">
+          <input 
+            type="number" 
+            class="member-number-input" 
+            data-uid="${user.uid}" 
+            value="${user.memberNumber || ""}" 
+            placeholder="Member number"
+          />
+
+          <button 
+            class="btn-small save-member-number-btn" 
+            data-uid="${user.uid}"
+          >
+            Save Member Number
+          </button>
+        </div>
+
+        <div class="admin-badge-controls">
+          ${badgeCheckbox(user, "emailVerifiedBadge", "Email Verified")}
+          ${badgeCheckbox(user, "communityVerified", "Community Verified")}
+          ${badgeCheckbox(user, "businessVerified", "Business Verified")}
+          ${badgeCheckbox(user, "gurdwaraVerified", "Gurdwara Verified")}
+          ${badgeCheckbox(user, "featuredListing", "Featured Listing")}
+        </div>
+
+        <div class="card-links">
+          <a href="view.html?id=${user.uid}" target="_blank">View Profile</a>
+        </div>
+      </div>
+    </details>
+  `;
+}
+
+function renderFaqCard(item) {
+  const typeLabel =
+    item.type === "feature"
+      ? "Feature Request"
+      : "Question / Comment";
+
   return `
     <div class="admin-user-card">
-      <h3>${user.businessName || user.fullName || "Unnamed user"}</h3>
-      <p><strong>Name:</strong> ${user.fullName || "Not provided"}</p>
-      <p><strong>Email:</strong> ${user.email || "Not provided"}</p>
-      <p><strong>Service:</strong> ${user.serviceTitle || "Not provided"}</p>
-      <p><strong>Town:</strong> ${user.town || "Not provided"}</p>
-      <p><strong>Account:</strong> ${user.accountType || "member"}</p>
+      <p class="eyebrow">${typeLabel}</p>
 
-      <p><strong>Membership:</strong> ${user.membershipPlan || "not set"}</p>
-      <p><strong>Status:</strong> ${user.membershipStatus || "not set"}</p>
-      <p><strong>Member Number:</strong> ${user.memberNumber || "not assigned"}</p>
+      <h3>${item.question || "No question provided"}</h3>
 
-      <div class="admin-member-controls">
-        <input 
-          type="number" 
-          class="member-number-input" 
-          data-uid="${user.uid}" 
-          value="${user.memberNumber || ""}" 
-          placeholder="Member number"
-        />
+      <p><strong>Asked by:</strong> ${item.name || "Unknown"}</p>
+      <p><strong>Email:</strong> ${item.userEmail || "Not provided"}</p>
+      <p><strong>Status:</strong> ${item.status || "pending"}</p>
 
-        <button 
-          class="btn-small save-member-number-btn" 
-          data-uid="${user.uid}"
-        >
-          Save Member Number
-        </button>
-      </div>
+      ${
+        item.answer
+          ? `<p><strong>Current answer:</strong> ${item.answer}</p>`
+          : ""
+      }
 
-      <div class="admin-badge-controls">
-        ${badgeCheckbox(user, "emailVerifiedBadge", "Email Verified")}
-        ${badgeCheckbox(user, "communityVerified", "Community Verified")}
-        ${badgeCheckbox(user, "businessVerified", "Business Verified")}
-        ${badgeCheckbox(user, "gurdwaraVerified", "Gurdwara Verified")}
-        ${badgeCheckbox(user, "featuredListing", "Featured Listing")}
-      </div>
+      <textarea 
+        class="faq-answer-input" 
+        data-id="${item.id}" 
+        rows="4"
+        placeholder="Write admin response..."
+      >${item.answer || ""}</textarea>
 
-      <div class="card-links">
-        <a href="view.html?id=${user.uid}" target="_blank">View Profile</a>
-      </div>
+      <button 
+        class="btn-small save-faq-answer-btn" 
+        data-id="${item.id}"
+      >
+        Save Response
+      </button>
     </div>
   `;
 }
 
 async function loadUsers() {
-  adminStatus.textContent = "Loading users...";
+  adminStatus.textContent = "Loading dashboard...";
 
   const usersRef = collection(db, "users");
-  const usersQuery = query(usersRef, orderBy("fullName"));
+  const usersQuery = query(usersRef, orderBy("createdAt", "desc"));
   const snapshot = await getDocs(usersQuery);
 
   const users = [];
@@ -95,13 +172,29 @@ async function loadUsers() {
     });
   });
 
-  adminUsers.innerHTML = users.map(renderUserCard).join("");
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const newUsers = users.filter(user => {
+    const createdAt = getDateFromTimestamp(user.createdAt);
+    return createdAt && createdAt >= sevenDaysAgo;
+  }).length;
+
+  const foundingMembers = users.filter(user => user.isFoundingMember === true).length;
+
+  statTotalUsers.textContent = users.length;
+  statNewUsers.textContent = newUsers;
+  statFoundingMembers.textContent = foundingMembers;
+
+  adminUsers.innerHTML = users.map(renderUserRow).join("");
   adminUsers.classList.remove("hidden");
 
-  adminStatus.textContent = `${users.length} user profile${users.length === 1 ? "" : "s"} loaded.`;
+  adminStatus.textContent = `${users.length} user${users.length === 1 ? "" : "s"} loaded.`;
 
+  setupUserAdminActions();
+}
 
-  
+function setupUserAdminActions() {
   document.querySelectorAll(".save-member-number-btn").forEach(button => {
     button.addEventListener("click", async (e) => {
       const uid = e.target.dataset.uid;
@@ -120,13 +213,9 @@ async function loadUsers() {
         membershipStatus: memberNumber <= 30 ? "active" : "pending-payment"
       });
 
-      adminStatus.textContent = `Member number ${memberNumber} saved.`;
+      adminStatus.textContent = `Member number ${memberNumber} saved. Refresh to see updated status.`;
     });
   });
-
-
-
-
 
   document.querySelectorAll(".admin-check input").forEach(input => {
     input.addEventListener("change", async (e) => {
@@ -138,9 +227,76 @@ async function loadUsers() {
         [field]: value
       });
 
-      adminStatus.textContent = `Updated ${field} for user.`;
+      adminStatus.textContent = `Updated ${field}.`;
     });
   });
+}
+
+async function loadFaqs() {
+  const faqsSnap = await getDocs(
+    query(collection(db, "faqs"), orderBy("createdAt", "desc"))
+  );
+
+  const questions = [];
+  const features = [];
+  let pendingCount = 0;
+
+  faqsSnap.forEach(docSnap => {
+    const item = {
+      id: docSnap.id,
+      ...docSnap.data()
+    };
+
+    if (item.status !== "answered") {
+      pendingCount++;
+    }
+
+    if (item.type === "feature") {
+      features.push(item);
+    } else {
+      questions.push(item);
+    }
+  });
+
+  statPendingFaqs.textContent = pendingCount;
+
+  adminQuestions.innerHTML = questions.length
+    ? questions.map(renderFaqCard).join("")
+    : `<div class="empty-state">No questions or comments yet.</div>`;
+
+  adminFeatures.innerHTML = features.length
+    ? features.map(renderFaqCard).join("")
+    : `<div class="empty-state">No feature requests yet.</div>`;
+
+  setupFaqAdminActions();
+}
+
+function setupFaqAdminActions() {
+  document.querySelectorAll(".save-faq-answer-btn").forEach(button => {
+    button.addEventListener("click", async (e) => {
+      const id = e.target.dataset.id;
+      const textarea = document.querySelector(`.faq-answer-input[data-id="${id}"]`);
+      const answer = textarea.value.trim();
+
+      if (!answer) {
+        adminStatus.textContent = "Please write a response first.";
+        return;
+      }
+
+      await updateDoc(doc(db, "faqs", id), {
+        answer,
+        status: "answered"
+      });
+
+      adminStatus.textContent = "FAQ response saved.";
+      await loadFaqs();
+    });
+  });
+}
+
+async function loadAdminDashboard() {
+  await loadUsers();
+  await loadFaqs();
 }
 
 onAuthStateChanged(auth, async (user) => {
@@ -164,6 +320,5 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  currentAdmin = user;
-  await loadUsers();
+  await loadAdminDashboard();
 });

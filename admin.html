@@ -13,20 +13,65 @@
   <nav>
     <a href="index.html">Home</a>
     <a href="map.html">Map</a>
+    <a href="directory.html">Directory</a>
+    <a href="faq.html">FAQs</a>
     <a href="admin.html">Admin</a>
     <div id="accountArea"></div>
   </nav>
 </header>
 
 <main class="page-wrap">
+
   <section class="form-card wide">
-    <h1>Admin Panel</h1>
-    <p>Verify Sangat Works members and manage trust badges.</p>
+    <h1>Admin Dashboard</h1>
+    <p>Manage users, memberships, verification badges, FAQs and feature requests.</p>
 
     <div id="adminStatus" class="empty-state">Checking admin access...</div>
 
+    <div class="admin-stats-grid">
+      <div>
+        <strong id="statTotalUsers">0</strong>
+        <span>Total Users</span>
+      </div>
+
+      <div>
+        <strong id="statNewUsers">0</strong>
+        <span>New This Week</span>
+      </div>
+
+      <div>
+        <strong id="statFoundingMembers">0</strong>
+        <span>Founding Members</span>
+      </div>
+
+      <div>
+        <strong id="statPendingFaqs">0</strong>
+        <span>Pending FAQs</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-card wide">
+    <h2>Users</h2>
+    <p>Click a user to expand their full admin controls.</p>
+
     <div id="adminUsers" class="admin-users hidden"></div>
   </section>
+
+  <section class="form-card wide">
+    <h2>Questions & Comments</h2>
+    <p>Respond to user questions and comments about Sangat Works.</p>
+
+    <div id="adminQuestions" class="admin-users"></div>
+  </section>
+
+  <section class="form-card wide">
+    <h2>Feature Requests</h2>
+    <p>Review and respond to suggested features.</p>
+
+    <div id="adminFeatures" class="admin-users"></div>
+  </section>
+
 </main>
 
 <script type="module" src="js/nav.js"></script>
