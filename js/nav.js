@@ -26,6 +26,7 @@ if (accountArea) {
     }
 
     let adminButton = "";
+    let skillsNetworkButton = "";
     let membershipBadge = `<span class="account-email">Free</span>`;
 
     try {
@@ -38,6 +39,12 @@ if (accountArea) {
         if (hasActiveSubscription(userData)) {
           membershipBadge = `
             <span class="account-email">Member</span>
+          `;
+
+          skillsNetworkButton = `
+            <a href="skills-network.html" class="btn-small">
+              Skills Network
+            </a>
           `;
         }
 
@@ -55,9 +62,10 @@ if (accountArea) {
     }
 
     accountArea.innerHTML = `
-
       <span class="account-email">${user.email}</span>
       ${membershipBadge}
+
+      ${skillsNetworkButton}
 
       ${adminButton}
 
