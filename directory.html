@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Directory | Sangat Works</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=5001" />
 </head>
 <body>
 
@@ -16,30 +16,78 @@
   </nav>
 </header>
 
-<main>
-  <section class="hero small-hero">
+<main class="directory-page">
+
+  <section class="directory-hero">
     <p class="eyebrow">Search the Sangat</p>
     <h1>Find Sikh businesses, trades and professionals.</h1>
-    <p class="hero-text">
+    <p>
       Search by skill, trade, location, business type, Gurdwara association or keyword.
     </p>
+
+    <div class="directory-search-bar">
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search electrician, plumber, accountant, developer..."
+      />
+      <button id="searchBtn" type="button">Search</button>
+    </div>
   </section>
 
-  <section class="search-section" id="directory">
-    <h2>Directory</h2>
-    <p>Search by trade, business type, skill, town or keyword.</p>
+  <section class="directory-layout">
 
-    <div class="search-box">
-      <input type="text" id="searchInput" placeholder="Search electrician, plumber, accountant..." />
-      <button id="searchBtn">Search</button>
-    </div>
+    <aside class="directory-filters">
+      <h2>Filters</h2>
 
-    <div id="directoryResults" class="cards-grid">
-      <div class="empty-state">
-        Loading Sangat Works profiles...
+      <div class="filter-block">
+        <label for="locationFilter">Location</label>
+        <select id="locationFilter">
+          <option value="">All locations</option>
+        </select>
       </div>
-    </div>
+
+      <div class="filter-block">
+        <label for="gurdwaraFilter">Gurdwara</label>
+        <select id="gurdwaraFilter">
+          <option value="">All Gurdwaras</option>
+        </select>
+      </div>
+
+      <div class="filter-block">
+        <label for="serviceFilter">Service</label>
+        <select id="serviceFilter">
+          <option value="">All services</option>
+        </select>
+      </div>
+
+      <div class="filter-check">
+        <input type="checkbox" id="featuredFilter" />
+        <label for="featuredFilter">Featured only</label>
+      </div>
+
+      <button id="clearFiltersBtn" class="btn-secondary full" type="button">
+        Clear Filters
+      </button>
+    </aside>
+
+    <section class="directory-results-area">
+      <div class="directory-results-top">
+        <div>
+          <h2>Directory Results</h2>
+          <p id="directoryCount">Loading profiles...</p>
+        </div>
+      </div>
+
+      <div id="directoryResults" class="directory-results-grid">
+        <div class="empty-state">
+          Loading Sangat Works profiles...
+        </div>
+      </div>
+    </section>
+
   </section>
+
 </main>
 
 <footer>
@@ -47,7 +95,7 @@
 </footer>
 
 <script type="module" src="js/nav.js"></script>
-<script type="module" src="js/directory.js?v=2001"></script>
+<script type="module" src="js/directory.js?v=5001"></script>
 
 </body>
 </html>

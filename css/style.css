@@ -1189,3 +1189,166 @@ footer {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
 }
+
+/* =========================================
+   DIRECTORY V2
+========================================= */
+
+.directory-page {
+  width: 96%;
+  max-width: 1700px;
+  margin: 0 auto;
+  padding: 30px 0 60px;
+}
+
+.directory-hero {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.directory-hero h1 {
+  font-size: clamp(2.2rem, 4vw, 4rem);
+  color: var(--blue);
+  margin-bottom: 12px;
+}
+
+.directory-hero p {
+  color: var(--muted);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.directory-search-bar {
+  margin: 30px auto 0;
+  max-width: 900px;
+  display: grid;
+  grid-template-columns: 1fr 180px;
+  gap: 12px;
+}
+
+.directory-search-bar input {
+  height: 60px;
+  font-size: 1rem;
+}
+
+.directory-search-bar button {
+  height: 60px;
+}
+
+.directory-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.directory-filters {
+  position: sticky;
+  top: 100px;
+  background: white;
+  border-radius: 24px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+}
+
+.directory-filters h2 {
+  color: var(--blue);
+  margin-bottom: 20px;
+}
+
+.filter-block {
+  margin-bottom: 16px;
+}
+
+.filter-block label {
+  display: block;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: var(--blue);
+}
+
+.filter-check {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 18px 0;
+}
+
+.filter-check input {
+  width: auto;
+}
+
+.directory-results-area {
+  min-width: 0;
+}
+
+.directory-results-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.directory-results-top h2 {
+  color: var(--blue);
+  margin-bottom: 4px;
+}
+
+#directoryCount {
+  color: var(--muted);
+}
+
+.directory-results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+/* Bigger profile cards */
+
+.directory-results-grid .profile-card {
+  height: 100%;
+  padding: 24px;
+  border-radius: 24px;
+}
+
+.directory-results-grid .profile-card h3 {
+  font-size: 1.3rem;
+}
+
+.directory-results-grid .service {
+  font-size: 1rem;
+}
+
+.directory-results-grid .tags {
+  margin-top: 16px;
+}
+
+.directory-results-grid .card-links {
+  margin-top: auto;
+}
+
+@media (max-width: 1100px) {
+
+  .directory-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .directory-filters {
+    position: static;
+  }
+
+}
+
+@media (max-width: 700px) {
+
+  .directory-search-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .directory-results-grid {
+    grid-template-columns: 1fr;
+  }
+
+}
