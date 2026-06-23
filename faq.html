@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAQs | Sangat Works</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo">Sangat Works</div>
+  <nav>
+    <div id="accountArea"></div>
+  </nav>
+</header>
+
+<main>
+
+  <section class="hero">
+    <p class="eyebrow">Help & Feedback</p>
+    <h1>FAQs, questions and feature requests.</h1>
+    <p class="hero-text">
+      Ask a question, leave a comment about Sangat Works, or suggest a feature
+      you would like to see added.
+    </p>
+  </section>
+
+  <section class="info-section">
+    <h2>Questions or comments</h2>
+
+    <form id="questionForm" class="profile-form">
+      <label>
+        Your name
+        <input type="text" id="questionName" required />
+      </label>
+
+      <label>
+        Question / comment
+        <textarea id="questionText" rows="5" required></textarea>
+      </label>
+
+      <button type="submit" class="btn-primary">
+        Submit Question
+      </button>
+
+      <p id="questionMessage" class="message"></p>
+    </form>
+  </section>
+
+  <section class="info-section">
+    <h2>Feature requests</h2>
+
+    <form id="featureForm" class="profile-form">
+      <label>
+        Your name
+        <input type="text" id="featureName" required />
+      </label>
+
+      <label>
+        Feature you would like to see
+        <textarea id="featureText" rows="5" required></textarea>
+      </label>
+
+      <button type="submit" class="btn-primary">
+        Submit Feature Request
+      </button>
+
+      <p id="featureMessage" class="message"></p>
+    </form>
+  </section>
+
+  <section class="info-section">
+    <h2>Answered FAQs</h2>
+    <div id="faqList" class="feature-grid"></div>
+  </section>
+
+</main>
+
+<footer>
+  <p>Sangat Works — built for community support.</p>
+</footer>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/faq.js"></script>
+
+</body>
+</html>
