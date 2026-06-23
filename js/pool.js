@@ -12,7 +12,8 @@ import {
   getDocs,
   query,
   where,
-  serverTimestamp
+  serverTimestamp,
+  deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const poolName = document.getElementById("poolName");
@@ -37,6 +38,7 @@ const poolId = params.get("poolId");
 
 let selectedRole = null;
 let currentUserProfile = null;
+let currentMembershipId = null;
 
 const STARTER_ROLES_BY_POOL = {
   construction: [
@@ -105,6 +107,28 @@ async function createStarterRoles(pool, user) {
 
   poolMessage.textContent = "Starter roles created successfully.";
   await loadRoles();
+}
+
+
+async function checkCurrentUserMembership(roleId, user) {
+  currentMembershipId = null;
+
+  const membershipQuery = query(
+    collection(db, "roleMembers"),
+    where("roleId", "==", roleId),
+    where("userId", "==", user.uid)
+  );
+
+  const snapshot = await getDocs(membershipQuery);
+
+  if (!snapshot.empty) {
+    currentMembershipId = snapshot.docs[0].id;
+    joinRoleBtn.textContent = "Leave This Role";
+  } else {
+    joinRoleBtn.textContent = "Join This Role";
+  }
+
+  joinRoleBtn.disabled = false;
 }
 
 
@@ -207,15 +231,19 @@ async function loadRoles() {
       selectedRoleBox.style.display = "block";
       selectedRoleName.textContent = role.name || "Unnamed Role";
       selectedRoleDescription.textContent = role.description || "";
+
       joinRoleMessage.textContent = "";
-      joinRoleBtn.disabled = false;
-      joinRoleBtn.textContent = "Join This Role";
+      joinRoleBtn.disabled = true;
+      joinRoleBtn.textContent = "Checking...";
       loadRoleMembers(docSnap.id);
+      checkCurrentUserMembership(docSnap.id, auth.currentUser);
     };
 
     rolesList.appendChild(card);
   }
 }
+
+
 
 async function joinSelectedRole(user) {
   if (!selectedRole) {
@@ -224,8 +252,24 @@ async function joinSelectedRole(user) {
   }
 
   joinRoleBtn.disabled = true;
-  joinRoleBtn.textContent = "Joining...";
   joinRoleMessage.textContent = "";
+
+  if (currentMembershipId) {
+    joinRoleBtn.textContent = "Leaving...";
+
+    await deleteDoc(doc(db, "roleMembers", currentMembershipId));
+
+    currentMembershipId = null;
+    joinRoleMessage.textContent = "You have left this role.";
+    joinRoleBtn.textContent = "Join This Role";
+    joinRoleBtn.disabled = false;
+
+    await loadRoles();
+    await loadRoleMembers(selectedRole.id);
+    return;
+  }
+
+  joinRoleBtn.textContent = "Joining...";
 
   const existingMembershipQuery = query(
     collection(db, "roleMembers"),
@@ -236,18 +280,19 @@ async function joinSelectedRole(user) {
   const existingMembership = await getDocs(existingMembershipQuery);
 
   if (!existingMembership.empty) {
+    currentMembershipId = existingMembership.docs[0].id;
     joinRoleMessage.textContent = "You are already a member of this role.";
+    joinRoleBtn.textContent = "Leave This Role";
     joinRoleBtn.disabled = false;
-    joinRoleBtn.textContent = "Join This Role";
     return;
   }
 
-  await addDoc(collection(db, "roleMembers"), {
+  const newMembership = await addDoc(collection(db, "roleMembers"), {
     roleId: selectedRole.id,
     roleName: selectedRole.name || "",
     roleDescription: selectedRole.description || "",
     poolId,
-    poolIdName: selectedRole.poolName || "",
+    poolName: selectedRole.poolName || "",
     gurdwaraId,
     gurdwaraName: selectedRole.gurdwaraName || "",
     userId: user.uid,
@@ -262,11 +307,16 @@ async function joinSelectedRole(user) {
     joinedAt: serverTimestamp()
   });
 
+  currentMembershipId = newMembership.id;
   joinRoleMessage.textContent = "You have joined this role.";
-  joinRoleBtn.textContent = "Joined";
+  joinRoleBtn.textContent = "Leave This Role";
+  joinRoleBtn.disabled = false;
 
   await loadRoles();
+  await loadRoleMembers(selectedRole.id);
 }
+
+
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
