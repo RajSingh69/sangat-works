@@ -50,8 +50,14 @@ function renderDirectoryProfile(profile) {
     : "";
 
   return `
-    <div class="profile-card theme-${profile.themeColour || "gold"}">
-      <h3>${profile.businessName || profile.fullName || "Unnamed Profile"}</h3>
+  <div class="profile-card directory-profile-card theme-${profile.themeColour || "gold"}">
+
+    <div class="directory-card-visuals">
+      ${profile.profilePhotoUrl ? `<img src="${profile.profilePhotoUrl}" class="directory-profile-photo" alt="Profile photo">` : ""}
+      ${profile.businessLogoUrl ? `<img src="${profile.businessLogoUrl}" class="directory-business-logo" alt="Business logo">` : ""}
+    </div>
+
+    <h3>${profile.businessName || profile.fullName || "Unnamed Profile"}</h3>
       <p class="service">${profile.serviceTitle || ""}</p>
 
       <div class="badges-row">
