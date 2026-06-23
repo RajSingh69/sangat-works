@@ -24,7 +24,7 @@ async function loadFoundingCounter() {
     }
   });
 
-  const max = 150;
+  const max = 30;
   const remaining = Math.max(max - claimed, 0);
   const percent = Math.min((claimed / max) * 100, 100);
 
