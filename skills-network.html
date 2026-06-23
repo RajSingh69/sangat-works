@@ -57,6 +57,11 @@
 </main>
 
 <script type="module" src="js/nav.js"></script>
+<script type="module">
+  import { protectPage } from "./js/subscription-guard.js";
+  protectPage();
+</script>
+
 <script type="module" src="js/skills-network.js"></script>
 </body>
 </html>
