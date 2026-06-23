@@ -24,6 +24,9 @@ import {
   getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
+const FEATURED_LISTING_PRICE_ID = "price_1TlZxODbE6tXsxNUzI1ng4Iy";
+const CHECKOUT_FUNCTION_URL = "https://europe-west1-sangat-works.cloudfunctions.net/createCheckoutSession";
+
 const profileForm = document.getElementById("profileForm");
 const profileMessage = document.getElementById("profileMessage");
 const publicProfile = document.getElementById("publicProfile");
@@ -44,6 +47,12 @@ const membershipStatus = document.getElementById("membershipStatus");
 const membershipExpiry = document.getElementById("membershipExpiry");
 const membershipDays = document.getElementById("membershipDays");
 
+const featuredStatus = document.getElementById("featuredStatus");
+const featuredExpiry = document.getElementById("featuredExpiry");
+const featuredDays = document.getElementById("featuredDays");
+const becomeFeaturedBtn = document.getElementById("becomeFeaturedBtn");
+const featuredMessage = document.getElementById("featuredMessage");
+
 const dashboardReviews = document.getElementById("dashboardReviews");
 const dashboardRecommendations = document.getElementById("dashboardRecommendations");
 const dashboardViews = document.getElementById("dashboardViews");
@@ -56,54 +65,18 @@ const dashboardGoogleClicks = document.getElementById("dashboardGoogleClicks");
 
 function calculateProfileStrength(profile) {
   const checks = [
-    {
-      label: "Add a profile photo",
-      complete: !!profile.profilePhotoUrl
-    },
-    {
-      label: "Add a business logo",
-      complete: !!profile.businessLogoUrl
-    },
-    {
-      label: "Add your business or profile name",
-      complete: !!profile.businessName || !!profile.fullName
-    },
-    {
-      label: "Add a service title",
-      complete: !!profile.serviceTitle
-    },
-    {
-      label: "Add a description",
-      complete: !!profile.description
-    },
-    {
-      label: "Add tags",
-      complete: (profile.tags || []).length > 0
-    },
-    {
-      label: "Add your town/location",
-      complete: !!profile.town
-    },
-    {
-      label: "Add years of experience",
-      complete: !!profile.yearsExperience
-    },
-    {
-      label: "Add specialist work/projects",
-      complete: !!profile.specialistWork
-    },
-    {
-      label: "Add Gurdwara/Sangat association",
-      complete: !!profile.associatedGurdwara
-    },
-    {
-      label: "Add website or LinkedIn",
-      complete: !!profile.website || !!profile.linkedin
-    },
-    {
-      label: "Add 2 fun facts",
-      complete: !!profile.funFactOne && !!profile.funFactTwo
-    }
+    { label: "Add a profile photo", complete: !!profile.profilePhotoUrl },
+    { label: "Add a business logo", complete: !!profile.businessLogoUrl },
+    { label: "Add your business or profile name", complete: !!profile.businessName || !!profile.fullName },
+    { label: "Add a service title", complete: !!profile.serviceTitle },
+    { label: "Add a description", complete: !!profile.description },
+    { label: "Add tags", complete: (profile.tags || []).length > 0 },
+    { label: "Add your town/location", complete: !!profile.town },
+    { label: "Add years of experience", complete: !!profile.yearsExperience },
+    { label: "Add specialist work/projects", complete: !!profile.specialistWork },
+    { label: "Add Gurdwara/Sangat association", complete: !!profile.associatedGurdwara },
+    { label: "Add website or LinkedIn", complete: !!profile.website || !!profile.linkedin },
+    { label: "Add 2 fun facts", complete: !!profile.funFactOne && !!profile.funFactTwo }
   ];
 
   const completed = checks.filter(check => check.complete).length;
@@ -128,6 +101,49 @@ function calculateProfileStrength(profile) {
   }
 }
 
+function timestampToDate(value) {
+  if (!value) return null;
+
+  if (value.toDate) {
+    return value.toDate();
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date;
+}
+
+function formatDate(value) {
+  const date = timestampToDate(value);
+
+  if (!date) {
+    return "-";
+  }
+
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+}
+
+function getDaysRemaining(value) {
+  const expiryDate = timestampToDate(value);
+
+  if (!expiryDate) {
+    return 0;
+  }
+
+  const today = new Date();
+  const diffMs = expiryDate - today;
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  return diffDays > 0 ? diffDays : 0;
+}
 
 function formatSubscriptionPlan(profile) {
   if (profile.isFoundingMember === true) {
@@ -149,59 +165,86 @@ function formatSubscriptionPlan(profile) {
   return "Free";
 }
 
-function calculateDaysRemaining(profile) {
-  if (!profile.subscriptionExpiresAt) {
-    return profile.hasSubscription === true ? "Active" : "0";
+function isActiveMember(profile) {
+  if (!profile) return false;
+
+  if (profile.isFoundingMember === true) return true;
+
+  if (profile.hasSubscription !== true) return false;
+
+  if (
+    profile.subscriptionStatus &&
+    profile.subscriptionStatus !== "active" &&
+    profile.subscriptionStatus !== "trialing"
+  ) {
+    return false;
   }
 
-  const expiryDate = profile.subscriptionExpiresAt.toDate
-    ? profile.subscriptionExpiresAt.toDate()
-    : new Date(profile.subscriptionExpiresAt);
+  if (profile.subscriptionExpiresAt) {
+    return getDaysRemaining(profile.subscriptionExpiresAt) > 0;
+  }
 
-  const today = new Date();
-  const diffMs = expiryDate - today;
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-  return diffDays > 0 ? diffDays : 0;
+  return true;
 }
-
-
-function formatExpiryDate(profile) {
-  if (!profile.subscriptionExpiresAt) {
-    return "-";
-  }
-
-  const expiryDate = profile.subscriptionExpiresAt.toDate
-    ? profile.subscriptionExpiresAt.toDate()
-    : new Date(profile.subscriptionExpiresAt);
-
-  if (Number.isNaN(expiryDate.getTime())) {
-    return "-";
-  }
-
-  return expiryDate.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  });
-}
-
 
 function renderMembershipStatus(profile) {
   if (!membershipPlan || !membershipStatus || !membershipExpiry || !membershipDays) return;
 
-  const isActive =
-    profile.hasSubscription === true ||
-    profile.subscriptionStatus === "active" ||
-    profile.isFoundingMember === true;
+  const active = isActiveMember(profile);
 
   membershipPlan.textContent = formatSubscriptionPlan(profile);
-  membershipStatus.textContent = isActive ? "Active" : "Inactive";
-  membershipExpiry.textContent = formatExpiryDate(profile);
-  membershipDays.textContent = calculateDaysRemaining(profile);
-
+  membershipStatus.textContent = active ? "Active" : "Inactive";
+  membershipExpiry.textContent = formatDate(profile.subscriptionExpiresAt);
+  membershipDays.textContent = profile.subscriptionExpiresAt
+    ? getDaysRemaining(profile.subscriptionExpiresAt)
+    : active
+      ? "Active"
+      : "0";
 }
 
+function isFeaturedActive(profile) {
+  if (!profile) return false;
+
+  if (profile.featuredListing !== true) return false;
+  if (profile.featuredListingStatus !== "active") return false;
+
+  return getDaysRemaining(profile.featuredExpiresAt) > 0;
+}
+
+function renderFeaturedListingStatus(profile) {
+  if (!featuredStatus || !featuredExpiry || !featuredDays || !becomeFeaturedBtn) return;
+
+  const memberActive = isActiveMember(profile);
+  const featuredActive = isFeaturedActive(profile);
+  const daysRemaining = getDaysRemaining(profile.featuredExpiresAt);
+
+  featuredStatus.textContent = featuredActive ? "Active" : "Inactive";
+  featuredExpiry.textContent = formatDate(profile.featuredExpiresAt);
+  featuredDays.textContent = daysRemaining;
+
+  if (!memberActive) {
+    becomeFeaturedBtn.disabled = true;
+    becomeFeaturedBtn.textContent = "Active Membership Required";
+    if (featuredMessage) {
+      featuredMessage.textContent = "Featured Listing is only available to active Sangat Works members.";
+    }
+    return;
+  }
+
+  becomeFeaturedBtn.disabled = false;
+
+  if (featuredActive) {
+    becomeFeaturedBtn.textContent = "Extend Featured Listing (£5 / 30 Days)";
+    if (featuredMessage) {
+      featuredMessage.textContent = "You are currently featured. Buying again adds another 30 days.";
+    }
+  } else {
+    becomeFeaturedBtn.textContent = "Become Featured (£5 / 30 Days)";
+    if (featuredMessage) {
+      featuredMessage.textContent = "";
+    }
+  }
+}
 
 function renderMemberDashboard(profile) {
   if (
@@ -254,7 +297,6 @@ function renderMemberDashboard(profile) {
     dashboardMemberLevel.textContent = "Community Member";
   }
 }
-
 
 function getTags(tagsString) {
   return tagsString
@@ -345,6 +387,7 @@ function fillForm(profile) {
   if (associatedGurdwaraInput) {
     associatedGurdwaraInput.value = profile.gurdwaraName || profile.associatedGurdwara || "";
   }
+
   document.getElementById("communityDiscount").value = profile.communityDiscount || "not-specified";
 
   document.getElementById("funFactOne").value = profile.funFactOne || "";
@@ -375,8 +418,12 @@ function renderProfile(profile) {
   const tagsHtml = tags.map(tag => `<span class="tag">${tag}</span>`).join("");
 
   const membershipBadge = profile.isFoundingMember
-  ? `<span class="trust-badge verified">★ Founding Member #${profile.memberNumber || ""} — Free 1 Year</span>`
-  : "";
+    ? `<span class="trust-badge verified">★ Founding Member #${profile.memberNumber || ""} — Free 1 Year</span>`
+    : "";
+
+  const featuredBadge = isFeaturedActive(profile)
+    ? `<span class="trust-badge">⭐ Featured Member</span>`
+    : "";
 
   const discountText = {
     yes: "Offers Sangat/community rates where possible",
@@ -397,6 +444,7 @@ function renderProfile(profile) {
       <p class="service">${profile.serviceTitle || ""}</p>
 
       <div class="badges-row">
+        ${featuredBadge}
         ${membershipBadge}
       </div>
 
@@ -414,8 +462,8 @@ function renderProfile(profile) {
       ${profile.specialistWork ? `<p><strong>Specialist work:</strong> ${profile.specialistWork}</p>` : ""}
 
       ${profile.showGurdwara && (profile.gurdwaraName || profile.associatedGurdwara) ? `
-      <p><strong>Local Gurdwara:</strong> ${profile.gurdwaraName || profile.associatedGurdwara}</p>
-    ` : ""}
+        <p><strong>Local Gurdwara:</strong> ${profile.gurdwaraName || profile.associatedGurdwara}</p>
+      ` : ""}
 
       <p><strong>Community support:</strong> ${discountText[profile.communityDiscount] || "Not specified"}</p>
 
@@ -439,6 +487,69 @@ function renderProfile(profile) {
   `;
 }
 
+async function startFeaturedCheckout() {
+  if (!currentUser) {
+    if (featuredMessage) {
+      featuredMessage.textContent = "Please log in first.";
+    }
+    return;
+  }
+
+  if (!isActiveMember(existingProfile)) {
+    if (featuredMessage) {
+      featuredMessage.textContent = "You need an active membership before buying Featured Listing.";
+    }
+    return;
+  }
+
+  try {
+    if (featuredMessage) {
+      featuredMessage.textContent = "Creating Featured Listing checkout...";
+    }
+
+    if (becomeFeaturedBtn) {
+      becomeFeaturedBtn.disabled = true;
+    }
+
+    const response = await fetch(CHECKOUT_FUNCTION_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        priceId: FEATURED_LISTING_PRICE_ID,
+        billingType: "featured",
+        uid: currentUser.uid,
+        email: currentUser.email || existingProfile.email || ""
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not create Featured Listing checkout.");
+    }
+
+    if (!data.url) {
+      throw new Error("No checkout URL returned.");
+    }
+
+    window.location.href = data.url;
+  } catch (error) {
+    if (featuredMessage) {
+      featuredMessage.textContent = error.message;
+    }
+
+    if (becomeFeaturedBtn) {
+      becomeFeaturedBtn.disabled = false;
+    }
+  }
+}
+
+if (becomeFeaturedBtn) {
+  becomeFeaturedBtn.addEventListener("click", startFeaturedCheckout);
+}
+
 if (profileForm) {
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
@@ -459,9 +570,8 @@ if (profileForm) {
       fillForm(existingProfile);
       calculateProfileStrength(existingProfile);
       renderMembershipStatus(existingProfile);
+      renderFeaturedListingStatus(existingProfile);
       renderMemberDashboard(existingProfile);
-
-
     } else {
       existingProfile = {
         fullName: user.displayName || "",
@@ -469,9 +579,11 @@ if (profileForm) {
       };
       await loadGurdwaras();
       fillForm(existingProfile);
+      calculateProfileStrength(existingProfile);
+      renderMembershipStatus(existingProfile);
+      renderFeaturedListingStatus(existingProfile);
+      renderMemberDashboard(existingProfile);
     }
-
-
   });
 
   profileForm.addEventListener("submit", async (e) => {
@@ -501,9 +613,8 @@ if (profileForm) {
         businessLogoUrl = await uploadImage(businessLogoFile, "businessLogos", currentUser.uid);
       }
 
-
-      let selectedGurdwaraId = "";
-      let selectedGurdwaraName = "";
+      let selectedGurdwaraId = existingProfile.gurdwaraId || "";
+      let selectedGurdwaraName = existingProfile.gurdwaraName || existingProfile.associatedGurdwara || "";
 
       if (gurdwaraSelect) {
         if (gurdwaraSelect.value === "add-new") {
@@ -527,7 +638,6 @@ if (profileForm) {
           selectedGurdwaraName = gurdwaraSelect.options[gurdwaraSelect.selectedIndex].textContent;
         }
       }
-
 
       const profile = {
         uid: currentUser.uid,
@@ -585,11 +695,10 @@ if (profileForm) {
 
       calculateProfileStrength(existingProfile);
       renderMembershipStatus(existingProfile);
+      renderFeaturedListingStatus(existingProfile);
       renderMemberDashboard(existingProfile);
+
       profileMessage.textContent = "Profile saved successfully.";
-
-
-
     } catch (error) {
       profileMessage.textContent = error.message;
     }
@@ -632,24 +741,21 @@ if (publicProfile) {
 
       publicProfile.innerHTML = renderProfile(profile);
 
-
       document.querySelectorAll(".tracked-link").forEach((link) => {
-      link.addEventListener("click", async () => {
-        const clickType = link.dataset.clickType;
+        link.addEventListener("click", async () => {
+          const clickType = link.dataset.clickType;
 
-        if (!clickType) return;
+          if (!clickType) return;
 
-        try {
-          await updateDoc(userRef, {
-            [clickType]: increment(1)
-          });
-        } catch (error) {
-          console.error("Failed to track contact click:", error);
-        }
+          try {
+            await updateDoc(userRef, {
+              [clickType]: increment(1)
+            });
+          } catch (error) {
+            console.error("Failed to track contact click:", error);
+          }
+        });
       });
-    });
-
-
     } catch (error) {
       publicProfile.innerHTML = `<div class="empty-state">Error loading profile: ${error.message}</div>`;
     }

@@ -31,7 +31,24 @@
       <p><strong>Status:</strong> <span id="membershipStatus">Inactive</span></p>
       <p><strong>Expiry Date:</strong> <span id="membershipExpiry">-</span></p>
       <p><strong>Days Remaining:</strong> <span id="membershipDays">0</span></p>
-      
+    </div>
+
+    <div id="featuredListingBox" class="profile-strength-box">
+      <div class="strength-top">
+        <strong>Featured Listing</strong>
+      </div>
+
+      <p>Promote your profile across Sangat Works for 30 days.</p>
+
+      <p><strong>Status:</strong> <span id="featuredStatus">Inactive</span></p>
+      <p><strong>Expiry Date:</strong> <span id="featuredExpiry">-</span></p>
+      <p><strong>Days Remaining:</strong> <span id="featuredDays">0</span></p>
+
+      <button type="button" id="becomeFeaturedBtn" class="btn-primary">
+        Become Featured (£5 / 30 Days)
+      </button>
+
+      <p id="featuredMessage" class="message"></p>
     </div>
 
     <div id="profileStrengthBox" class="profile-strength-box">
@@ -47,69 +64,59 @@
       <ul id="profileStrengthChecklist"></ul>
     </div>
 
-
     <div id="memberDashboardBox" class="profile-strength-box">
+      <div class="strength-top">
+        <strong>Member Dashboard</strong>
+      </div>
 
-    <div class="strength-top">
-      <strong>Member Dashboard</strong>
+      <div class="dashboard-grid">
+        <div class="dashboard-stat">
+          <span class="dashboard-number" id="dashboardReviews">0</span>
+          <span class="dashboard-label">Reviews</span>
+        </div>
+
+        <div class="dashboard-stat">
+          <span class="dashboard-number" id="dashboardRecommendations">0</span>
+          <span class="dashboard-label">Recommendations</span>
+        </div>
+
+        <div class="dashboard-stat">
+          <span class="dashboard-number" id="dashboardViews">0</span>
+          <span class="dashboard-label">Profile Views</span>
+        </div>
+
+        <div class="dashboard-stat">
+          <span class="dashboard-number" id="dashboardTrustScore">0</span>
+          <span class="dashboard-label">Trust Score</span>
+        </div>
+
+        <div class="dashboard-stat">
+          <span class="dashboard-number" id="dashboardWebsiteClicks">0</span>
+          <span class="dashboard-label">Website Clicks</span>
+        </div>
+
+        <div class="dashboard-stat">
+          <span class="dashboard-number" id="dashboardLinkedInClicks">0</span>
+          <span class="dashboard-label">LinkedIn Clicks</span>
+        </div>
+
+        <div class="dashboard-stat">
+          <span class="dashboard-number" id="dashboardGoogleClicks">0</span>
+          <span class="dashboard-label">Google Clicks</span>
+        </div>
+      </div>
+
+      <hr style="margin: 1rem 0; opacity: 0.15;">
+
+      <p>
+        <strong>Status:</strong>
+        <span id="dashboardMemberLevel">Community Member</span>
+      </p>
+
+      <p>
+        Track your profile performance, reviews, recommendations and community reputation.
+      </p>
     </div>
-
-    <div class="dashboard-grid">
-
-      <div class="dashboard-stat">
-        <span class="dashboard-number" id="dashboardReviews">0</span>
-        <span class="dashboard-label">Reviews</span>
-      </div>
-
-      <div class="dashboard-stat">
-        <span class="dashboard-number" id="dashboardRecommendations">0</span>
-        <span class="dashboard-label">Recommendations</span>
-      </div>
-
-      <div class="dashboard-stat">
-        <span class="dashboard-number" id="dashboardViews">0</span>
-        <span class="dashboard-label">Profile Views</span>
-      </div>
-
-      <div class="dashboard-stat">
-        <span class="dashboard-number" id="dashboardTrustScore">0</span>
-        <span class="dashboard-label">Trust Score</span>
-      </div>
-
-
-      <div class="dashboard-stat">
-        <span class="dashboard-number" id="dashboardWebsiteClicks">0</span>
-        <span class="dashboard-label">Website Clicks</span>
-      </div>
-
-      <div class="dashboard-stat">
-        <span class="dashboard-number" id="dashboardLinkedInClicks">0</span>
-        <span class="dashboard-label">LinkedIn Clicks</span>
-      </div>
-
-      <div class="dashboard-stat">
-        <span class="dashboard-number" id="dashboardGoogleClicks">0</span>
-        <span class="dashboard-label">Google Clicks</span>
-      </div>
-
-
-
-
-
-    </div>
-
-    <hr style="margin: 1rem 0; opacity: 0.15;">
-
-    <p>
-      <strong>Status:</strong>
-      <span id="dashboardMemberLevel">Community Member</span>
-    </p>
-
-    <p>
-      Track your profile performance, reviews, recommendations and community reputation.
-    </p>
-
-  </div>
 
     <form id="profileForm" class="profile-form">
       <h2>Basic Info</h2>
@@ -157,7 +164,6 @@
 
       <input type="hidden" id="associatedGurdwara" />
 
-      
       <select id="communityDiscount">
         <option value="not-specified">Community discount preference</option>
         <option value="yes">Yes, I can offer Sangat/community rates where possible</option>
@@ -240,7 +246,7 @@
 </main>
 
 <script type="module" src="js/nav.js"></script>
-<script type="module" src="js/profile.js"></script>
+<script type="module" src="js/profile.js?v=5001"></script>
 <script type="module" src="js/onboarding.js"></script>
 </body>
 </html>
