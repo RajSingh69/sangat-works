@@ -55,7 +55,7 @@ const onboardingHTML = `
       <div class="onboarding-icon">🚀</div>
       <h2>Founding Members</h2>
       <p>
-        The first 150 members join free forever and help shape the future of the platform.
+        The first 30 members join free for 1 year and help shape the future of the platform.
       </p>
     </div>
 
