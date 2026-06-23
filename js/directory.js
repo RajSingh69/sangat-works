@@ -18,6 +18,7 @@ const gurdwaraFilter = document.getElementById("gurdwaraFilter");
 const serviceFilter = document.getElementById("serviceFilter");
 const featuredFilter = document.getElementById("featuredFilter");
 const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+const sortBy = document.getElementById("sortBy");
 
 let allProfiles = [];
 
@@ -40,32 +41,112 @@ function getProfileService(profile) {
   return cleanValue(profile.serviceTitle || profile.businessType || "");
 }
 
+function getRating(profile) {
+  const rating =
+    profile.averageRating ||
+    profile.ratingAverage ||
+    profile.reviewAverage ||
+    0;
+
+  return Number(rating) || 0;
+}
+
+function getReviewCount(profile) {
+  return Number(profile.reviewCount || profile.reviewsCount || 0);
+}
+
+function renderStars(rating) {
+  if (!rating) return "☆☆☆☆☆";
+
+  const rounded = Math.round(rating);
+  return "★★★★★".slice(0, rounded) + "☆☆☆☆☆".slice(0, 5 - rounded);
+}
+
+function renderDirectoryBadges(profile) {
+  const badges = [];
+
+  if (profile.isFoundingMember === true) {
+    badges.push("★ Founding Member");
+  }
+
+  if (profile.emailVerified === true || profile.isEmailVerified === true) {
+    badges.push("✓ Email Verified");
+  }
+
+  if (profile.businessVerified === true || profile.isBusinessVerified === true) {
+    badges.push("✓ Business Verified");
+  }
+
+  if (profile.gurdwaraVerified === true || profile.isGurdwaraVerified === true) {
+    badges.push("✓ Gurdwara Verified");
+  }
+
+  if (badges.length === 0) {
+    return "";
+  }
+
+  return `
+    <div class="directory-badges-row">
+      ${badges.map(badge => `<span class="trust-badge verified">${badge}</span>`).join("")}
+    </div>
+  `;
+}
+
 function renderDirectoryProfile(profile) {
   const tags = profile.tags || [];
   const visibleTags = tags.slice(0, 6);
-  const tagsHtml = visibleTags.map(tag => `<span class="tag">${tag}</span>`).join("");
+  const tagsHtml = visibleTags
+    .map(tag => `<span class="tag">${tag}</span>`)
+    .join("");
 
   const featuredBadge = profile.featuredListing
     ? `<span class="trust-badge featured-badge">★ Featured</span>`
     : "";
 
+  const experienceBadge = profile.yearsExperience
+    ? `<span class="trust-badge">${profile.yearsExperience} Years Experience</span>`
+    : "";
+
+  const rating = getRating(profile);
+  const reviewCount = getReviewCount(profile);
+  const badgesHtml = renderDirectoryBadges(profile);
+
+  const reviewHtml = reviewCount > 0
+    ? `
+      <div class="directory-rating-row">
+        <span class="directory-stars">${renderStars(rating)}</span>
+        <strong>${rating.toFixed(1)}</strong>
+        <span>${reviewCount} review${reviewCount === 1 ? "" : "s"}</span>
+      </div>
+    `
+    : `
+      <div class="directory-rating-row muted-rating">
+        <span class="directory-stars">☆☆☆☆☆</span>
+        <span>No reviews yet</span>
+      </div>
+    `;
+
   return `
-  <div class="profile-card directory-profile-card theme-${profile.themeColour || "gold"}">
+    <div class="profile-card directory-profile-card theme-${profile.themeColour || "gold"}">
 
-    <div class="directory-card-visuals">
-      ${profile.profilePhotoUrl ? `<img src="${profile.profilePhotoUrl}" class="directory-profile-photo" alt="Profile photo">` : ""}
-      ${profile.businessLogoUrl ? `<img src="${profile.businessLogoUrl}" class="directory-business-logo" alt="Business logo">` : ""}
-    </div>
-
-    <h3>${profile.businessName || profile.fullName || "Unnamed Profile"}</h3>
-      <p class="service">${profile.serviceTitle || ""}</p>
-
-      <div class="badges-row">
-        ${featuredBadge}
+      <div class="directory-card-visuals">
+        ${profile.profilePhotoUrl ? `<img src="${profile.profilePhotoUrl}" class="directory-profile-photo" alt="Profile photo">` : ""}
+        ${profile.businessLogoUrl ? `<img src="${profile.businessLogoUrl}" class="directory-business-logo" alt="Business logo">` : ""}
       </div>
 
-      ${profile.yearsExperience ? `<p><strong>Experience:</strong> ${profile.yearsExperience} years</p>` : ""}
+      <h3>${profile.businessName || profile.fullName || "Unnamed Profile"}</h3>
+      <p class="service">${profile.serviceTitle || ""}</p>
+
+      <div class="directory-badges-row">
+        ${featuredBadge}
+        ${experienceBadge}
+      </div>
+
+      ${reviewHtml}
+      ${badgesHtml}
+
       <p><strong>Location:</strong> ${profile.town || "Location not provided"}</p>
+
       ${profile.serviceArea ? `<p><strong>Service area:</strong> ${profile.serviceArea}</p>` : ""}
 
       ${profile.associatedGurdwara && profile.showGurdwara ? `
@@ -76,7 +157,9 @@ function renderDirectoryProfile(profile) {
         <p><strong>Community:</strong> ${discountLabel(profile.communityDiscount)}</p>
       ` : ""}
 
-      ${profile.description ? `<p>${profile.description.substring(0, 180)}${profile.description.length > 180 ? "..." : ""}</p>` : ""}
+      ${profile.description ? `
+        <p>${profile.description.substring(0, 180)}${profile.description.length > 180 ? "..." : ""}</p>
+      ` : ""}
 
       <div class="tags">${tagsHtml}</div>
 
@@ -135,7 +218,7 @@ function filterProfiles() {
   const selectedService = cleanValue(serviceFilter?.value).toLowerCase();
   const featuredOnly = featuredFilter?.checked === true;
 
-  const filteredProfiles = allProfiles.filter(profile => {
+  let filteredProfiles = allProfiles.filter(profile => {
     const searchableText = `
       ${profile.fullName || ""}
       ${profile.businessName || ""}
@@ -170,8 +253,30 @@ function filterProfiles() {
     );
   });
 
+  const sortValue = sortBy?.value || "featured";
+
+  filteredProfiles.sort((a, b) => {
+    if (sortValue === "rating") {
+      return getRating(b) - getRating(a);
+    }
+
+    if (sortValue === "experience") {
+      return Number(b.yearsExperience || 0) -
+        Number(a.yearsExperience || 0);
+    }
+
+    if (sortValue === "newest") {
+      const aTime = a.createdAt?.seconds || a.updatedAt?.seconds || 0;
+      const bTime = b.createdAt?.seconds || b.updatedAt?.seconds || 0;
+      return bTime - aTime;
+    }
+
+    return (b.featuredListing === true) -
+      (a.featuredListing === true);
+  });
+
   if (directoryCount) {
-    directoryCount.textContent = `${filteredProfiles.length} profile${filteredProfiles.length === 1 ? "" : "s"} found`;
+    directoryCount.textContent = `Showing ${filteredProfiles.length} Sangat member${filteredProfiles.length === 1 ? "" : "s"}`;
   }
 
   if (filteredProfiles.length === 0) {
@@ -192,6 +297,7 @@ function clearFilters() {
   if (gurdwaraFilter) gurdwaraFilter.value = "";
   if (serviceFilter) serviceFilter.value = "";
   if (featuredFilter) featuredFilter.checked = false;
+  if (sortBy) sortBy.value = "featured";
 
   filterProfiles();
 }
@@ -227,15 +333,11 @@ async function loadDirectory() {
       `;
 
       if (directoryCount) {
-        directoryCount.textContent = "0 profiles found";
+        directoryCount.textContent = "Showing 0 Sangat members";
       }
 
       return;
     }
-
-    allProfiles.sort((a, b) => {
-      return (b.featuredListing === true) - (a.featuredListing === true);
-    });
 
     populateFilters();
     filterProfiles();
@@ -279,6 +381,10 @@ if (featuredFilter) {
 
 if (clearFiltersBtn) {
   clearFiltersBtn.addEventListener("click", clearFilters);
+}
+
+if (sortBy) {
+  sortBy.addEventListener("change", filterProfiles);
 }
 
 protectPage({
