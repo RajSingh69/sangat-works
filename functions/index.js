@@ -23,11 +23,18 @@ const MONTHLY_SUBSCRIPTION_PRICE_ID = "price_1Tkm19DbE6tXsxNUxU6b7NUI";
 const YEARLY_PASS_PRICE_ID = "price_1Tl90wDbE6tXsxNUPMzfGO5m";
 const MONTHLY_PASS_PRICE_ID = "price_1Tl8zyDbE6tXsxNUpynPPWft";
 
+/*
+  Featured Listing
+  One-off £5 for 30 days.
+*/
+const FEATURED_LISTING_PRICE_ID = "price_1TlZxODbE6tXsxNUzI1ng4Iy";
+
 const ALL_PRICE_IDS = [
   YEARLY_SUBSCRIPTION_PRICE_ID,
   MONTHLY_SUBSCRIPTION_PRICE_ID,
   YEARLY_PASS_PRICE_ID,
-  MONTHLY_PASS_PRICE_ID
+  MONTHLY_PASS_PRICE_ID,
+  FEATURED_LISTING_PRICE_ID
 ];
 
 function getPlanFromPriceId(priceId) {
@@ -43,6 +50,10 @@ function getPlanFromPriceId(priceId) {
     priceId === MONTHLY_PASS_PRICE_ID
   ) {
     return "monthly";
+  }
+
+  if (priceId === FEATURED_LISTING_PRICE_ID) {
+    return "featured";
   }
 
   return "unknown";
@@ -63,6 +74,10 @@ function getBillingTypeFromPriceId(priceId) {
     return "oneoff";
   }
 
+  if (priceId === FEATURED_LISTING_PRICE_ID) {
+    return "featured";
+  }
+
   return "unknown";
 }
 
@@ -80,6 +95,43 @@ function getPassExpiryDate(priceId) {
   }
 
   return null;
+}
+
+function isActiveMember(userData) {
+  if (!userData) return false;
+
+  if (userData.hasSubscription !== true) return false;
+
+  if (
+    userData.subscriptionStatus !== "active" &&
+    userData.subscriptionStatus !== "trialing"
+  ) {
+    return false;
+  }
+
+  if (userData.subscriptionExpiresAt && userData.subscriptionExpiresAt.toDate) {
+    return userData.subscriptionExpiresAt.toDate() > new Date();
+  }
+
+  return true;
+}
+
+function getFeaturedExpiryDate(existingFeaturedExpiresAt) {
+  const now = new Date();
+
+  let startDate = now;
+
+  if (
+    existingFeaturedExpiresAt &&
+    existingFeaturedExpiresAt.toDate &&
+    existingFeaturedExpiresAt.toDate() > now
+  ) {
+    startDate = existingFeaturedExpiresAt.toDate();
+  }
+
+  startDate.setDate(startDate.getDate() + 30);
+
+  return admin.firestore.Timestamp.fromDate(startDate);
 }
 
 exports.createCheckoutSession = onRequest(
@@ -128,6 +180,20 @@ exports.createCheckoutSession = onRequest(
         });
       }
 
+      if (billingType === "featured") {
+        const userSnap = await admin
+          .firestore()
+          .collection("users")
+          .doc(uid)
+          .get();
+
+        if (!userSnap.exists || !isActiveMember(userSnap.data())) {
+          return res.status(403).json({
+            error: "Featured Listing is only available to active members"
+          });
+        }
+      }
+
       const stripe = Stripe(stripeSecret.value());
 
       const session = await stripe.checkout.sessions.create({
@@ -148,7 +214,7 @@ exports.createCheckoutSession = onRequest(
           billingType
         },
         payment_intent_data:
-          billingType === "oneoff"
+          billingType === "oneoff" || billingType === "featured"
             ? {
                 metadata: {
                   uid,
@@ -219,6 +285,41 @@ exports.stripeWebhook = onRequest(
           return res.status(200).send("No uid metadata");
         }
 
+        if (billingType === "featured") {
+          const userRef = admin.firestore().collection("users").doc(uid);
+          const userSnap = await userRef.get();
+
+          if (!userSnap.exists || !isActiveMember(userSnap.data())) {
+            console.error(
+              `Featured payment completed but user ${uid} is not an active member`
+            );
+            return res.status(200).send("Featured ignored: inactive member");
+          }
+
+          const userData = userSnap.data();
+          const featuredExpiresAt = getFeaturedExpiryDate(
+            userData.featuredExpiresAt
+          );
+
+          await userRef.set(
+            {
+              featuredListing: true,
+              featuredListingStatus: "active",
+              featuredExpiresAt,
+              featuredStripePriceId: priceId,
+              featuredStripeSessionId: session.id || "",
+              featuredStripeCustomerId: session.customer || "",
+              featuredUpdatedAt:
+                admin.firestore.FieldValue.serverTimestamp(),
+              email: email || session.customer_details?.email || ""
+            },
+            { merge: true }
+          );
+
+          console.log(`Featured Listing activated for user ${uid}`);
+          return res.status(200).send("Featured Listing activated");
+        }
+
         let expiresAt = null;
         let stripeSubscriptionId = "";
         let stripeCustomerId = session.customer || "";
@@ -258,7 +359,8 @@ exports.stripeWebhook = onRequest(
             stripeCustomerId,
             stripeSubscriptionId,
             stripePriceId: priceId,
-            subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            subscriptionUpdatedAt:
+              admin.firestore.FieldValue.serverTimestamp(),
             email: email || session.customer_details?.email || ""
           },
           { merge: true }
