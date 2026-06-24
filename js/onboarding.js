@@ -23,47 +23,66 @@ const onboardingHTML = `
       <div class="onboarding-icon">🤝</div>
       <h2>Welcome to Sangat Works</h2>
       <p>
-        A community platform built to help Sikhs find, support and recommend one another.
+        Sangat Works helps Sikhs find, support and recommend trusted businesses,
+        tradespeople, professionals and community members across the UK.
       </p>
     </div>
 
     <div class="onboarding-step">
-      <div class="onboarding-icon">🏢</div>
-      <h2>Create Your Profile</h2>
+      <div class="onboarding-icon">🗺️</div>
+      <h2>Directory & Map</h2>
       <p>
-        Showcase your business, experience, services, links and community involvement.
+        Use the Directory and Map to search for Sikh businesses, services and
+        professionals by skill, location, Gurdwara, rating and featured status.
       </p>
     </div>
 
     <div class="onboarding-step">
-      <div class="onboarding-icon">🔎</div>
-      <h2>Discover Trusted People</h2>
+      <div class="onboarding-icon">🤝</div>
+      <h2>Gurdwara Skills Network</h2>
       <p>
-        Search electricians, tutors, accountants, developers, trades and professionals.
+        Join skill pools linked to your Gurdwara, such as construction, technology,
+        business, healthcare and other community networks.
+      </p>
+      <p>
+        You can apply for roles inside each pool, discover trusted members and help
+        build useful connections within your local Sangat.
+      </p>
+    </div>
+
+    <div class="onboarding-step">
+      <div class="onboarding-icon">🎓</div>
+      <h2>Young Professionals</h2>
+      <p>
+        Young Professionals helps Sikh students, graduates and working professionals
+        connect, network and discover opportunities for collaboration, mentorship
+        and career growth.
+      </p>
+    </div>
+
+    <div class="onboarding-step">
+      <div class="onboarding-icon">💡</div>
+      <h2>FAQs & Suggestions</h2>
+      <p>
+        Use FAQs & Suggestions to ask questions, share feedback and suggest features
+        you would like to see added to Sangat Works.
+      </p>
+      <p>
+        The platform is still growing, so community feedback directly helps shape
+        what gets built next.
       </p>
     </div>
 
     <div class="onboarding-step">
       <div class="onboarding-icon">⭐</div>
-      <h2>Reviews & Verification</h2>
+      <h2>Membership Benefits</h2>
       <p>
-        Community reviews and verification badges help build trust.
+        Membership unlocks access to the Directory, Map, Young Professionals,
+        Gurdwara Skills Network, Featured Listings and future community tools.
       </p>
-    </div>
-
-    <div class="onboarding-step">
-      <div class="onboarding-icon">🚀</div>
-      <h2>Founding Members</h2>
       <p>
-        The first 30 members join free for 1 year and help shape the future of the platform.
-      </p>
-    </div>
-
-    <div class="onboarding-step">
-      <div class="onboarding-icon">🙏</div>
-      <h2>Support the Sangat</h2>
-      <p>
-        Strengthen community connections and keep opportunities within the Sangat where possible.
+        Every member helps strengthen the Sangat by supporting businesses,
+        sharing opportunities and building trusted connections.
       </p>
     </div>
 
@@ -95,12 +114,17 @@ function showStep(index) {
     "onboardingProgress"
   ).textContent = `Step ${index + 1} of ${steps.length}`;
 
+  const prevBtn = document.getElementById("onboardingPrev");
   const nextBtn = document.getElementById("onboardingNext");
 
-  if (index === steps.length - 1) {
-    nextBtn.textContent = "Get Started";
-  } else {
-    nextBtn.textContent = "Next";
+  if (prevBtn) {
+    prevBtn.style.display = index === 0 ? "none" : "inline-flex";
+  }
+
+  if (nextBtn) {
+    nextBtn.textContent = index === steps.length - 1
+      ? "Join the Sangat"
+      : "Next";
   }
 }
 
@@ -117,7 +141,6 @@ async function completeOnboarding(uid) {
 }
 
 onAuthStateChanged(auth, async (user) => {
-
   if (!user) return;
 
   const userRef = doc(db, "users", user.uid);
@@ -138,31 +161,25 @@ onAuthStateChanged(auth, async (user) => {
 
   showStep(0);
 
-  const steps =
-    document.querySelectorAll(".onboarding-step");
+  const steps = document.querySelectorAll(".onboarding-step");
 
   document
     .getElementById("onboardingPrev")
     .addEventListener("click", () => {
-
       if (currentStep > 0) {
         currentStep--;
         showStep(currentStep);
       }
-
     });
 
   document
     .getElementById("onboardingNext")
     .addEventListener("click", async () => {
-
       if (currentStep < steps.length - 1) {
         currentStep++;
         showStep(currentStep);
       } else {
         await completeOnboarding(user.uid);
       }
-
     });
-
 });
