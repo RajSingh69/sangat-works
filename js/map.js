@@ -113,6 +113,22 @@ function isFeatured(profile) {
   return expiryDate > new Date();
 }
 
+
+function createMarkerIcon(profile) {
+  const featured = isFeatured(profile);
+
+  return L.divIcon({
+    className: "",
+    html: featured
+      ? '<div class="featured-marker"></div>'
+      : '<div class="standard-marker"></div>',
+    iconSize: featured ? [24, 24] : [18, 18],
+    iconAnchor: featured ? [12, 12] : [9, 9]
+  });
+}
+
+
+
 function getTownCoords(town) {
   if (!town) return null;
 
@@ -420,7 +436,8 @@ function renderMarkers() {
     if (!coords) return;
 
     const marker = L.marker(coords, {
-      title: profile.businessName || profile.fullName || ""
+      title: profile.businessName || profile.fullName || "",
+      icon: createMarkerIcon(profile)
     })
       .addTo(map)
       .bindPopup(createPopup(profile));
