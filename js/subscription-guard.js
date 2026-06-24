@@ -27,25 +27,35 @@ function getExpiryDate(userData) {
   return expiryDate;
 }
 
+function isAllowedStatus(status) {
+  return (
+    status === "active" ||
+    status === "trialing" ||
+    status === "cancelling" ||
+    status === "past_due"
+  );
+}
+
 export function hasActiveSubscription(userData) {
   if (!userData) return false;
 
+  const expiryDate = getExpiryDate(userData);
+
   if (userData.isFoundingMember === true) {
-    return true;
+    if (!expiryDate) {
+      return false;
+    }
+
+    return expiryDate > new Date();
   }
 
   if (userData.hasSubscription !== true) {
     return false;
   }
 
-  if (
-    userData.subscriptionStatus &&
-    userData.subscriptionStatus !== "active"
-  ) {
+  if (!isAllowedStatus(userData.subscriptionStatus)) {
     return false;
   }
-
-  const expiryDate = getExpiryDate(userData);
 
   if (!expiryDate) {
     return false;
@@ -76,6 +86,7 @@ export function protectPage(options = {}) {
       const allowed = hasActiveSubscription(userData);
 
       console.log("Subscription check:", userData);
+      console.log("isFoundingMember value:", userData.isFoundingMember);
       console.log("hasSubscription value:", userData.hasSubscription);
       console.log("subscriptionStatus value:", userData.subscriptionStatus);
       console.log("subscriptionExpiresAt value:", userData.subscriptionExpiresAt);
