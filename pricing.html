@@ -19,54 +19,89 @@
 <main>
 
   <section class="hero small-hero">
-    <p class="eyebrow">Membership</p>
-    <h1>Choose how you want to support and use Sangat Works.</h1>
+    <p class="eyebrow">Membership & Services</p>
+    <h1>Choose your membership and boost your profile.</h1>
     <p class="hero-text">
-      Join as a founding member if spaces are still available, choose an auto-renewing membership,
-      or buy one-off access without being tied into a subscription.
+      Join Sangat Works, access member features, and use paid profile boosts
+      to get seen by more of the Sangat.
     </p>
   </section>
 
   <section class="pricing-section">
 
+    <div id="membershipStatusBox" class="pricing-card highlighted" style="display:none; margin-bottom: 28px;">
+      <p class="eyebrow">Your Account</p>
+      <h3>Current Membership</h3>
 
+      <div class="feature-grid" style="margin-top:18px;">
+        <div class="feature-card">
+          <h3>Status</h3>
+          <p id="membershipStatusText">Loading...</p>
+        </div>
 
+        <div class="feature-card">
+          <h3>Plan</h3>
+          <p id="membershipPlanText">Loading...</p>
+        </div>
 
+        <div class="feature-card">
+          <h3>Billing</h3>
+          <p id="membershipBillingText">Loading...</p>
+        </div>
 
+        <div class="feature-card">
+          <h3>Access Until</h3>
+          <p id="membershipExpiryText">Loading...</p>
+        </div>
+      </div>
 
-
-    <div id="membershipStatusBox" class="pricing-card" style="display:none; margin-bottom: 24px;">
-      <p class="eyebrow">Your Membership</p>
-      <h3>Current Account Status</h3>
-
-      <p><strong>Status:</strong> <span id="membershipStatusText">Loading...</span></p>
-      <p><strong>Plan:</strong> <span id="membershipPlanText">Loading...</span></p>
-      <p><strong>Billing Type:</strong> <span id="membershipBillingText">Loading...</span></p>
-      <p><strong>Access Until:</strong> <span id="membershipExpiryText">Loading...</span></p>
-
-      <button id="cancelSubscriptionBtn" class="btn-secondary full" style="display:none;">
+      <button id="cancelSubscriptionBtn" class="btn-secondary full" style="display:none; margin-top: 18px;">
         Cancel Subscription
       </button>
 
       <p id="cancelSubscriptionMessage" class="message"></p>
 
-      <hr />
+      <hr style="margin: 24px 0;" />
 
-      <p><strong>Featured Listing:</strong> <span id="featuredStatusText">Loading...</span></p>
-      <p><strong>Featured Until:</strong> <span id="featuredExpiryText">Loading...</span></p>
+      <div class="feature-grid">
+        <div class="feature-card theme-gold">
+          <h3>Featured Listing</h3>
+          <p id="featuredStatusText">Loading...</p>
+        </div>
+
+        <div class="feature-card theme-blue">
+          <h3>Featured Until</h3>
+          <p id="featuredExpiryText">Loading...</p>
+        </div>
+      </div>
     </div>
 
+    <div class="section-heading">
+      <p class="eyebrow">Services To Buy</p>
+      <h2>Promote your profile across Sangat Works.</h2>
+      <p>
+        These are optional paid boosts for members who want extra visibility.
+      </p>
+    </div>
 
+    <div class="pricing-grid">
 
+      <div class="pricing-card highlighted">
+        <p class="eyebrow">Available Now</p>
+        <h3>Featured Listing</h3>
+        <strong>£5 / 30 days</strong>
+        <p>
+          Promote your profile across the directory and map. Featured members appear
+          more prominently and receive a highlighted marker on the map.
+        </p>
+        <button class="btn-primary full checkout-btn" data-plan="featured_listing">
+          Buy Featured Listing
+        </button>
+      </div>
 
+    </div>
 
-
-
-
-
-
-
-    <div class="founding-counter-box">
+    <div class="founding-counter-box" style="margin-top: 28px;">
       <strong id="foundingClaimed">0</strong>
       <span>/ 150 founding places claimed</span>
 
@@ -94,10 +129,10 @@
 
     <div class="section-heading">
       <p class="eyebrow">Auto-Renewing Membership</p>
-      <h2>Set it once and keep your access active.</h2>
+      <h2>Keep your access active automatically.</h2>
       <p>
         These plans renew automatically through Stripe. You can cancel your subscription
-        from your Stripe/customer account when you no longer want it.
+        and keep access until the end of your current billing period.
       </p>
     </div>
 
@@ -108,7 +143,7 @@
         <strong>£25/year</strong>
         <p>
           Best value for members who want continuous access to the directory, map,
-          reviews, profile features and verification eligibility.
+          reviews, profile features, Skills Network and Young Professionals.
         </p>
         <button class="btn-primary full checkout-btn" data-plan="yearly_subscription">
           Subscribe Yearly
