@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Young Professionals | Sangat Works</title>
+
+  <link rel="stylesheet" href="css/style.css?v=5001" />
+
+  <style>
+    .yp-page {
+      width: 94%;
+      max-width: 1400px;
+      margin: 42px auto 70px;
+    }
+
+    .yp-hero {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: 30px;
+      padding: clamp(28px, 5vw, 54px);
+      margin-bottom: 28px;
+    }
+
+    .yp-hero h1 {
+      font-size: clamp(2.2rem, 5vw, 4rem);
+      color: var(--blue);
+      letter-spacing: -0.06em;
+      line-height: 1.05;
+      margin-bottom: 14px;
+    }
+
+    .yp-hero p {
+      color: var(--muted);
+      max-width: 780px;
+      margin: 0 auto;
+      font-size: 1.05rem;
+    }
+
+    .yp-layout {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .yp-panel {
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-soft);
+      border-radius: 26px;
+      padding: 24px;
+    }
+
+    .yp-panel h2 {
+      color: var(--blue);
+      margin-bottom: 10px;
+      letter-spacing: -0.04em;
+    }
+
+    .yp-panel p {
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    .yp-form {
+      display: grid;
+      gap: 13px;
+    }
+
+    .yp-check-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .yp-filters {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .yp-results-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .yp-results-top h2 {
+      color: var(--blue);
+      margin-bottom: 4px;
+      letter-spacing: -0.04em;
+    }
+
+    #ypCount {
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .yp-results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 18px;
+    }
+
+    .yp-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-top: 7px solid var(--gold);
+      box-shadow: var(--shadow-soft);
+      border-radius: 24px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+
+    .yp-card h3 {
+      color: var(--blue);
+      font-size: 1.25rem;
+      letter-spacing: -0.04em;
+      margin-bottom: 4px;
+    }
+
+    .yp-card .service {
+      color: var(--orange-dark);
+      font-weight: 950;
+      margin-bottom: 10px;
+    }
+
+    .yp-meta {
+      display: grid;
+      gap: 5px;
+      margin: 12px 0;
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    .yp-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .yp-badge {
+      background: #fff0d5;
+      color: var(--orange-dark);
+      border: 1px solid rgba(255, 122, 24, 0.2);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 900;
+    }
+
+    .yp-badge.green {
+      background: #ecfdf5;
+      color: var(--green);
+      border-color: #bbf7d0;
+    }
+
+    .yp-bio {
+      color: var(--muted);
+      margin: 10px 0 16px;
+      flex: 1;
+    }
+
+    .yp-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: auto;
+    }
+
+    .yp-actions a {
+      color: var(--blue);
+      font-weight: 950;
+      text-decoration: none;
+      background: var(--sky);
+      padding: 8px 12px;
+      border-radius: 999px;
+    }
+
+    .yp-message {
+      font-weight: 900;
+      color: var(--orange-dark);
+      margin-top: 10px;
+    }
+
+    @media (max-width: 1050px) {
+      .yp-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .yp-filters {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 650px) {
+      .yp-page {
+        width: 94%;
+        margin: 24px auto 50px;
+      }
+
+      .yp-filters {
+        grid-template-columns: 1fr;
+      }
+
+      .yp-results-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="logo">Sangat Works</div>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <div id="accountArea"></div>
+  </nav>
+</header>
+
+<main class="yp-page">
+
+  <section class="yp-hero">
+    <p class="eyebrow">Young Professionals</p>
+
+    <h1>Help Sikh graduates and young professionals connect.</h1>
+
+    <p>
+      Build your network, find opportunities, meet mentors and help the next
+      generation of Sikh professionals grow.
+    </p>
+  </section>
+
+  <section class="yp-layout">
+
+    <aside class="yp-panel">
+      <h2>Your Young Professional Profile</h2>
+
+      <p>
+        Add a simple profile so other members can find you, support you or connect
+        you with opportunities.
+      </p>
+
+      <form id="ypForm" class="yp-form">
+
+        <input
+          type="text"
+          id="ypFullName"
+          placeholder="Full name"
+          required
+        />
+
+        <input
+          type="text"
+          id="ypTown"
+          placeholder="Town / city"
+        />
+
+        <input
+          type="text"
+          id="ypUniversity"
+          placeholder="University e.g. University of Surrey"
+        />
+
+        <input
+          type="text"
+          id="ypDegree"
+          placeholder="Degree e.g. Computer Science"
+        />
+
+        <input
+          type="number"
+          id="ypGraduationYear"
+          placeholder="Graduation year e.g. 2025"
+          min="1980"
+          max="2100"
+        />
+
+        <input
+          type="text"
+          id="ypIndustry"
+          placeholder="Industry e.g. Software, Finance, Law"
+          required
+        />
+
+        <input
+          type="text"
+          id="ypSkills"
+          placeholder="Skills e.g. React, Excel, Marketing"
+        />
+
+        <input
+          type="url"
+          id="ypLinkedin"
+          placeholder="LinkedIn URL"
+        />
+
+        <textarea
+          id="ypBio"
+          placeholder="Short bio. What are you looking for? What can you offer?"
+        ></textarea>
+
+        <div class="yp-check-grid">
+          <label class="check-row">
+            <input type="checkbox" id="ypLookingForWork" />
+            I am looking for work, placements or opportunities
+          </label>
+
+          <label class="check-row">
+            <input type="checkbox" id="ypOfferingMentorship" />
+            I can offer mentoring or advice
+          </label>
+        </div>
+
+        <button type="submit" class="btn-primary full">
+          Save Young Professional Profile
+        </button>
+
+      </form>
+
+      <p id="ypMessage" class="yp-message"></p>
+    </aside>
+
+    <section class="yp-panel">
+      <div class="yp-results-top">
+        <div>
+          <h2>Young Professionals Network</h2>
+          <p id="ypCount">Loading profiles...</p>
+        </div>
+
+        <button id="ypResetFiltersBtn" type="button" class="btn-secondary">
+          Reset Filters
+        </button>
+      </div>
+
+      <div class="yp-filters">
+        <input
+          type="text"
+          id="ypSearchInput"
+          placeholder="Search name, skill, uni..."
+        />
+
+        <select id="ypIndustryFilter">
+          <option value="">All industries</option>
+        </select>
+
+        <select id="ypTownFilter">
+          <option value="">All towns</option>
+        </select>
+
+        <select id="ypStatusFilter">
+          <option value="">Everyone</option>
+          <option value="looking">Looking for work</option>
+          <option value="mentor">Mentors only</option>
+        </select>
+      </div>
+
+      <div id="ypResults" class="yp-results-grid">
+        <div class="empty-state">Loading young professionals...</div>
+      </div>
+    </section>
+
+  </section>
+
+</main>
+
+<footer>
+  <p>Sangat Works — built for community support.</p>
+</footer>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/young-professionals.js?v=1001"></script>
+
+</body>
+</html>

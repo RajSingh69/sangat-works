@@ -27,6 +27,7 @@ if (accountArea) {
 
     let adminButton = "";
     let skillsNetworkButton = "";
+    let youngProfessionalsButton = "";
     let membershipBadge = `<span class="account-email">Free</span>`;
 
     try {
@@ -44,6 +45,12 @@ if (accountArea) {
           skillsNetworkButton = `
             <a href="skills-network.html" class="btn-small">
               Skills Network
+            </a>
+          `;
+
+          youngProfessionalsButton = `
+            <a href="young-professionals.html" class="btn-small">
+              Young Professionals
             </a>
           `;
         }
@@ -66,6 +73,8 @@ if (accountArea) {
       ${membershipBadge}
 
       ${skillsNetworkButton}
+
+      ${youngProfessionalsButton}
 
       ${adminButton}
 
