@@ -85,6 +85,34 @@ function titleCase(value) {
     .replace(/\b\w/g, char => char.toUpperCase());
 }
 
+function timestampToDate(value) {
+  if (!value) return null;
+
+  if (value.toDate) {
+    return value.toDate();
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date;
+}
+
+function isFeatured(profile) {
+  if (!profile) return false;
+  if (profile.featuredListing !== true) return false;
+  if (profile.featuredListingStatus !== "active") return false;
+
+  const expiryDate = timestampToDate(profile.featuredExpiresAt);
+
+  if (!expiryDate) return false;
+
+  return expiryDate > new Date();
+}
+
 function getTownCoords(town) {
   if (!town) return null;
 
@@ -119,19 +147,11 @@ function getProfileTown(profile) {
 function getProfileGurdwara(profile) {
   return (
     profile.associatedGurdwara ||
+    profile.gurdwaraName ||
     profile.gurdwara ||
     profile.organisation ||
     profile.affiliation ||
     ""
-  );
-}
-
-function isFeatured(profile) {
-  return Boolean(
-    profile.isFeatured ||
-    profile.featured ||
-    profile.featuredListing ||
-    profile.isFoundingMember
   );
 }
 
@@ -388,7 +408,10 @@ function renderMarkers() {
 
   clearMarkers();
 
-  const filteredProfiles = allProfiles.filter(profileMatchesFilters);
+  const filteredProfiles = allProfiles
+    .filter(profileMatchesFilters)
+    .sort((a, b) => Number(isFeatured(b)) - Number(isFeatured(a)));
+
   const bounds = [];
 
   filteredProfiles.forEach((profile, index) => {
@@ -396,7 +419,9 @@ function renderMarkers() {
 
     if (!coords) return;
 
-    const marker = L.marker(coords)
+    const marker = L.marker(coords, {
+      title: profile.businessName || profile.fullName || ""
+    })
       .addTo(map)
       .bindPopup(createPopup(profile));
 
