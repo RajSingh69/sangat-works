@@ -29,6 +29,7 @@ if (accountArea) {
     let skillsNetworkButton = "";
     let youngProfessionalsButton = "";
     let membershipBadge = `<span class="account-email">Free</span>`;
+    let roleBadge = "";
 
     try {
       const userRef = doc(db, "users", user.uid);
@@ -38,9 +39,31 @@ if (accountArea) {
         const userData = userSnap.data();
 
         if (hasActiveSubscription(userData)) {
-          membershipBadge = `
-            <span class="account-email">Member</span>
-          `;
+          if (userData.isFoundingMember === true) {
+            membershipBadge = `
+              <span class="account-email">
+                👑 Founding #${userData.memberNumber || ""}
+              </span>
+            `;
+          } else if (userData.subscriptionPlan === "yearly") {
+            membershipBadge = `
+              <span class="account-email">
+                ⭐ Yearly Member
+              </span>
+            `;
+          } else if (userData.subscriptionPlan === "monthly") {
+            membershipBadge = `
+              <span class="account-email">
+                ⭐ Monthly Member
+              </span>
+            `;
+          } else {
+            membershipBadge = `
+              <span class="account-email">
+                ⭐ Member
+              </span>
+            `;
+          }
 
           skillsNetworkButton = `
             <a href="skills-network.html" class="btn-small">
@@ -60,8 +83,24 @@ if (accountArea) {
           userData.isAdmin === true
         ) {
           adminButton = `
-            <a href="admin.html" class="btn-small admin-btn">Admin</a>
+            <a href="admin.html" class="btn-small admin-btn">
+              Admin
+            </a>
           `;
+
+          if (user.email === "rajanbhamra02@gmail.com") {
+            roleBadge = `
+              <span class="account-email">
+                👨‍💻 Platform Developer
+              </span>
+            `;
+          } else {
+            roleBadge = `
+              <span class="account-email">
+                🛡️ Administrator
+              </span>
+            `;
+          }
         }
       }
     } catch (error) {
@@ -70,6 +109,9 @@ if (accountArea) {
 
     accountArea.innerHTML = `
       <span class="account-email">${user.email}</span>
+
+      ${roleBadge}
+
       ${membershipBadge}
 
       ${skillsNetworkButton}

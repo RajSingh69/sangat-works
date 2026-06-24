@@ -147,22 +147,22 @@ function getDaysRemaining(value) {
 
 function formatSubscriptionPlan(profile) {
   if (profile.isFoundingMember === true) {
-    return "Founding Member";
+    return `👑 Founding Member #${profile.memberNumber || ""}`;
   }
 
   if (profile.subscriptionPlan === "yearly") {
-    return "Yearly Member";
+    return "⭐ Yearly Member";
   }
 
   if (profile.subscriptionPlan === "monthly") {
-    return "Monthly Member";
+    return "⭐ Monthly Member";
   }
 
   if (profile.hasSubscription === true) {
-    return "Active Member";
+    return "⭐ Active Member";
   }
 
-  return "Free";
+  return "Free User";
 }
 
 function isActiveMember(profile) {
@@ -188,18 +188,32 @@ function isActiveMember(profile) {
 }
 
 function renderMembershipStatus(profile) {
-  if (!membershipPlan || !membershipStatus || !membershipExpiry || !membershipDays) return;
+  if (!membershipPlan || !membershipStatus || !membershipExpiry || !membershipDays) {
+    return;
+  }
 
   const active = isActiveMember(profile);
+  const daysRemaining = getDaysRemaining(profile.subscriptionExpiresAt);
 
   membershipPlan.textContent = formatSubscriptionPlan(profile);
-  membershipStatus.textContent = active ? "Active" : "Inactive";
-  membershipExpiry.textContent = formatDate(profile.subscriptionExpiresAt);
-  membershipDays.textContent = profile.subscriptionExpiresAt
-    ? getDaysRemaining(profile.subscriptionExpiresAt)
-    : active
+
+  if (profile.isFoundingMember === true) {
+    membershipStatus.textContent = active
+      ? "Active (Free Founding Membership)"
+      : "Expired";
+  } else {
+    membershipStatus.textContent = active
       ? "Active"
-      : "0";
+      : "Inactive";
+  }
+
+  membershipExpiry.textContent = formatDate(profile.subscriptionExpiresAt);
+
+  if (active) {
+    membershipDays.textContent = `${daysRemaining} days`;
+  } else {
+    membershipDays.textContent = "Expired";
+  }
 }
 
 function isFeaturedActive(profile) {
