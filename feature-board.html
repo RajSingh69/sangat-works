@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Future Features | Sangat Works</title>
+
+  <link rel="stylesheet" href="css/style.css" />
+
+  <style>
+    .features-page {
+      width: 94%;
+      max-width: 1150px;
+      margin: 42px auto;
+    }
+
+    .features-hero {
+      background: linear-gradient(135deg, rgba(18, 60, 105, 0.96), rgba(255, 122, 24, 0.88));
+      color: white;
+      border-radius: 30px;
+      padding: clamp(28px, 5vw, 54px);
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .features-hero h1 {
+      font-size: clamp(2.3rem, 5vw, 4.6rem);
+      line-height: 1.02;
+      letter-spacing: -0.06em;
+      margin-bottom: 14px;
+    }
+
+    .features-hero p {
+      max-width: 780px;
+      font-weight: 800;
+      line-height: 1.7;
+      opacity: 0.95;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .feature-card {
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .feature-card h2 {
+      color: var(--blue);
+      font-size: 1.25rem;
+      margin: 0;
+    }
+
+    .feature-card p {
+      color: var(--muted);
+      font-weight: 700;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .feature-tag {
+      display: inline-flex;
+      width: fit-content;
+      background: #fff2dc;
+      color: var(--orange-dark);
+      border: 1px solid rgba(255, 122, 24, 0.25);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 0.82rem;
+      font-weight: 950;
+    }
+
+    .vote-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: auto;
+    }
+
+    .vote-btn {
+      border: 1px solid var(--border);
+      background: #f8fbff;
+      color: var(--blue);
+      border-radius: 14px;
+      padding: 12px;
+      font-weight: 950;
+      cursor: pointer;
+      box-shadow: none;
+    }
+
+    .vote-btn:hover {
+      background: #eaf4ff;
+    }
+
+    .vote-btn.active {
+      background: var(--blue);
+      color: white;
+    }
+
+    .feature-message {
+      margin: 20px 0;
+      color: var(--muted);
+      font-weight: 900;
+      text-align: center;
+    }
+
+    @media (max-width: 950px) {
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 620px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="logo">Sangat Works</div>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="directory.html">Directory</a>
+    <a href="pricing.html">Pricing</a>
+    <a href="feature-board.html" class="btn-small">Future Features</a>
+  </nav>
+</header>
+
+<main class="features-page">
+
+  <section class="features-hero">
+    <p class="eyebrow">Shape the platform</p>
+
+    <h1>Vote on future Sangat Works features.</h1>
+
+    <p>
+      Help decide what should be built next. Vote for the features you want most,
+      and help guide Sangat Works into something genuinely useful for the Sangat.
+    </p>
+  </section>
+
+  <p id="featureMessage" class="feature-message">Loading feature ideas...</p>
+
+  <section id="featuresGrid" class="features-grid"></section>
+
+</main>
+
+<script type="module" src="js/feature-board.js"></script>
+
+</body>
+</html>

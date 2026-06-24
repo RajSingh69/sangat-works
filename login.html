@@ -19,7 +19,7 @@
 
     .login-hero-card,
     .login-form-card {
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.96);
       border: 1px solid var(--border);
       border-radius: 28px;
       box-shadow: var(--shadow);
@@ -91,6 +91,54 @@
       margin-bottom: 22px;
     }
 
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: #f3f7fc;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 8px;
+      margin-bottom: 22px;
+    }
+
+    .auth-tab {
+      border: 0;
+      border-radius: 14px;
+      padding: 13px 16px;
+      cursor: pointer;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.96rem;
+      font-weight: 900;
+      transition: 0.2s ease;
+      box-shadow: none;
+    }
+
+    .auth-tab:hover {
+      background: rgba(18, 60, 105, 0.08);
+      color: var(--blue);
+    }
+
+    .auth-tab.active {
+      background: var(--blue);
+      color: white;
+      box-shadow: 0 10px 24px rgba(18, 60, 105, 0.18);
+    }
+
+    .auth-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .auth-form.hidden {
+      display: none;
+    }
+
+    .auth-form input {
+      width: 100%;
+    }
+
     .auth-switch-note {
       margin-top: 18px;
       text-align: center;
@@ -121,12 +169,16 @@
       box-shadow: none;
     }
 
+    .toggle-password:hover {
+      background: #ddecff;
+    }
+
     .login-links {
       display: flex;
       justify-content: space-between;
       gap: 12px;
       flex-wrap: wrap;
-      margin-top: 12px;
+      margin-top: 4px;
       font-size: 0.9rem;
       font-weight: 900;
     }
@@ -140,7 +192,7 @@
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 12px;
-      margin-top: 22px;
+      margin-top: 10px;
     }
 
     .login-small-card {
@@ -151,6 +203,12 @@
       color: var(--blue);
       font-weight: 900;
       font-size: 0.92rem;
+    }
+
+    .message {
+      margin-top: 16px;
+      text-align: center;
+      font-weight: 900;
     }
 
     @media (max-width: 900px) {
@@ -172,6 +230,15 @@
       .toggle-password {
         font-size: 0.8rem;
         padding: 7px 10px;
+      }
+
+      .auth-tabs {
+        gap: 8px;
+        padding: 7px;
+      }
+
+      .auth-tab {
+        padding: 12px 10px;
       }
     }
   </style>
@@ -230,12 +297,12 @@
     <h2>Access your account</h2>
     <p>Login if you already have an account, or register to join Sangat Works.</p>
 
-    <div class="tabs">
-      <button class="tab active" id="showLogin" type="button">Login</button>
-      <button class="tab" id="showRegister" type="button">Register</button>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="showLogin" type="button">Login</button>
+      <button class="auth-tab" id="showRegister" type="button">Register</button>
     </div>
 
-    <form id="loginForm">
+    <form id="loginForm" class="auth-form">
       <input type="email" id="loginEmail" placeholder="Email address" required />
 
       <div class="password-wrap">
@@ -253,7 +320,7 @@
       </div>
     </form>
 
-    <form id="registerForm" class="hidden">
+    <form id="registerForm" class="auth-form hidden">
       <input type="text" id="registerName" placeholder="Full name" required />
       <input type="email" id="registerEmail" placeholder="Email address" required />
 
@@ -286,6 +353,35 @@
 <script type="module" src="js/auth.js"></script>
 
 <script>
+  const showLoginBtn = document.getElementById("showLogin");
+  const showRegisterBtn = document.getElementById("showRegister");
+  const loginForm = document.getElementById("loginForm");
+  const registerForm = document.getElementById("registerForm");
+  const authMessage = document.getElementById("authMessage");
+
+  function showLoginForm() {
+    showLoginBtn.classList.add("active");
+    showRegisterBtn.classList.remove("active");
+
+    loginForm.classList.remove("hidden");
+    registerForm.classList.add("hidden");
+
+    if (authMessage) authMessage.textContent = "";
+  }
+
+  function showRegisterForm() {
+    showRegisterBtn.classList.add("active");
+    showLoginBtn.classList.remove("active");
+
+    registerForm.classList.remove("hidden");
+    loginForm.classList.add("hidden");
+
+    if (authMessage) authMessage.textContent = "";
+  }
+
+  showLoginBtn.addEventListener("click", showLoginForm);
+  showRegisterBtn.addEventListener("click", showRegisterForm);
+
   document.querySelectorAll(".toggle-password").forEach((button) => {
     button.addEventListener("click", () => {
       const targetId = button.getAttribute("data-target");
