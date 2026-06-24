@@ -5,6 +5,105 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>About the Developers | Sangat Works</title>
   <link rel="stylesheet" href="css/style.css" />
+
+  <style>
+    .developer-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 26px;
+      align-items: stretch;
+      margin-top: 26px;
+    }
+
+    .developer-profile-card {
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow: hidden;
+    }
+
+    .developer-photo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .developer-photo-frame {
+      width: 100%;
+      height: 280px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #fff7e8;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 24px rgba(18, 60, 105, 0.08);
+    }
+
+    .developer-photo-frame.single {
+      height: 360px;
+    }
+
+    .developer-photo-frame img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    .developer-photo-frame.rajan-la img {
+      object-position: center 38%;
+    }
+
+    .developer-photo-frame.rajan-parna img {
+      object-position: center 30%;
+    }
+
+    .developer-photo-frame.jagdev-photo img {
+      object-position: center 28%;
+    }
+
+    .developer-profile-card h3 {
+      margin-bottom: 2px;
+    }
+
+    .developer-role {
+      color: var(--orange-dark);
+      font-weight: 900;
+      margin-top: -8px;
+    }
+
+    .developer-copy {
+      display: grid;
+      gap: 10px;
+    }
+
+    @media (max-width: 900px) {
+      .developer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .developer-photo-frame,
+      .developer-photo-frame.single {
+        height: 320px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .developer-photo-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .developer-photo-frame,
+      .developer-photo-frame.single {
+        height: 300px;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -50,7 +149,7 @@
       Sangat Works helps the community find and support one another.
     </p>
 
-    <div class="features-grid">
+    <div class="feature-grid">
       <div class="feature-card">
         <h3>Support Sikh Businesses</h3>
         <p>
@@ -80,34 +179,40 @@
     <p class="eyebrow">Meet the Developers</p>
     <h2>The people behind Sangat Works.</h2>
 
-    <div class="features-grid">
+    <div class="developer-grid">
 
-      <div class="feature-card">
-        <img
-          src="assets/rajanLA.jpeg"
-          alt="Rajan Singh"
-          style="width:100%; max-height:360px; object-fit:cover; border-radius:18px; margin-bottom:18px;"
-        />
+      <div class="developer-profile-card">
+        <div class="developer-photo-grid">
+          <div class="developer-photo-frame rajan-la">
+            <img src="assets/rajanLA.jpeg" alt="Rajan Singh" />
+          </div>
+
+          <div class="developer-photo-frame rajan-parna">
+            <img src="assets/rajan-parna.jpeg" alt="Rajan Singh" />
+          </div>
+        </div>
 
         <h3>Rajan Singh</h3>
-        <p><strong>Founder & Software Developer</strong></p>
+        <p class="developer-role">Founder & Software Developer</p>
 
-        <p>
-          Fateh, I’m Rajan. I’m a 23-year-old software developer and the founder
-          of S3D Systems, where I build custom software, websites, automation tools,
-          3D models and drone media projects.
-        </p>
+        <div class="developer-copy">
+          <p>
+            Fateh, I’m Rajan. I’m a 23-year-old software developer and the founder
+            of S3D Systems, where I build custom software, websites, automation tools,
+            3D models and drone media projects.
+          </p>
 
-        <p>
-          I built Sangat Works because I believe technology should be used to solve
-          real community problems. The goal is simple: make it easier for Sikhs to
-          find, trust and support one another.
-        </p>
+          <p>
+            I built Sangat Works because I believe technology should be used to solve
+            real community problems. The goal is simple: make it easier for Sikhs to
+            find, trust and support one another.
+          </p>
 
-        <p>
-          I am also building SayVah, a direct seva app designed to help connect
-          volunteers, Gurdwaras and people who need support.
-        </p>
+          <p>
+            I am also building SayVah, a direct seva app designed to help connect
+            volunteers, Gurdwaras and people who need support.
+          </p>
+        </div>
 
         <div class="card-links">
           <a href="tel:07826666420">07826 666 420</a>
@@ -116,32 +221,32 @@
         </div>
       </div>
 
-      <div class="feature-card">
-        <img
-          src="assets/JagdevPic.jpg"
-          alt="Jagdev Singh Kallha"
-          style="width:100%; max-height:360px; object-fit:cover; border-radius:18px; margin-bottom:18px;"
-        />
+      <div class="developer-profile-card">
+        <div class="developer-photo-frame single jagdev-photo">
+          <img src="assets/JagdevPic.jpg" alt="Jagdev Singh Kallha" />
+        </div>
 
         <h3>Jagdev Singh Kallha</h3>
-        <p><strong>Co-Founder | Founder & CEO of NXT Gen Sports Group</strong></p>
+        <p class="developer-role">Co-Founder | Founder & CEO of NXT Gen Sports Group</p>
 
-        <p>
-          Jagdev is a lifelong advocate for grassroots football, equality, diversity
-          and inclusion. He founded NXT Gen Sports Group to help create a more
-          equitable and inclusive future for the game.
-        </p>
+        <div class="developer-copy">
+          <p>
+            Jagdev is a lifelong advocate for grassroots football, equality, diversity
+            and inclusion. He founded NXT Gen Sports Group to help create a more
+            equitable and inclusive future for the game.
+          </p>
 
-        <p>
-          His mission is to empower the next generation of football talent by giving
-          athletes from all communities better opportunity, representation and support.
-        </p>
+          <p>
+            His mission is to empower the next generation of football talent by giving
+            athletes from all communities better opportunity, representation and support.
+          </p>
 
-        <p>
-          Through Sangat Works, Jagdev brings that same passion for fairness,
-          opportunity and community connection into a platform built to support the
-          Sikh community.
-        </p>
+          <p>
+            Through Sangat Works, Jagdev brings that same passion for fairness,
+            opportunity and community connection into a platform built to support the
+            Sikh community.
+          </p>
+        </div>
 
         <div class="card-links">
           <a href="https://share.google/namNE1LerSs1RooFE" target="_blank">Jagdev | Red Roots</a>
@@ -161,7 +266,7 @@
       Gurdwara-linked opportunities and future community-led features.
     </p>
 
-    <div class="features-grid">
+    <div class="feature-grid">
       <div class="feature-card">
         <h3>Completed So Far</h3>
         <p>
