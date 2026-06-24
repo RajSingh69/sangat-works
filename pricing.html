@@ -29,6 +29,43 @@
 
   <section class="pricing-section">
 
+
+
+
+
+
+
+    <div id="membershipStatusBox" class="pricing-card" style="display:none; margin-bottom: 24px;">
+      <p class="eyebrow">Your Membership</p>
+      <h3>Current Account Status</h3>
+
+      <p><strong>Status:</strong> <span id="membershipStatusText">Loading...</span></p>
+      <p><strong>Plan:</strong> <span id="membershipPlanText">Loading...</span></p>
+      <p><strong>Billing Type:</strong> <span id="membershipBillingText">Loading...</span></p>
+      <p><strong>Access Until:</strong> <span id="membershipExpiryText">Loading...</span></p>
+
+      <button id="cancelSubscriptionBtn" class="btn-secondary full" style="display:none;">
+        Cancel Subscription
+      </button>
+
+      <p id="cancelSubscriptionMessage" class="message"></p>
+
+      <hr />
+
+      <p><strong>Featured Listing:</strong> <span id="featuredStatusText">Loading...</span></p>
+      <p><strong>Featured Until:</strong> <span id="featuredExpiryText">Loading...</span></p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
     <div class="founding-counter-box">
       <strong id="foundingClaimed">0</strong>
       <span>/ 150 founding places claimed</span>
@@ -146,6 +183,7 @@
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/founding-counter.js"></script>
 <script type="module" src="./js/checkout.js?v=1006"></script>
+<script type="module" src="./js/pricing.js?v=1001"></script>
 
 </body>
 </html>

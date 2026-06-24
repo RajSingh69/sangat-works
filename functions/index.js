@@ -104,7 +104,8 @@ function isActiveMember(userData) {
 
   if (
     userData.subscriptionStatus !== "active" &&
-    userData.subscriptionStatus !== "trialing"
+    userData.subscriptionStatus !== "trialing" &&
+    userData.subscriptionStatus !== "cancelling"
   ) {
     return false;
   }
@@ -132,6 +133,94 @@ function getFeaturedExpiryDate(existingFeaturedExpiresAt) {
   startDate.setDate(startDate.getDate() + 30);
 
   return admin.firestore.Timestamp.fromDate(startDate);
+}
+
+function getSubscriptionExpiryTimestamp(subscription) {
+  if (subscription.current_period_end) {
+    return admin.firestore.Timestamp.fromMillis(
+      subscription.current_period_end * 1000
+    );
+  }
+
+  if (subscription.cancel_at) {
+    return admin.firestore.Timestamp.fromMillis(subscription.cancel_at * 1000);
+  }
+
+  if (subscription.ended_at) {
+    return admin.firestore.Timestamp.fromMillis(subscription.ended_at * 1000);
+  }
+
+  return null;
+}
+
+function getSubscriptionFirestoreStatus(subscription) {
+  if (
+    subscription.cancel_at_period_end === true &&
+    (subscription.status === "active" || subscription.status === "trialing")
+  ) {
+    return "cancelling";
+  }
+
+  return subscription.status || "unknown";
+}
+
+async function findUserByStripeSubscriptionId(subscriptionId) {
+  const snapshot = await admin
+    .firestore()
+    .collection("users")
+    .where("stripeSubscriptionId", "==", subscriptionId)
+    .limit(1)
+    .get();
+
+  if (snapshot.empty) {
+    return null;
+  }
+
+  return snapshot.docs[0];
+}
+
+async function updateUserFromStripeSubscription(subscription) {
+  const userDoc = await findUserByStripeSubscriptionId(subscription.id);
+
+  if (!userDoc) {
+    console.log(`No matching user found for subscription ${subscription.id}`);
+    return;
+  }
+
+  const priceId = subscription.items?.data?.[0]?.price?.id || "";
+  const status = getSubscriptionFirestoreStatus(subscription);
+  const expiresAt = getSubscriptionExpiryTimestamp(subscription);
+
+  const hasSubscription =
+    status === "active" ||
+    status === "trialing" ||
+    status === "cancelling" ||
+    status === "past_due";
+
+  await userDoc.ref.set(
+    {
+      hasSubscription,
+      subscriptionStatus: status,
+      subscriptionPlan: getPlanFromPriceId(priceId),
+      subscriptionBillingType: "subscription",
+      subscriptionExpiresAt: expiresAt,
+      subscriptionCancelAtPeriodEnd:
+        subscription.cancel_at_period_end === true,
+      subscriptionCancelledAt: subscription.cancel_at_period_end
+        ? admin.firestore.FieldValue.serverTimestamp()
+        : null,
+      stripeCustomerId:
+        typeof subscription.customer === "string"
+          ? subscription.customer
+          : subscription.customer?.id || "",
+      stripeSubscriptionId: subscription.id,
+      stripePriceId: priceId,
+      subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
+    },
+    { merge: true }
+  );
+
+  console.log(`Subscription updated for user ${userDoc.id}`);
 }
 
 exports.createCheckoutSession = onRequest(
@@ -249,6 +338,103 @@ exports.createCheckoutSession = onRequest(
   }
 );
 
+exports.cancelSubscription = onRequest(
+  {
+    region: "europe-west1",
+    cors: true,
+    secrets: [stripeSecret],
+    maxInstances: 10
+  },
+  async (req, res) => {
+    res.set("Access-Control-Allow-Origin", "https://sangatworks.co.uk");
+    res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+      return res.status(204).send("");
+    }
+
+    try {
+      if (req.method !== "POST") {
+        return res.status(405).json({ error: "Method not allowed" });
+      }
+
+      const body =
+        typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+
+      const { uid } = body;
+
+      if (!uid) {
+        return res.status(400).json({
+          error: "Missing uid"
+        });
+      }
+
+      const userRef = admin.firestore().collection("users").doc(uid);
+      const userSnap = await userRef.get();
+
+      if (!userSnap.exists) {
+        return res.status(404).json({
+          error: "User profile not found"
+        });
+      }
+
+      const userData = userSnap.data();
+
+      if (userData.subscriptionBillingType !== "subscription") {
+        return res.status(400).json({
+          error: "Only rolling subscriptions can be cancelled here"
+        });
+      }
+
+      if (!userData.stripeSubscriptionId) {
+        return res.status(400).json({
+          error: "No Stripe subscription found for this user"
+        });
+      }
+
+      if (userData.subscriptionCancelAtPeriodEnd === true) {
+        return res.status(200).json({
+          success: true,
+          message: "Subscription is already set to cancel at period end"
+        });
+      }
+
+      const stripe = Stripe(stripeSecret.value());
+
+      const subscription = await stripe.subscriptions.update(
+        userData.stripeSubscriptionId,
+        {
+          cancel_at_period_end: true
+        }
+      );
+
+      const expiresAt = getSubscriptionExpiryTimestamp(subscription);
+
+      await userRef.set(
+        {
+          subscriptionStatus: "cancelling",
+          subscriptionCancelAtPeriodEnd: true,
+          subscriptionCancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+          subscriptionExpiresAt: expiresAt,
+          subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
+        },
+        { merge: true }
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Subscription will cancel at the end of the current billing period"
+      });
+    } catch (error) {
+      console.error("Cancel subscription error:", error);
+      return res.status(500).json({
+        error: error.message || "Failed to cancel subscription"
+      });
+    }
+  }
+);
+
 exports.stripeWebhook = onRequest(
   {
     region: "europe-west1",
@@ -324,6 +510,7 @@ exports.stripeWebhook = onRequest(
         let stripeSubscriptionId = "";
         let stripeCustomerId = session.customer || "";
         let subscriptionStatus = "active";
+        let subscriptionCancelAtPeriodEnd = false;
 
         if (billingType === "subscription") {
           const subscription = await stripe.subscriptions.retrieve(
@@ -333,12 +520,11 @@ exports.stripeWebhook = onRequest(
           priceId = subscription.items.data[0]?.price?.id || priceId;
           stripeSubscriptionId = session.subscription || "";
           stripeCustomerId = session.customer || "";
+          subscriptionStatus = getSubscriptionFirestoreStatus(subscription);
+          subscriptionCancelAtPeriodEnd =
+            subscription.cancel_at_period_end === true;
 
-          expiresAt = subscription.current_period_end
-            ? admin.firestore.Timestamp.fromMillis(
-                subscription.current_period_end * 1000
-              )
-            : null;
+          expiresAt = getSubscriptionExpiryTimestamp(subscription);
         }
 
         if (billingType === "oneoff") {
@@ -356,6 +542,8 @@ exports.stripeWebhook = onRequest(
             subscriptionPlan: plan,
             subscriptionBillingType: billingType,
             subscriptionExpiresAt: expiresAt,
+            subscriptionCancelAtPeriodEnd,
+            subscriptionCancelledAt: null,
             stripeCustomerId,
             stripeSubscriptionId,
             stripePriceId: priceId,
@@ -371,34 +559,75 @@ exports.stripeWebhook = onRequest(
         );
       }
 
+      if (event.type === "customer.subscription.updated") {
+        const subscription = event.data.object;
+
+        await updateUserFromStripeSubscription(subscription);
+      }
+
       if (event.type === "customer.subscription.deleted") {
         const subscription = event.data.object;
 
-        const snapshot = await admin
-          .firestore()
-          .collection("users")
-          .where("stripeSubscriptionId", "==", subscription.id)
-          .limit(1)
-          .get();
+        const userDoc = await findUserByStripeSubscriptionId(subscription.id);
 
-        if (!snapshot.empty) {
-          const userDoc = snapshot.docs[0];
+        if (!userDoc) {
+          console.log(
+            `No matching user found for deleted subscription ${subscription.id}`
+          );
+        } else {
+          const endedAt = subscription.ended_at
+            ? admin.firestore.Timestamp.fromMillis(subscription.ended_at * 1000)
+            : admin.firestore.FieldValue.serverTimestamp();
 
           await userDoc.ref.set(
             {
               hasSubscription: false,
               subscriptionStatus: "inactive",
+              subscriptionCancelAtPeriodEnd: false,
+              subscriptionEndedAt: endedAt,
               subscriptionUpdatedAt:
-                admin.firestore.FieldValue.serverTimestamp()
+                admin.firestore.FieldValue.serverTimestamp(),
+              stripeSubscriptionId: "",
+              stripePriceId: ""
             },
             { merge: true }
           );
 
-          console.log(`Subscription cancelled for user ${userDoc.id}`);
+          console.log(`Subscription deleted for user ${userDoc.id}`);
+        }
+      }
+
+      if (event.type === "invoice.payment_failed") {
+        const invoice = event.data.object;
+        const subscriptionId =
+          typeof invoice.subscription === "string"
+            ? invoice.subscription
+            : invoice.subscription?.id || "";
+
+        if (!subscriptionId) {
+          console.log("Payment failed invoice has no subscription ID");
         } else {
-          console.log(
-            `No matching user found for cancelled subscription ${subscription.id}`
-          );
+          const userDoc = await findUserByStripeSubscriptionId(subscriptionId);
+
+          if (!userDoc) {
+            console.log(
+              `No matching user found for failed payment subscription ${subscriptionId}`
+            );
+          } else {
+            await userDoc.ref.set(
+              {
+                hasSubscription: true,
+                subscriptionStatus: "past_due",
+                subscriptionPaymentFailedAt:
+                  admin.firestore.FieldValue.serverTimestamp(),
+                subscriptionUpdatedAt:
+                  admin.firestore.FieldValue.serverTimestamp()
+              },
+              { merge: true }
+            );
+
+            console.log(`Payment failed marked for user ${userDoc.id}`);
+          }
         }
       }
 
