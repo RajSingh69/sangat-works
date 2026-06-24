@@ -58,8 +58,36 @@ function getReviewCount(profile) {
 function renderStars(rating) {
   if (!rating) return "☆☆☆☆☆";
 
-  const rounded = Math.round(rating);
+  const rounded = Math.max(0, Math.min(5, Math.round(rating)));
   return "★★★★★".slice(0, rounded) + "☆☆☆☆☆".slice(0, 5 - rounded);
+}
+
+function timestampToDate(value) {
+  if (!value) return null;
+
+  if (value.toDate) {
+    return value.toDate();
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date;
+}
+
+function isFeaturedActive(profile) {
+  if (!profile) return false;
+  if (profile.featuredListing !== true) return false;
+  if (profile.featuredListingStatus !== "active") return false;
+
+  const expiryDate = timestampToDate(profile.featuredExpiresAt);
+
+  if (!expiryDate) return false;
+
+  return expiryDate > new Date();
 }
 
 function renderDirectoryBadges(profile) {
@@ -99,7 +127,7 @@ function renderDirectoryProfile(profile) {
     .map(tag => `<span class="tag">${tag}</span>`)
     .join("");
 
-  const featuredBadge = profile.featuredListing
+  const featuredBadge = isFeaturedActive(profile)
     ? `<span class="trust-badge featured-badge">★ Featured</span>`
     : "";
 
@@ -242,7 +270,7 @@ function filterProfiles() {
     const matchesLocation = !selectedLocation || profileLocation === selectedLocation;
     const matchesGurdwara = !selectedGurdwara || profileGurdwara === selectedGurdwara;
     const matchesService = !selectedService || profileService === selectedService;
-    const matchesFeatured = !featuredOnly || profile.featuredListing === true;
+    const matchesFeatured = !featuredOnly || isFeaturedActive(profile);
 
     return (
       matchesSearch &&
@@ -256,6 +284,9 @@ function filterProfiles() {
   const sortValue = sortBy?.value || "featured";
 
   filteredProfiles.sort((a, b) => {
+    const aFeatured = isFeaturedActive(a);
+    const bFeatured = isFeaturedActive(b);
+
     if (sortValue === "rating") {
       return getRating(b) - getRating(a);
     }
@@ -271,8 +302,7 @@ function filterProfiles() {
       return bTime - aTime;
     }
 
-    return (b.featuredListing === true) -
-      (a.featuredListing === true);
+    return Number(bFeatured) - Number(aFeatured);
   });
 
   if (directoryCount) {
