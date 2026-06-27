@@ -14,7 +14,56 @@ import {
   hasActiveSubscription
 } from "./subscription-guard.js";
 
+import {
+  canAccessDeveloperFeatures,
+  getUserRole,
+  isAdminUser,
+  isSuperAdmin
+} from "./roles.js";
+
 const accountArea = document.getElementById("accountArea");
+
+function renderMembershipBadge(userData) {
+  if (!hasActiveSubscription(userData)) {
+    return `<span class="account-email">Free</span>`;
+  }
+
+  if (isSuperAdmin(userData)) {
+    return `<span class="account-email">Lifetime Member</span>`;
+  }
+
+  if (userData.isFoundingMember === true) {
+    return `<span class="account-email">Founding #${userData.memberNumber || ""}</span>`;
+  }
+
+  if (userData.subscriptionPlan === "yearly") {
+    return `<span class="account-email">Yearly Member</span>`;
+  }
+
+  if (userData.subscriptionPlan === "monthly") {
+    return `<span class="account-email">Monthly Member</span>`;
+  }
+
+  return `<span class="account-email">Member</span>`;
+}
+
+function renderRoleBadge(userData) {
+  const role = getUserRole(userData);
+
+  if (canAccessDeveloperFeatures(userData)) {
+    return `<span class="account-email">Super Admin</span>`;
+  }
+
+  if (role === "admin") {
+    return `<span class="account-email">Administrator</span>`;
+  }
+
+  if (role === "moderator") {
+    return `<span class="account-email">Moderator</span>`;
+  }
+
+  return "";
+}
 
 if (accountArea) {
   onAuthStateChanged(auth, async (user) => {
@@ -28,6 +77,11 @@ if (accountArea) {
     let adminButton = "";
     let skillsNetworkButton = "";
     let youngProfessionalsButton = "";
+    let projectsButton = `
+      <a href="projects.html" class="btn-small">
+        Projects
+      </a>
+    `;
     let membershipBadge = `<span class="account-email">Free</span>`;
     let roleBadge = "";
 
@@ -38,33 +92,10 @@ if (accountArea) {
       if (userSnap.exists()) {
         const userData = userSnap.data();
 
-        if (hasActiveSubscription(userData)) {
-          if (userData.isFoundingMember === true) {
-            membershipBadge = `
-              <span class="account-email">
-                👑 Founding #${userData.memberNumber || ""}
-              </span>
-            `;
-          } else if (userData.subscriptionPlan === "yearly") {
-            membershipBadge = `
-              <span class="account-email">
-                ⭐ Yearly Member
-              </span>
-            `;
-          } else if (userData.subscriptionPlan === "monthly") {
-            membershipBadge = `
-              <span class="account-email">
-                ⭐ Monthly Member
-              </span>
-            `;
-          } else {
-            membershipBadge = `
-              <span class="account-email">
-                ⭐ Member
-              </span>
-            `;
-          }
+        membershipBadge = renderMembershipBadge(userData);
+        roleBadge = renderRoleBadge(userData);
 
+        if (hasActiveSubscription(userData)) {
           skillsNetworkButton = `
             <a href="skills-network.html" class="btn-small">
               Skills Network
@@ -78,29 +109,12 @@ if (accountArea) {
           `;
         }
 
-        if (
-          userData.accountType === "admin" ||
-          userData.isAdmin === true
-        ) {
+        if (isAdminUser(userData)) {
           adminButton = `
             <a href="admin.html" class="btn-small admin-btn">
               Admin
             </a>
           `;
-
-          if (user.email === "rajanbhamra02@gmail.com") {
-            roleBadge = `
-              <span class="account-email">
-                👨‍💻 Platform Developer
-              </span>
-            `;
-          } else {
-            roleBadge = `
-              <span class="account-email">
-                🛡️ Administrator
-              </span>
-            `;
-          }
         }
       }
     } catch (error) {
@@ -117,6 +131,8 @@ if (accountArea) {
       ${skillsNetworkButton}
 
       ${youngProfessionalsButton}
+
+      ${projectsButton}
 
       ${adminButton}
 

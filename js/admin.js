@@ -6,6 +6,7 @@ import {
 
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -13,6 +14,13 @@ import {
   query,
   orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+import {
+  getUserRole,
+  isAdminUser,
+  isInternalAccount,
+  isSuperAdmin
+} from "./roles.js";
 
 const adminStatus = document.getElementById("adminStatus");
 const adminUsers = document.getElementById("adminUsers");
@@ -24,6 +32,8 @@ const statPendingFaqs = document.getElementById("statPendingFaqs");
 
 const adminQuestions = document.getElementById("adminQuestions");
 const adminFeatures = document.getElementById("adminFeatures");
+
+let currentAdminData = null;
 
 function getDateFromTimestamp(value) {
   if (!value) return null;
@@ -65,6 +75,44 @@ function badgeCheckbox(user, field, label) {
 
 function renderUserRow(user) {
   const name = user.businessName || user.fullName || user.email || "Unnamed user";
+  const role = getUserRole(user);
+  const currentUserIsSuperAdmin = isSuperAdmin(currentAdminData);
+  const canDelete = currentUserIsSuperAdmin && !isSuperAdmin(user);
+  const permanentInternalAccount = isInternalAccount(user) && isSuperAdmin(user);
+  const roleControls = currentUserIsSuperAdmin && !permanentInternalAccount
+    ? `
+      <select class="role-select" data-uid="${user.uid}">
+        ${["standard", "member", "moderator", "admin", "super_admin"].map((option) => `
+          <option value="${option}" ${role === option ? "selected" : ""}>${option}</option>
+        `).join("")}
+      </select>
+
+      <button
+        class="btn-small save-role-btn"
+        data-uid="${user.uid}"
+      >
+        Save Role
+      </button>
+    `
+    : "";
+  const memberNumberControls = permanentInternalAccount
+    ? `<p><strong>Permanent internal account:</strong> Super Admin role is locked.</p>`
+    : `
+      <input
+        type="number"
+        class="member-number-input"
+        data-uid="${user.uid}"
+        value="${user.memberNumber || ""}"
+        placeholder="Member number"
+      />
+
+      <button
+        class="btn-small save-member-number-btn"
+        data-uid="${user.uid}"
+      >
+        Save Member Number
+      </button>
+    `;
 
   return `
     <details class="admin-user-card">
@@ -78,6 +126,7 @@ function renderUserRow(user) {
         <p><strong>Email:</strong> ${user.email || "Not provided"}</p>
         <p><strong>Service:</strong> ${user.serviceTitle || "Not provided"}</p>
         <p><strong>Town:</strong> ${user.town || "Not provided"}</p>
+        <p><strong>Role:</strong> ${role}</p>
         <p><strong>Account:</strong> ${user.accountType || "member"}</p>
 
         <p><strong>Membership:</strong> ${user.membershipPlan || "not set"}</p>
@@ -85,20 +134,8 @@ function renderUserRow(user) {
         <p><strong>Member Number:</strong> ${user.memberNumber || "not assigned"}</p>
 
         <div class="admin-member-controls">
-          <input 
-            type="number" 
-            class="member-number-input" 
-            data-uid="${user.uid}" 
-            value="${user.memberNumber || ""}" 
-            placeholder="Member number"
-          />
-
-          <button 
-            class="btn-small save-member-number-btn" 
-            data-uid="${user.uid}"
-          >
-            Save Member Number
-          </button>
+          ${roleControls}
+          ${memberNumberControls}
         </div>
 
         <div class="admin-badge-controls">
@@ -111,6 +148,11 @@ function renderUserRow(user) {
 
         <div class="card-links">
           <a href="view.html?id=${user.uid}" target="_blank">View Profile</a>
+          ${
+            canDelete
+              ? `<button type="button" class="btn-small project-withdraw-btn delete-profile-btn" data-uid="${user.uid}">Delete Profile</button>`
+              : ""
+          }
         </div>
       </div>
     </details>
@@ -180,7 +222,9 @@ async function loadUsers() {
     return createdAt && createdAt >= sevenDaysAgo;
   }).length;
 
-  const foundingMembers = users.filter(user => user.isFoundingMember === true).length;
+  const foundingMembers = users.filter(user => {
+    return user.isFoundingMember === true && !isInternalAccount(user);
+  }).length;
 
   statTotalUsers.textContent = users.length;
   statNewUsers.textContent = newUsers;
@@ -195,11 +239,62 @@ async function loadUsers() {
 }
 
 function setupUserAdminActions() {
+  document.querySelectorAll(".save-role-btn").forEach(button => {
+    button.addEventListener("click", async (e) => {
+      if (!isSuperAdmin(currentAdminData)) {
+        adminStatus.textContent = "Only Super Admins can change roles.";
+        return;
+      }
+
+      const uid = e.target.dataset.uid;
+      const input = document.querySelector(`.role-select[data-uid="${uid}"]`);
+      const role = input.value;
+      const targetSnap = await getDoc(doc(db, "users", uid));
+
+      if (targetSnap.exists() && isInternalAccount(targetSnap.data()) && isSuperAdmin(targetSnap.data())) {
+        adminStatus.textContent = "Permanent Super Admin roles cannot be changed here.";
+        return;
+      }
+
+      await updateDoc(doc(db, "users", uid), {
+        role,
+        internalAccount: role === "super_admin"
+      });
+
+      adminStatus.textContent = `Role updated to ${role}.`;
+    });
+  });
+
+  document.querySelectorAll(".delete-profile-btn").forEach(button => {
+    button.addEventListener("click", async (e) => {
+      if (!isSuperAdmin(currentAdminData)) {
+        adminStatus.textContent = "Only Super Admins can delete profiles.";
+        return;
+      }
+
+      const uid = e.target.dataset.uid;
+
+      if (!window.confirm("Delete this public profile document? This does not delete the Firebase Auth account.")) {
+        return;
+      }
+
+      await deleteDoc(doc(db, "users", uid));
+      adminStatus.textContent = "Profile deleted.";
+      await loadUsers();
+    });
+  });
+
   document.querySelectorAll(".save-member-number-btn").forEach(button => {
     button.addEventListener("click", async (e) => {
       const uid = e.target.dataset.uid;
       const input = document.querySelector(`.member-number-input[data-uid="${uid}"]`);
       const memberNumber = Number(input.value);
+      const targetSnap = await getDoc(doc(db, "users", uid));
+
+      if (targetSnap.exists() && isInternalAccount(targetSnap.data())) {
+        adminStatus.textContent = "Internal accounts are excluded from member numbering.";
+        return;
+      }
 
       if (!memberNumber) {
         adminStatus.textContent = "Please enter a valid member number.";
@@ -209,6 +304,8 @@ function setupUserAdminActions() {
       await updateDoc(doc(db, "users", uid), {
         memberNumber,
         isFoundingMember: memberNumber <= 30,
+        internalAccount: false,
+        role: memberNumber <= 30 ? "member" : "standard",
         membershipPlan: memberNumber <= 30 ? "founding-free-year" : "paid-required",
         membershipStatus: memberNumber <= 30 ? "active" : "pending-payment"
       });
@@ -314,8 +411,9 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   const adminData = adminSnap.data();
+  currentAdminData = adminData;
 
-  if (adminData.accountType !== "admin" && adminData.isAdmin !== true) {
+  if (!isAdminUser(adminData)) {
     adminStatus.textContent = "Access denied. Admins only.";
     return;
   }

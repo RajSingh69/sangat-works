@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Projects — Sangat Works</title>
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo">Sangat Works</div>
+  <nav>
+    <div id="accountArea"></div>
+  </nav>
+</header>
+
+<main class="projects-page">
+
+  <section class="hero small-hero">
+    <p class="eyebrow">Projects</p>
+
+    <h1>Build trusted project teams.</h1>
+
+    <p class="hero-text">
+      Homeowners can post renovation and construction projects for free.
+      Sangat Works tradespeople can apply, collaborate and build trusted teams.
+    </p>
+
+    <div class="hero-actions">
+      <a href="#createProjectSection" class="btn-primary">Post a Project</a>
+      <a href="#openProjectsSection" class="btn-secondary">Browse Projects</a>
+      <a href="#myProjectsSection" class="btn-secondary">My Projects</a>
+    </div>
+  </section>
+
+  <section class="info-section projects-status-box">
+    <p class="eyebrow">Access</p>
+    <h2>Projects Dashboard</h2>
+    <p id="projectsAuthMessage">Checking your Sangat Works account...</p>
+
+    <div id="projectsLoggedOutArea" class="hidden">
+      <div class="project-alert">
+        <strong>Login required</strong>
+        <p>Please login or create an account to use Sangat Works Projects.</p>
+        <a href="login.html" class="btn-primary">Login / Sign Up</a>
+      </div>
+    </div>
+
+    <div id="projectsMemberArea" class="hidden">
+      <div class="project-member-badge">
+        <span>Current Access</span>
+        <strong id="projectsUserBadge">Member</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="info-section projects-intro-grid">
+    <div class="project-role-card homeowner-role">
+      <span class="project-role-icon">🏠</span>
+      <h2>For Homeowners</h2>
+      <p>Create projects, review applicants, build your team and unlock the workspace.</p>
+      <ul>
+        <li>Post projects for free</li>
+        <li>Accept or reject applicants</li>
+        <li>Build your trusted project team</li>
+        <li>Unlock Project Workspace later for £40</li>
+      </ul>
+    </div>
+
+    <div class="project-role-card trade-role">
+      <span class="project-role-icon">🔨</span>
+      <h2>For Tradespeople</h2>
+      <p>Browse projects, apply, join teams and collaborate inside unlocked workspaces.</p>
+      <ul>
+        <li>Browse open homeowner projects</li>
+        <li>Apply to relevant jobs</li>
+        <li>Join accepted project teams</li>
+        <li>Buddy System foundation included</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="createProjectSection" class="info-section">
+    <p class="eyebrow">Homeowner Flow</p>
+    <h2>Create a Project</h2>
+    <p>Add the basic project details. Tradespeople can then view and apply.</p>
+
+    <form id="createProjectForm" class="project-form">
+
+      <label>
+        Project Title
+        <input type="text" id="projectTitle" placeholder="e.g. Kitchen renovation in Birmingham" required />
+      </label>
+
+      <label>
+        Project Type
+        <select id="projectType" required>
+          <option value="">Select project type</option>
+          <option value="Full Renovation">Full Renovation</option>
+          <option value="Extension">Extension</option>
+          <option value="Loft Conversion">Loft Conversion</option>
+          <option value="Kitchen">Kitchen</option>
+          <option value="Bathroom">Bathroom</option>
+          <option value="Garage Conversion">Garage Conversion</option>
+          <option value="Landscaping">Landscaping</option>
+          <option value="Driveway">Driveway</option>
+          <option value="Roofing">Roofing</option>
+          <option value="Electrical">Electrical</option>
+          <option value="Plumbing">Plumbing</option>
+          <option value="Painting & Decorating">Painting & Decorating</option>
+          <option value="Flooring">Flooring</option>
+          <option value="Commercial">Commercial</option>
+          <option value="Other">Other</option>
+        </select>
+      </label>
+
+      <label>
+        Project Description
+        <textarea id="projectDescription" placeholder="Tell tradespeople what needs doing." required></textarea>
+      </label>
+
+      <div class="two-col">
+        <label>
+          Location
+          <input type="text" id="projectLocation" placeholder="e.g. Coventry, West Midlands" required />
+        </label>
+
+        <label>
+          Budget
+          <input type="text" id="projectBudget" placeholder="e.g. £5,000 - £10,000" />
+        </label>
+      </div>
+
+      <div class="two-col">
+        <label>
+          Estimated Start
+          <input type="date" id="projectStartDate" />
+        </label>
+
+        <label>
+          Estimated Finish
+          <input type="date" id="projectEndDate" />
+        </label>
+      </div>
+
+      <div class="project-trades-box">
+        <h3>Required Trades</h3>
+        <p>Select all trades needed for this project.</p>
+
+        <div class="trade-chip-grid">
+          <label><input type="checkbox" value="Builder" /> Builder</label>
+          <label><input type="checkbox" value="Electrician" /> Electrician</label>
+          <label><input type="checkbox" value="Plumber" /> Plumber</label>
+          <label><input type="checkbox" value="Carpenter" /> Carpenter</label>
+          <label><input type="checkbox" value="Roofer" /> Roofer</label>
+          <label><input type="checkbox" value="Plasterer" /> Plasterer</label>
+          <label><input type="checkbox" value="Tiler" /> Tiler</label>
+          <label><input type="checkbox" value="Decorator" /> Decorator</label>
+          <label><input type="checkbox" value="Flooring Specialist" /> Flooring Specialist</label>
+          <label><input type="checkbox" value="Kitchen Fitter" /> Kitchen Fitter</label>
+          <label><input type="checkbox" value="Bathroom Fitter" /> Bathroom Fitter</label>
+          <label><input type="checkbox" value="Landscaper" /> Landscaper</label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary full">Publish Project</button>
+      <p id="projectFormMessage" class="message"></p>
+    </form>
+  </section>
+
+  <section id="myProjectsSection" class="info-section">
+    <p class="eyebrow">Homeowner Dashboard</p>
+    <h2>My Projects</h2>
+    <p>Review applicants, accept or reject tradespeople, and build your project team.</p>
+
+    <div id="myProjectsList" class="projects-grid">
+      <div class="empty-state">Loading your projects...</div>
+    </div>
+  </section>
+
+  <section id="openProjectsSection" class="info-section">
+    <p class="eyebrow">Tradesperson Flow</p>
+    <h2>Open Projects</h2>
+    <p>These are live homeowner projects currently open for applications.</p>
+
+    <div id="tradesJobAccessBox" class="project-access-card">
+      <strong id="openJobsCountText">There are currently 0 open project jobs available.</strong>
+      <p id="tradesJobAccessStatusText">Checking your job access.</p>
+      <button type="button" class="btn-primary" id="tradesJobAccessCheckoutBtn">
+        Buy 30-day Job Access for &pound;14.99
+      </button>
+      <p id="tradesJobAccessMessage" class="message"></p>
+    </div>
+
+    <div id="openProjectsList" class="projects-grid">
+      <div class="empty-state">Loading open projects...</div>
+    </div>
+  </section>
+
+  <section id="myApplicationsSection" class="info-section">
+    <p class="eyebrow">Tradesperson Dashboard</p>
+    <h2>My Applications</h2>
+    <p>Projects you have applied to will appear here.</p>
+
+    <div id="myApplicationsList" class="projects-grid">
+      <div class="empty-state">Loading your applications...</div>
+    </div>
+  </section>
+
+  <section id="myTeamsSection" class="info-section">
+    <p class="eyebrow">Project Teams</p>
+    <h2>My Accepted Project Teams</h2>
+    <p>Accepted project team memberships will appear here.</p>
+
+    <div id="myTeamsList" class="projects-grid">
+      <div class="empty-state">Loading your project teams...</div>
+    </div>
+  </section>
+
+  <section id="projectWorkspaceSection" class="info-section project-workspace-section">
+    <p class="eyebrow">Paid Software</p>
+    <h2>Project Workspace</h2>
+    <p>
+      Workspace rooms now open per project. Use the buttons in My Projects or My Accepted Project Teams
+      to enter a project workspace.
+    </p>
+
+    <div class="project-workspace-card">
+      <strong>Workspace Unlock</strong>
+      <p>Each project workspace is prepared for a one-off &pound;40 unlock. Stripe checkout is still a placeholder.</p>
+      <a href="#myProjectsSection" class="btn-primary">Choose a Project</a>
+    </div>
+  </section>
+  <section id="buddySystemSection" class="info-section">
+    <p class="eyebrow">Buddy System</p>
+    <h2>Trusted Trades Foundation</h2>
+    <p>
+      The Buddy System foundation is in place. Accepted project team members
+      can later become trusted trade connections.
+    </p>
+
+    <div class="feature-grid">
+      <div class="feature-card theme-green">
+        <h3>Trusted Connections</h3>
+        <p>Tradespeople will be able to invite people they have worked with before.</p>
+      </div>
+
+      <div class="feature-card theme-blue">
+        <h3>Team Reputation</h3>
+        <p>Teams can build stronger trust through repeated project collaboration.</p>
+      </div>
+
+      <div class="feature-card theme-purple">
+        <h3>Buddy Invites</h3>
+        <p>Buddy invitations will use the trustedTrades collection next.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>Sangat Works — built for community support.</p>
+</footer>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/projects.js"></script>
+
+</body>
+</html>

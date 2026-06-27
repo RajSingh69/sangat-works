@@ -15,6 +15,10 @@ import {
   Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+import {
+  isInternalAccount
+} from "./roles.js";
+
 const FOUNDING_MEMBER_LIMIT = 30;
 
 const showLogin = document.getElementById("showLogin");
@@ -37,7 +41,7 @@ async function getFoundingMemberCount() {
   usersSnap.forEach((docSnap) => {
     const user = docSnap.data();
 
-    if (user.isFoundingMember === true) {
+    if (user.isFoundingMember === true && !isInternalAccount(user)) {
       count++;
     }
   });
@@ -110,6 +114,8 @@ registerForm.addEventListener("submit", async (e) => {
       uid: userCredential.user.uid,
       fullName,
       email,
+      role: isFoundingMember ? "member" : "standard",
+      internalAccount: false,
 
       isFoundingMember,
       memberNumber,

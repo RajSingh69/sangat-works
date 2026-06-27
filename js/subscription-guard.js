@@ -11,6 +11,10 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+import {
+  isSuperAdmin
+} from "./roles.js";
+
 function getExpiryDate(userData) {
   if (!userData || !userData.subscriptionExpiresAt) {
     return null;
@@ -38,6 +42,10 @@ function isAllowedStatus(status) {
 
 export function hasActiveSubscription(userData) {
   if (!userData) return false;
+
+  if (isSuperAdmin(userData)) {
+    return true;
+  }
 
   const expiryDate = getExpiryDate(userData);
 

@@ -11,6 +11,10 @@ import {
   getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+import {
+  isAdminUser
+} from "./roles.js";
+
 const adminDashboardCard = document.getElementById("adminDashboardCard");
 
 const adminTotalUsers = document.getElementById("adminTotalUsers");
@@ -65,7 +69,7 @@ if (adminDashboardCard) {
 
     const userData = userSnap.data();
 
-    if (userData.accountType === "admin" || userData.isAdmin === true) {
+    if (isAdminUser(userData)) {
       adminDashboardCard.classList.remove("hidden");
       await loadAdminStats();
     }

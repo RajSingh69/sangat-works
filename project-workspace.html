@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Project Workspace - Sangat Works</title>
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo">Sangat Works</div>
+  <nav>
+    <div id="accountArea"></div>
+  </nav>
+</header>
+
+<main class="projects-page project-workspace-page">
+
+  <section class="hero small-hero">
+    <p class="eyebrow">Project Workspace</p>
+    <h1 id="workspaceProjectTitle">Loading workspace...</h1>
+    <p class="hero-text" id="workspaceProjectSummary">Checking your project access.</p>
+
+    <div class="hero-actions">
+      <a href="projects.html#myProjectsSection" class="btn-secondary">Back to Projects</a>
+    </div>
+  </section>
+
+  <section id="workspaceAccessBox" class="info-section project-workspace-section">
+    <p class="eyebrow">Access</p>
+    <h2 id="workspaceAccessTitle">Checking access</h2>
+    <p id="workspaceAccessMessage">Please wait while we load this project workspace.</p>
+  </section>
+
+  <section id="workspaceLockedBox" class="info-section project-workspace-locked hidden">
+    <p class="eyebrow">Locked</p>
+    <h2>Workspace Locked</h2>
+    <p id="workspaceLockedMessage">
+      This project workspace is prepared for a one-off &pound;40 unlock.
+      Stripe checkout is not connected yet.
+    </p>
+    <button type="button" class="btn-primary" id="workspaceCheckoutPlaceholderBtn">
+      Unlock Workspace for &pound;40
+    </button>
+    <p id="workspaceCheckoutMessage" class="message"></p>
+  </section>
+
+  <section id="workspaceShell" class="info-section workspace-shell hidden">
+    <div class="workspace-title-row">
+      <div>
+        <p class="eyebrow">Workspace</p>
+        <h2>Manage Project</h2>
+        <p id="workspaceRoleMessage">You have access to this workspace.</p>
+      </div>
+      <a href="projects.html#myProjectsSection" class="btn-secondary">Projects Dashboard</a>
+    </div>
+
+    <div class="workspace-overview-grid workspace-overview-grid-v2">
+      <div class="workspace-stat">
+        <strong id="dashboardStatusLabel">Open</strong>
+        <span>Status</span>
+      </div>
+      <div class="workspace-stat">
+        <strong id="workspaceProgressLabel">Planning</strong>
+        <span>Progress</span>
+      </div>
+      <div class="workspace-stat">
+        <strong id="dashboardBudgetLabel">Not set</strong>
+        <span>Budget</span>
+      </div>
+      <div class="workspace-stat">
+        <strong id="dashboardTeamCount">0</strong>
+        <span>Team</span>
+      </div>
+      <div class="workspace-stat">
+        <strong id="workspaceTaskCount">0</strong>
+        <span>Tasks</span>
+      </div>
+      <div class="workspace-stat">
+        <strong id="dashboardQuoteCount">0</strong>
+        <span>Quotes</span>
+      </div>
+      <div class="workspace-stat">
+        <strong id="dashboardQuoteTotal">&pound;0</strong>
+        <span>Quote Total</span>
+      </div>
+      <div class="workspace-stat">
+        <strong id="dashboardSpendTotal">&pound;0</strong>
+        <span>Spend</span>
+      </div>
+    </div>
+
+    <div class="workspace-dashboard-grid">
+      <div class="workspace-panel">
+        <h3>Project Summary</h3>
+        <div id="projectSummaryDetails" class="workspace-detail-list"></div>
+      </div>
+
+      <div class="workspace-panel">
+        <h3>Latest Activity</h3>
+        <div id="dashboardLatestActivity" class="workspace-list">
+          <div class="empty-state">No activity yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="workspace-progress-card">
+      <h3>Project Progress</h3>
+      <div class="two-col">
+        <label>
+          Project Stage
+          <select id="workspaceProgressSelect">
+            <option value="planning">Planning</option>
+            <option value="team_selected">Team Selected</option>
+            <option value="in_progress">In Progress</option>
+            <option value="snagging">Snagging</option>
+            <option value="completed">Completed</option>
+          </select>
+        </label>
+
+        <button type="button" class="btn-primary" id="saveWorkspaceProgressBtn">
+          Save Progress
+        </button>
+      </div>
+      <p id="workspaceProgressMessage" class="message"></p>
+    </div>
+
+    <div class="workspace-panel">
+      <div class="workspace-section-heading">
+        <div>
+          <p class="eyebrow">Tasks</p>
+          <h3>Task Board</h3>
+        </div>
+      </div>
+
+      <form id="workspaceTaskForm" class="workspace-mini-form workspace-inline-form">
+        <input type="text" id="workspaceTaskTitle" placeholder="Task title" required />
+        <input type="text" id="workspaceTaskAssignedTo" placeholder="Assigned to" />
+        <input type="date" id="workspaceTaskDueDate" />
+        <button type="submit" class="btn-primary">Add Task</button>
+      </form>
+      <p id="workspaceTaskMessage" class="message"></p>
+
+      <div id="workspaceTaskBoard" class="workspace-board">
+        <div class="workspace-board-column">
+          <h4>To Do</h4>
+          <div id="taskColumnTodo" class="workspace-list"></div>
+        </div>
+        <div class="workspace-board-column">
+          <h4>In Progress</h4>
+          <div id="taskColumnInProgress" class="workspace-list"></div>
+        </div>
+        <div class="workspace-board-column">
+          <h4>Done</h4>
+          <div id="taskColumnDone" class="workspace-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="workspace-dashboard-grid">
+      <div class="workspace-panel">
+        <h3>Milestones</h3>
+        <form id="workspaceMilestoneForm" class="workspace-mini-form">
+          <input type="text" id="workspaceMilestoneTitle" placeholder="Milestone title" required />
+          <div class="two-col">
+            <input type="date" id="workspaceMilestoneDate" required />
+            <select id="workspaceMilestoneStatus">
+              <option value="upcoming">Upcoming</option>
+              <option value="in_progress">In Progress</option>
+              <option value="complete">Complete</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-primary full">Add Milestone</button>
+          <p id="workspaceMilestoneMessage" class="message"></p>
+        </form>
+        <div id="workspaceMilestonesList" class="workspace-list"></div>
+      </div>
+
+      <div class="workspace-panel">
+        <h3>Timeline</h3>
+        <div id="workspaceTimelineList" class="workspace-list"></div>
+      </div>
+    </div>
+
+    <div class="workspace-dashboard-grid">
+      <div class="workspace-panel">
+        <h3>Team</h3>
+        <div id="workspaceTeamList" class="workspace-list"></div>
+      </div>
+
+      <div class="workspace-panel">
+        <h3>Messages</h3>
+        <form id="workspaceMessageForm" class="workspace-mini-form">
+          <textarea id="workspaceMessageText" placeholder="Write a project message..." required></textarea>
+          <button type="submit" class="btn-primary full">Send Message</button>
+          <p id="workspaceMessageFormMessage" class="message"></p>
+        </form>
+        <div id="workspaceMessagesList" class="workspace-list"></div>
+      </div>
+    </div>
+
+    <div class="workspace-dashboard-grid">
+      <div class="workspace-panel">
+        <h3>Documents</h3>
+        <form id="workspaceDocumentForm" class="workspace-mini-form">
+          <input type="text" id="workspaceDocumentTitle" placeholder="Document title" required />
+          <div class="two-col">
+            <input type="text" id="workspaceDocumentType" placeholder="Type, e.g. Contract" />
+            <input type="url" id="workspaceDocumentUrl" placeholder="https://..." required />
+          </div>
+          <button type="submit" class="btn-primary full">Add Document Link</button>
+          <p id="workspaceDocumentMessage" class="message"></p>
+        </form>
+        <div id="workspaceDocumentsList" class="workspace-list"></div>
+      </div>
+
+      <div class="workspace-panel">
+        <h3>Photos</h3>
+        <form id="workspacePhotoForm" class="workspace-mini-form">
+          <input type="text" id="workspacePhotoTitle" placeholder="Photo title" required />
+          <input type="url" id="workspacePhotoUrl" placeholder="Image URL" required />
+          <textarea id="workspacePhotoCaption" placeholder="Caption"></textarea>
+          <button type="submit" class="btn-primary full">Add Photo</button>
+          <p id="workspacePhotoMessage" class="message"></p>
+        </form>
+        <div id="workspacePhotosList" class="workspace-list"></div>
+      </div>
+    </div>
+
+    <div class="workspace-dashboard-grid">
+      <div class="workspace-panel">
+        <h3>Quotes</h3>
+        <form id="workspaceQuoteForm" class="workspace-mini-form">
+          <input type="text" id="workspaceQuoteSupplier" placeholder="Supplier or tradesperson" required />
+          <div class="two-col">
+            <input type="number" id="workspaceQuoteAmount" placeholder="Amount" min="0" step="0.01" required />
+            <select id="workspaceQuoteStatus">
+              <option value="received">Received</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="paid">Paid</option>
+            </select>
+          </div>
+          <textarea id="workspaceQuoteNotes" placeholder="Quote notes"></textarea>
+          <button type="submit" class="btn-primary full">Add Quote</button>
+          <p id="workspaceQuoteMessage" class="message"></p>
+        </form>
+        <div id="workspaceQuotesList" class="workspace-list"></div>
+      </div>
+
+      <div class="workspace-panel">
+        <h3>Budget</h3>
+        <div id="workspaceBudgetSummary" class="workspace-detail-list"></div>
+        <form id="workspaceBudgetForm" class="workspace-mini-form">
+          <input type="text" id="workspaceBudgetTitle" placeholder="Spend item" required />
+          <div class="two-col">
+            <input type="number" id="workspaceBudgetAmount" placeholder="Amount" min="0" step="0.01" required />
+            <input type="date" id="workspaceBudgetDate" />
+          </div>
+          <button type="submit" class="btn-primary full">Add Spend Item</button>
+          <p id="workspaceBudgetMessage" class="message"></p>
+        </form>
+        <div id="workspaceBudgetItemsList" class="workspace-list"></div>
+      </div>
+    </div>
+
+    <div class="workspace-panel">
+      <h3>Notes</h3>
+      <form id="workspaceNoteForm" class="workspace-mini-form">
+        <textarea id="workspaceNoteText" placeholder="Add a project note..." required></textarea>
+        <button type="submit" class="btn-primary full">Add Note</button>
+        <p id="workspaceNoteMessage" class="message"></p>
+      </form>
+      <div id="workspaceNotesList" class="workspace-list"></div>
+    </div>
+
+    <div class="workspace-panel">
+      <h3>Activity Feed</h3>
+      <div id="workspaceActivityList" class="workspace-list"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>Sangat Works - built for community support.</p>
+</footer>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/project-workspace.js"></script>
+
+</body>
+</html>
