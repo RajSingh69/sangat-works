@@ -16,7 +16,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 import {
-  isInternalAccount
+  isExcludedFromFoundingMemberCount
 } from "./roles.js";
 
 const FOUNDING_MEMBER_LIMIT = 30;
@@ -41,7 +41,10 @@ async function getFoundingMemberCount() {
   usersSnap.forEach((docSnap) => {
     const user = docSnap.data();
 
-    if (user.isFoundingMember === true && !isInternalAccount(user)) {
+    if (
+      user.isFoundingMember === true &&
+      !isExcludedFromFoundingMemberCount(user)
+    ) {
       count++;
     }
   });

@@ -52,3 +52,10 @@ export function canAccessAnyWorkspace(userData) {
 export function isInternalAccount(userData) {
   return userData?.internalAccount === true || isSuperAdmin(userData);
 }
+
+export function isExcludedFromFoundingMemberCount(userData) {
+  return (
+    userData?.excludeFromFoundingMemberCount === true ||
+    isInternalAccount(userData)
+  );
+}

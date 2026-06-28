@@ -39,6 +39,12 @@ const projectsAuthMessage = document.getElementById("projectsAuthMessage");
 const projectsMemberArea = document.getElementById("projectsMemberArea");
 const projectsLoggedOutArea = document.getElementById("projectsLoggedOutArea");
 const projectsUserBadge = document.getElementById("projectsUserBadge");
+const projectRoleChoiceSection = document.getElementById("projectRoleChoiceSection");
+const projectRoleSummarySection = document.getElementById("projectRoleSummarySection");
+const projectRoleSummaryTitle = document.getElementById("projectRoleSummaryTitle");
+const projectRoleSummaryText = document.getElementById("projectRoleSummaryText");
+const projectRoleChoiceMessage = document.getElementById("projectRoleChoiceMessage");
+const changeProjectRoleBtn = document.getElementById("changeProjectRoleBtn");
 const openJobsCountText = document.getElementById("openJobsCountText");
 const tradesJobAccessStatusText = document.getElementById("tradesJobAccessStatusText");
 const tradesJobAccessCheckoutBtn = document.getElementById("tradesJobAccessCheckoutBtn");
@@ -78,9 +84,25 @@ const workspaceTaskMessage = document.getElementById("workspaceTaskMessage");
 const workspaceNoteText = document.getElementById("workspaceNoteText");
 const workspaceNoteMessage = document.getElementById("workspaceNoteMessage");
 
+const PROJECT_DASHBOARD_SECTIONS = {
+  homeowner: [
+    "createProjectSection",
+    "myProjectsSection",
+    "openProjectsSection",
+    "projectWorkspaceSection"
+  ],
+  tradesperson: [
+    "openProjectsSection",
+    "myApplicationsSection",
+    "myTeamsSection",
+    "projectWorkspaceSection"
+  ]
+};
+
 let currentUser = null;
 let currentUserData = null;
 let currentUserIsMember = false;
+let currentProjectUserType = "";
 let openProjectJobCount = 0;
 
 let myApplicationMap = new Map();
@@ -111,6 +133,7 @@ onAuthStateChanged(auth, async (user) => {
 
     currentUserData = userSnap.data();
     currentUserIsMember = hasActiveSubscription(currentUserData);
+    currentProjectUserType = getProjectUserType(currentUserData);
 
     showMemberState(currentUserData);
     await refreshProjectsDashboard();
@@ -324,11 +347,16 @@ async function refreshProjectsDashboard() {
   await loadMyProjects();
   await loadOpenProjects();
   await buildWorkspaceProjectOptions();
+  updateProjectsRoleUI();
 }
 
 function showLoggedOutState() {
+  currentProjectUserType = "";
   projectsLoggedOutArea?.classList.remove("hidden");
   projectsMemberArea?.classList.add("hidden");
+  projectRoleChoiceSection?.classList.add("hidden");
+  projectRoleSummarySection?.classList.add("hidden");
+  setDashboardSectionsVisible([]);
 
   if (projectsAuthMessage) {
     projectsAuthMessage.textContent = "Login or create an account to access Sangat Works Projects.";
@@ -336,8 +364,12 @@ function showLoggedOutState() {
 }
 
 function showBlockedState(message) {
+  currentProjectUserType = "";
   projectsLoggedOutArea?.classList.remove("hidden");
   projectsMemberArea?.classList.add("hidden");
+  projectRoleChoiceSection?.classList.add("hidden");
+  projectRoleSummarySection?.classList.add("hidden");
+  setDashboardSectionsVisible([]);
 
   if (projectsAuthMessage) {
     projectsAuthMessage.textContent = message;
@@ -347,6 +379,7 @@ function showBlockedState(message) {
 function showMemberState(userData) {
   projectsLoggedOutArea?.classList.add("hidden");
   projectsMemberArea?.classList.remove("hidden");
+  updateProjectsRoleUI();
 
   if (projectsUserBadge) {
     projectsUserBadge.textContent = isSuperAdmin(userData)
@@ -365,6 +398,111 @@ function showMemberState(userData) {
 
 if (tradesJobAccessCheckoutBtn) {
   tradesJobAccessCheckoutBtn.addEventListener("click", startTradesJobAccessCheckout);
+}
+
+document.querySelectorAll(".project-role-choice-btn").forEach((button) => {
+  button.addEventListener("click", async () => {
+    await saveProjectUserType(button.dataset.projectUserType);
+  });
+});
+
+if (changeProjectRoleBtn) {
+  changeProjectRoleBtn.addEventListener("click", () => {
+    currentProjectUserType = "";
+    showProjectRoleChoice();
+  });
+}
+
+async function saveProjectUserType(projectUserType) {
+  if (!currentUser || !["homeowner", "tradesperson"].includes(projectUserType)) {
+    return;
+  }
+
+  try {
+    setProjectRoleChoiceMessage("Saving your Projects dashboard...");
+
+    await updateDoc(doc(db, "users", currentUser.uid), {
+      projectsUserType: projectUserType,
+      projectsUserTypeUpdatedAt: serverTimestamp()
+    });
+
+    currentProjectUserType = projectUserType;
+    currentUserData = {
+      ...currentUserData,
+      projectsUserType: projectUserType
+    };
+
+    setProjectRoleChoiceMessage("");
+    updateProjectsRoleUI();
+
+    const targetId = projectUserType === "homeowner"
+      ? "createProjectSection"
+      : "openProjectsSection";
+
+    document.getElementById(targetId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  } catch (error) {
+    console.error(error);
+    setProjectRoleChoiceMessage("Could not save your Projects role. Please try again.");
+  }
+}
+
+function getProjectUserType(userData) {
+  return ["homeowner", "tradesperson"].includes(userData?.projectsUserType)
+    ? userData.projectsUserType
+    : "";
+}
+
+function updateProjectsRoleUI() {
+  if (!currentUser) {
+    projectRoleChoiceSection?.classList.add("hidden");
+    projectRoleSummarySection?.classList.add("hidden");
+    setDashboardSectionsVisible([]);
+    return;
+  }
+
+  if (!currentProjectUserType) {
+    showProjectRoleChoice();
+    return;
+  }
+
+  projectRoleChoiceSection?.classList.add("hidden");
+  projectRoleSummarySection?.classList.remove("hidden");
+  setDashboardSectionsVisible(PROJECT_DASHBOARD_SECTIONS[currentProjectUserType] || []);
+
+  if (projectRoleSummaryTitle) {
+    projectRoleSummaryTitle.textContent = currentProjectUserType === "homeowner"
+      ? "Homeowner Dashboard"
+      : "Tradesperson Dashboard";
+  }
+
+  if (projectRoleSummaryText) {
+    projectRoleSummaryText.textContent = currentProjectUserType === "homeowner"
+      ? "Create projects for free, review applicants and unlock workspaces after payment."
+      : "Browse open jobs, buy Job Access if needed, apply to projects and manage accepted teams.";
+  }
+}
+
+function showProjectRoleChoice() {
+  projectRoleChoiceSection?.classList.remove("hidden");
+  projectRoleSummarySection?.classList.add("hidden");
+  setDashboardSectionsVisible([]);
+}
+
+function setDashboardSectionsVisible(visibleSectionIds) {
+  const visible = new Set(visibleSectionIds);
+
+  Object.values(PROJECT_DASHBOARD_SECTIONS)
+    .flat()
+    .forEach((sectionId) => {
+      document.getElementById(sectionId)?.classList.toggle("hidden", !visible.has(sectionId));
+    });
+}
+
+function setProjectRoleChoiceMessage(message) {
+  if (projectRoleChoiceMessage) projectRoleChoiceMessage.textContent = message;
 }
 
 function getMembershipLabel(userData) {
@@ -433,11 +571,11 @@ async function loadOpenProjects() {
     renderTradesJobAccessBox();
 
     if (snapshot.empty) {
-      openProjectsList.innerHTML = `<div class="empty-state">No open projects yet. Be the first homeowner to post one.</div>`;
+      openProjectsList.innerHTML = `<div class="empty-state">There are currently no open projects available. Please check back soon.</div>`;
       return;
     }
 
-    if (!canAccessProjectJobs()) {
+    if (!canAccessProjectJobs() && currentProjectUserType !== "homeowner") {
       openProjectsList.innerHTML = `<div class="empty-state">Buy job access or use active membership to view and apply to open project jobs.</div>`;
       return;
     }
@@ -448,7 +586,7 @@ async function loadOpenProjects() {
       openProjectsList.innerHTML += renderProjectCard({
         id: docSnap.id,
         ...docSnap.data()
-      }, "trade");
+      }, currentProjectUserType === "homeowner" ? "browse" : "trade");
     });
   } catch (error) {
     console.error(error);
@@ -1256,6 +1394,9 @@ function renderSignedOutProjectAreas() {
   if (openProjectsList) openProjectsList.innerHTML = `<div class="empty-state">Login to browse open projects.</div>`;
   if (myApplicationsList) myApplicationsList.innerHTML = `<div class="empty-state">Login as a member to see your applications.</div>`;
   if (myTeamsList) myTeamsList.innerHTML = `<div class="empty-state">Login as a member to see your project teams.</div>`;
+  projectRoleChoiceSection?.classList.add("hidden");
+  projectRoleSummarySection?.classList.add("hidden");
+  setDashboardSectionsVisible([]);
   hideWorkspacePanels();
   renderTradesJobAccessBox();
 }
@@ -1381,7 +1522,9 @@ function hasActiveTradesJobAccess(userData) {
 
 function renderTradesJobAccessBox() {
   if (openJobsCountText) {
-    openJobsCountText.textContent = `There are currently ${openProjectJobCount} open project jobs available.`;
+    openJobsCountText.textContent = openProjectJobCount === 0
+      ? "There are currently no open projects available. Please check back soon."
+      : `There are currently ${openProjectJobCount} open project jobs available.`;
   }
 
   if (!tradesJobAccessStatusText || !tradesJobAccessCheckoutBtn) return;
@@ -1398,6 +1541,12 @@ function renderTradesJobAccessBox() {
     return;
   }
 
+  if (currentProjectUserType === "homeowner") {
+    tradesJobAccessStatusText.textContent = "Homeowners can browse open projects here. Choose Tradesperson if you want to apply.";
+    tradesJobAccessCheckoutBtn.classList.add("hidden");
+    return;
+  }
+
   if (hasActiveTradesJobAccess(currentUserData)) {
     tradesJobAccessStatusText.textContent = `Your 30-day Job Access Pass is active until ${formatDate(currentUserData.tradesJobAccessExpiresAt)}.`;
     tradesJobAccessCheckoutBtn.classList.add("hidden");
@@ -1405,8 +1554,9 @@ function renderTradesJobAccessBox() {
   }
 
   if (openProjectJobCount === 0) {
-    tradesJobAccessStatusText.textContent = "No open jobs are currently available. Please check back soon.";
-    tradesJobAccessCheckoutBtn.classList.add("hidden");
+    tradesJobAccessStatusText.textContent = "There are currently no open projects available. Please check back soon.";
+    tradesJobAccessCheckoutBtn.disabled = true;
+    tradesJobAccessCheckoutBtn.classList.remove("hidden");
     return;
   }
 
@@ -1444,7 +1594,9 @@ function renderProjectCard(project, mode) {
 
   let tradeActions = "";
 
-  if (project.ownerId === currentUser?.uid) {
+  if (mode === "browse") {
+    tradeActions = `<div class="project-card-actions"><span class="project-mini-stat">Homeowner browsing view</span></div>`;
+  } else if (project.ownerId === currentUser?.uid) {
     tradeActions = `<div class="project-card-actions"><span class="project-mini-stat">Your project</span></div>`;
   } else if (existingTeam) {
     tradeActions = `<div class="project-card-actions"><span class="project-status-pill">You are on this team</span></div>`;

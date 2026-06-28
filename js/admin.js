@@ -18,6 +18,7 @@ import {
 import {
   getUserRole,
   isAdminUser,
+  isExcludedFromFoundingMemberCount,
   isInternalAccount,
   isSuperAdmin
 } from "./roles.js";
@@ -77,8 +78,8 @@ function renderUserRow(user) {
   const name = user.businessName || user.fullName || user.email || "Unnamed user";
   const role = getUserRole(user);
   const currentUserIsSuperAdmin = isSuperAdmin(currentAdminData);
-  const canDelete = currentUserIsSuperAdmin && !isSuperAdmin(user);
-  const permanentInternalAccount = isInternalAccount(user) && isSuperAdmin(user);
+  const permanentInternalAccount = isInternalAccount(user);
+  const canDelete = currentUserIsSuperAdmin && !permanentInternalAccount;
   const roleControls = currentUserIsSuperAdmin && !permanentInternalAccount
     ? `
       <select class="role-select" data-uid="${user.uid}">
@@ -96,7 +97,7 @@ function renderUserRow(user) {
     `
     : "";
   const memberNumberControls = permanentInternalAccount
-    ? `<p><strong>Permanent internal account:</strong> Super Admin role is locked.</p>`
+    ? `<p><strong>Permanent internal account:</strong> Role and member number are locked.</p>`
     : `
       <input
         type="number"
@@ -223,7 +224,10 @@ async function loadUsers() {
   }).length;
 
   const foundingMembers = users.filter(user => {
-    return user.isFoundingMember === true && !isInternalAccount(user);
+    return (
+      user.isFoundingMember === true &&
+      !isExcludedFromFoundingMemberCount(user)
+    );
   }).length;
 
   statTotalUsers.textContent = users.length;
@@ -251,8 +255,8 @@ function setupUserAdminActions() {
       const role = input.value;
       const targetSnap = await getDoc(doc(db, "users", uid));
 
-      if (targetSnap.exists() && isInternalAccount(targetSnap.data()) && isSuperAdmin(targetSnap.data())) {
-        adminStatus.textContent = "Permanent Super Admin roles cannot be changed here.";
+      if (targetSnap.exists() && isInternalAccount(targetSnap.data())) {
+        adminStatus.textContent = "Permanent internal account roles cannot be changed here.";
         return;
       }
 

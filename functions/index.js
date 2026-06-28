@@ -10,6 +10,8 @@ const stripeSecret = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 const superAdminSeedToken = defineSecret("SUPER_ADMIN_SEED_TOKEN");
 const superAdminAccountsJson = defineSecret("SUPER_ADMIN_ACCOUNTS_JSON");
+const internalPaymentTesterSeedToken = defineSecret("INTERNAL_PAYMENT_TESTER_SEED_TOKEN");
+const internalPaymentTesterAccountJson = defineSecret("INTERNAL_PAYMENT_TESTER_ACCOUNT_JSON");
 
 /*
   Subscription prices
@@ -31,8 +33,28 @@ const MONTHLY_PASS_PRICE_ID = "price_1Tl8zyDbE6tXsxNUpynPPWft";
 */
 const FEATURED_LISTING_PRICE_ID = "price_1TlZxODbE6tXsxNUzI1ng4Iy";
 
-const PROJECT_WORKSPACE_UNLOCK_PRICE_ID = "price_1Tn0FTDbE6tXsxNUOlu3a5eJ";
-const TRADES_JOB_ACCESS_PRICE_ID = "price_1Tn0GsDbE6tXsxNU3wHbCQBo";
+/*
+  Project payment prices
+  Switch PROJECT_PAYMENT_PRICE_MODE between "TEST" and "LIVE".
+  Membership and Featured Listing prices are configured separately above.
+*/
+const PROJECT_PAYMENT_PRICE_MODE = "TEST";
+const PROJECT_PAYMENT_PRICE_IDS = {
+  TEST: {
+    workspaceUnlock: "price_1TnFVKDbE6tXsxNUocVIIChZ",
+    tradesJobAccess: "price_1TnFVvDbE6tXsxNUmZrBhyR1"
+  },
+  LIVE: {
+    workspaceUnlock: "price_1Tn0FTDbE6tXsxNUOlu3a5eJ",
+    tradesJobAccess: "price_1Tn0GsDbE6tXsxNU3wHbCQBo"
+  }
+};
+const ACTIVE_PROJECT_PAYMENT_PRICE_IDS =
+  PROJECT_PAYMENT_PRICE_IDS[PROJECT_PAYMENT_PRICE_MODE];
+const PROJECT_WORKSPACE_UNLOCK_PRICE_ID =
+  ACTIVE_PROJECT_PAYMENT_PRICE_IDS.workspaceUnlock;
+const TRADES_JOB_ACCESS_PRICE_ID =
+  ACTIVE_PROJECT_PAYMENT_PRICE_IDS.tradesJobAccess;
 
 const ALL_PRICE_IDS = [
   YEARLY_SUBSCRIPTION_PRICE_ID,
@@ -201,6 +223,74 @@ function getSuperAdminProfileData(uid, account) {
     hasSeenIntro: false,
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   };
+}
+
+function hasPaidMembershipData(userData) {
+  if (!userData) return false;
+
+  return (
+    userData.subscriptionBillingType === "subscription" ||
+    userData.subscriptionBillingType === "oneoff" ||
+    Boolean(userData.stripeSubscriptionId) ||
+    (
+      Boolean(userData.stripePriceId) &&
+      userData.subscriptionBillingType !== "founding-free-year"
+    )
+  );
+}
+
+function getInternalPaymentTesterProfileData(uid, account, existingData) {
+  const profileData = {
+    uid,
+    fullName: account.displayName,
+    displayName: account.displayName,
+    email: account.email,
+    role: "member",
+    internalAccount: true,
+    excludeFromFoundingMemberCount: true,
+    canImpersonateUsers: false,
+    impersonationReady: false,
+    canViewHiddenDiagnostics: false,
+    isFoundingMember: false,
+    memberNumber: null,
+    accountType: "member",
+    isAdmin: false,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  };
+
+  const shouldResetMembership =
+    !existingData ||
+    existingData.isFoundingMember === true ||
+    existingData.subscriptionBillingType === "founding-free-year" ||
+    existingData.subscriptionPlan === "founding" ||
+    !hasPaidMembershipData(existingData);
+
+  if (shouldResetMembership) {
+    return {
+      ...profileData,
+      hasSubscription: false,
+      subscriptionStatus: "inactive",
+      subscriptionPlan: "none",
+      subscriptionBillingType: "none",
+      subscriptionExpiresAt: null,
+      subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      membershipPlan: "pending",
+      membershipStatus: "pending-payment",
+      stripeCustomerId: existingData?.stripeCustomerId || "",
+      stripeSubscriptionId: "",
+      stripePriceId: "",
+      featuredListing: false,
+      featuredListingStatus: "inactive",
+      featuredExpiresAt: null,
+      tradesJobAccess: false,
+      tradesJobAccessStatus: "inactive",
+      tradesJobAccessExpiresAt: null,
+      hasSeenIntro: existingData?.hasSeenIntro === true,
+      isPublic: existingData?.isPublic === true
+    };
+  }
+
+  return profileData;
 }
 
 async function verifyRequestUser(req, uid) {
@@ -894,6 +984,107 @@ exports.seedSuperAdmins = onRequest(
       console.error("Super Admin seed error:", error);
       return res.status(500).json({
         error: error.message || "Super Admin seed failed"
+      });
+    }
+  }
+);
+
+exports.seedInternalPaymentTester = onRequest(
+  {
+    region: "europe-west1",
+    secrets: [internalPaymentTesterSeedToken, internalPaymentTesterAccountJson],
+    maxInstances: 1
+  },
+  async (req, res) => {
+    try {
+      if (req.method !== "POST") {
+        return res.status(405).json({ error: "Method not allowed" });
+      }
+
+      const providedToken = req.get("x-seed-token") || "";
+
+      if (
+        !providedToken ||
+        providedToken !== internalPaymentTesterSeedToken.value()
+      ) {
+        return res.status(403).json({ error: "Invalid seed token" });
+      }
+
+      const account = JSON.parse(internalPaymentTesterAccountJson.value());
+
+      if (
+        !account ||
+        Array.isArray(account) ||
+        !account.email ||
+        !account.password ||
+        !account.displayName
+      ) {
+        return res.status(400).json({
+          error:
+            "INTERNAL_PAYMENT_TESTER_ACCOUNT_JSON must be a JSON object with email, password and displayName"
+        });
+      }
+
+      let authUser;
+      let created = false;
+
+      try {
+        authUser = await admin.auth().getUserByEmail(account.email);
+      } catch (error) {
+        if (error.code !== "auth/user-not-found") {
+          throw error;
+        }
+
+        authUser = await admin.auth().createUser({
+          email: account.email,
+          password: account.password,
+          displayName: account.displayName,
+          emailVerified: true,
+          disabled: false
+        });
+        created = true;
+      }
+
+      if (!created) {
+        await admin.auth().updateUser(authUser.uid, {
+          password: account.password,
+          displayName: account.displayName,
+          emailVerified: true,
+          disabled: false
+        });
+      }
+
+      await admin.auth().setCustomUserClaims(authUser.uid, {
+        role: "member",
+        internalAccount: true
+      });
+
+      const userRef = admin.firestore().collection("users").doc(authUser.uid);
+      const existingSnap = await userRef.get();
+      const profileData = getInternalPaymentTesterProfileData(
+        authUser.uid,
+        account,
+        existingSnap.exists ? existingSnap.data() : null
+      );
+
+      if (created || !existingSnap.exists) {
+        profileData.createdAt = admin.firestore.FieldValue.serverTimestamp();
+      }
+
+      await userRef.set(profileData, { merge: true });
+
+      return res.status(200).json({
+        success: true,
+        result: {
+          email: account.email,
+          uid: authUser.uid,
+          status: created ? "created" : "updated"
+        }
+      });
+    } catch (error) {
+      console.error("Internal Payment Tester seed error:", error);
+      return res.status(500).json({
+        error: error.message || "Internal Payment Tester seed failed"
       });
     }
   }

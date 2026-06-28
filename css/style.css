@@ -1854,6 +1854,17 @@ footer {
   border-top: 7px solid var(--blue);
 }
 
+.project-choice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.project-role-choice-btn {
+  min-width: 180px;
+}
+
 .project-form label {
   display: grid;
   gap: 7px;

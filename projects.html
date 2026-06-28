@@ -57,6 +57,32 @@
     </div>
   </section>
 
+  <section id="projectRoleChoiceSection" class="info-section hidden">
+    <p class="eyebrow">Projects Setup</p>
+    <h2>What best describes you?</h2>
+    <p>Choose the dashboard you want to use first. You can change this later from this page.</p>
+
+    <div class="project-choice-actions">
+      <button type="button" class="btn-primary project-role-choice-btn" data-project-user-type="homeowner">
+        &#127968; Homeowner
+      </button>
+      <button type="button" class="btn-secondary project-role-choice-btn" data-project-user-type="tradesperson">
+        &#128296; Tradesperson
+      </button>
+    </div>
+
+    <p id="projectRoleChoiceMessage" class="message"></p>
+  </section>
+
+  <section id="projectRoleSummarySection" class="info-section hidden">
+    <p class="eyebrow">Dashboard</p>
+    <h2 id="projectRoleSummaryTitle">Projects Dashboard</h2>
+    <p id="projectRoleSummaryText">Your Projects dashboard is ready.</p>
+    <button type="button" class="btn-secondary" id="changeProjectRoleBtn">
+      Change Projects Role
+    </button>
+  </section>
+
   <section class="info-section projects-intro-grid">
     <div class="project-role-card homeowner-role">
       <span class="project-role-icon">🏠</span>
@@ -83,7 +109,7 @@
     </div>
   </section>
 
-  <section id="createProjectSection" class="info-section">
+  <section id="createProjectSection" class="info-section hidden">
     <p class="eyebrow">Homeowner Flow</p>
     <h2>Create a Project</h2>
     <p>Add the basic project details. Tradespeople can then view and apply.</p>
@@ -155,14 +181,21 @@
           <label><input type="checkbox" value="Electrician" /> Electrician</label>
           <label><input type="checkbox" value="Plumber" /> Plumber</label>
           <label><input type="checkbox" value="Carpenter" /> Carpenter</label>
+          <label><input type="checkbox" value="Bricklayer" /> Bricklayer</label>
           <label><input type="checkbox" value="Roofer" /> Roofer</label>
+          <label><input type="checkbox" value="Painter & Decorator" /> Painter & Decorator</label>
           <label><input type="checkbox" value="Plasterer" /> Plasterer</label>
-          <label><input type="checkbox" value="Tiler" /> Tiler</label>
-          <label><input type="checkbox" value="Decorator" /> Decorator</label>
-          <label><input type="checkbox" value="Flooring Specialist" /> Flooring Specialist</label>
+          <label><input type="checkbox" value="Landscaper" /> Landscaper</label>
           <label><input type="checkbox" value="Kitchen Fitter" /> Kitchen Fitter</label>
           <label><input type="checkbox" value="Bathroom Fitter" /> Bathroom Fitter</label>
-          <label><input type="checkbox" value="Landscaper" /> Landscaper</label>
+          <label><input type="checkbox" value="Flooring" /> Flooring</label>
+          <label><input type="checkbox" value="Heating Engineer" /> Heating Engineer</label>
+          <label><input type="checkbox" value="Window Installer" /> Window Installer</label>
+          <label><input type="checkbox" value="General Handyman" /> General Handyman</label>
+          <label><input type="checkbox" value="Architect" /> Architect</label>
+          <label><input type="checkbox" value="Structural Engineer" /> Structural Engineer</label>
+          <label><input type="checkbox" value="Surveyor" /> Surveyor</label>
+          <label><input type="checkbox" value="Other" /> Other</label>
         </div>
       </div>
 
@@ -171,7 +204,7 @@
     </form>
   </section>
 
-  <section id="myProjectsSection" class="info-section">
+  <section id="myProjectsSection" class="info-section hidden">
     <p class="eyebrow">Homeowner Dashboard</p>
     <h2>My Projects</h2>
     <p>Review applicants, accept or reject tradespeople, and build your project team.</p>
@@ -181,7 +214,7 @@
     </div>
   </section>
 
-  <section id="openProjectsSection" class="info-section">
+  <section id="openProjectsSection" class="info-section hidden">
     <p class="eyebrow">Tradesperson Flow</p>
     <h2>Open Projects</h2>
     <p>These are live homeowner projects currently open for applications.</p>
@@ -200,7 +233,7 @@
     </div>
   </section>
 
-  <section id="myApplicationsSection" class="info-section">
+  <section id="myApplicationsSection" class="info-section hidden">
     <p class="eyebrow">Tradesperson Dashboard</p>
     <h2>My Applications</h2>
     <p>Projects you have applied to will appear here.</p>
@@ -210,7 +243,7 @@
     </div>
   </section>
 
-  <section id="myTeamsSection" class="info-section">
+  <section id="myTeamsSection" class="info-section hidden">
     <p class="eyebrow">Project Teams</p>
     <h2>My Accepted Project Teams</h2>
     <p>Accepted project team memberships will appear here.</p>
@@ -220,7 +253,7 @@
     </div>
   </section>
 
-  <section id="projectWorkspaceSection" class="info-section project-workspace-section">
+  <section id="projectWorkspaceSection" class="info-section project-workspace-section hidden">
     <p class="eyebrow">Paid Software</p>
     <h2>Project Workspace</h2>
     <p>
@@ -230,7 +263,7 @@
 
     <div class="project-workspace-card">
       <strong>Workspace Unlock</strong>
-      <p>Each project workspace is prepared for a one-off &pound;40 unlock. Stripe checkout is still a placeholder.</p>
+      <p>Each project workspace unlocks through Stripe as a one-off payment.</p>
       <a href="#myProjectsSection" class="btn-primary">Choose a Project</a>
     </div>
   </section>

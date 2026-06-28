@@ -5,6 +5,10 @@ import {
   getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+import {
+  isExcludedFromFoundingMemberCount
+} from "./roles.js";
+
 const foundingClaimed = document.getElementById("foundingClaimed");
 const foundingCounterFill = document.getElementById("foundingCounterFill");
 const foundingRemaining = document.getElementById("foundingRemaining");
@@ -19,7 +23,10 @@ async function loadFoundingCounter() {
   usersSnap.forEach(docSnap => {
     const user = docSnap.data();
 
-    if (user.isFoundingMember === true) {
+    if (
+      user.isFoundingMember === true &&
+      !isExcludedFromFoundingMemberCount(user)
+    ) {
       claimed++;
     }
   });
