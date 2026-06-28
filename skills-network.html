@@ -31,6 +31,9 @@
       </div>
 
       <p id="userGurdwaraName">Loading...</p>
+      <select id="skillsGurdwaraSelect" aria-label="Select your local Gurdwara">
+        <option value="">Select your Gurdwara</option>
+      </select>
     </div>
 
     <div class="profile-strength-box">
@@ -38,18 +41,14 @@
         <strong>Skills Pools</strong>
       </div>
 
-      <div id="emptyPoolsBox" class="profile-strength-box" style="display:none;">
-    <p>No pools exist for this Gurdwara yet.</p>
-    <button id="createStarterPoolsBtn" class="btn-primary" type="button">
-        Create Starter Pools
-    </button>
-    </div>
-
-    <div id="skillsPoolsList" class="dashboard-grid">
-    Loading pools...
-    </div>
-
       <div id="skillsPoolsList" class="dashboard-grid"></div>
+
+      <div id="emptyPoolsBox" class="profile-strength-box" style="display:none;">
+        <p>No pools exist for this Gurdwara yet.</p>
+        <button id="createStarterPoolsBtn" class="btn-primary" type="button">
+          Create Starter Pools
+        </button>
+      </div>
     </div>
 
     <p id="skillsNetworkMessage" class="message"></p>

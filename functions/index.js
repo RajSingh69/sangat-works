@@ -38,7 +38,7 @@ const FEATURED_LISTING_PRICE_ID = "price_1TlZxODbE6tXsxNUzI1ng4Iy";
   Switch PROJECT_PAYMENT_PRICE_MODE between "TEST" and "LIVE".
   Membership and Featured Listing prices are configured separately above.
 */
-const PROJECT_PAYMENT_PRICE_MODE = "TEST";
+const PROJECT_PAYMENT_PRICE_MODE = "LIVE";
 const PROJECT_PAYMENT_PRICE_IDS = {
   TEST: {
     workspaceUnlock: "price_1TnFVKDbE6tXsxNUocVIIChZ",

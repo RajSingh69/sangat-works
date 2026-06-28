@@ -14,8 +14,6 @@ import {
   updateDoc,
   increment,
   serverTimestamp,
-  query,
-  orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 import {
@@ -33,6 +31,8 @@ const publicProfile = document.getElementById("publicProfile");
 
 const gurdwaraSelect = document.getElementById("gurdwaraSelect");
 const newGurdwaraName = document.getElementById("newGurdwaraName");
+const newGurdwaraAddress = document.getElementById("newGurdwaraAddress");
+const newGurdwaraPostcode = document.getElementById("newGurdwaraPostcode");
 const associatedGurdwaraInput = document.getElementById("associatedGurdwara");
 
 let currentUser = null;
@@ -323,6 +323,14 @@ function value(id) {
   return document.getElementById(id)?.value.trim() || "";
 }
 
+function normalisePostcode(postcode) {
+  return postcode.trim().toUpperCase().replace(/\s+/g, "");
+}
+
+function getGurdwaraDisplayName(gurdwara) {
+  return gurdwara.name || gurdwara.gurdwaraName || gurdwara.localGurdwara || "Unnamed Gurdwara";
+}
+
 function checked(id) {
   return document.getElementById(id)?.checked || false;
 }
@@ -335,19 +343,18 @@ async function loadGurdwaras(selectedGurdwaraId = "") {
     <option value="add-new">+ Add New Gurdwara</option>
   `;
 
-  const gurdwarasQuery = query(
-    collection(db, "gurdwaras"),
-    orderBy("name", "asc")
-  );
+  const snapshot = await getDocs(collection(db, "gurdwaras"));
+  const gurdwaras = snapshot.docs
+    .map((docSnap) => ({
+      id: docSnap.id,
+      name: getGurdwaraDisplayName(docSnap.data())
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-  const snapshot = await getDocs(gurdwarasQuery);
-
-  snapshot.forEach((docSnap) => {
-    const gurdwara = docSnap.data();
-
+  gurdwaras.forEach((gurdwara) => {
     const option = document.createElement("option");
-    option.value = docSnap.id;
-    option.textContent = gurdwara.name || "Unnamed Gurdwara";
+    option.value = gurdwara.id;
+    option.textContent = gurdwara.name;
 
     gurdwaraSelect.insertBefore(option, gurdwaraSelect.querySelector('option[value="add-new"]'));
   });
@@ -358,16 +365,25 @@ async function loadGurdwaras(selectedGurdwaraId = "") {
 }
 
 function setupGurdwaraSelect() {
-  if (!gurdwaraSelect || !newGurdwaraName) return;
+  if (!gurdwaraSelect || !newGurdwaraName || !newGurdwaraAddress || !newGurdwaraPostcode) return;
+
+  function setNewGurdwaraFieldsVisible(isVisible) {
+    const display = isVisible ? "block" : "none";
+    [newGurdwaraName, newGurdwaraAddress, newGurdwaraPostcode].forEach((field) => {
+      field.style.display = display;
+      field.required = isVisible;
+
+      if (!isVisible) {
+        field.value = "";
+      }
+    });
+  }
 
   gurdwaraSelect.addEventListener("change", () => {
     if (gurdwaraSelect.value === "add-new") {
-      newGurdwaraName.style.display = "block";
-      newGurdwaraName.required = true;
+      setNewGurdwaraFieldsVisible(true);
     } else {
-      newGurdwaraName.style.display = "none";
-      newGurdwaraName.required = false;
-      newGurdwaraName.value = "";
+      setNewGurdwaraFieldsVisible(false);
     }
   });
 }
@@ -633,16 +649,47 @@ if (profileForm) {
       if (gurdwaraSelect) {
         if (gurdwaraSelect.value === "add-new") {
           const newName = value("newGurdwaraName");
+          const newAddress = value("newGurdwaraAddress");
+          const newPostcode = value("newGurdwaraPostcode");
+          const postcodeNormalised = normalisePostcode(newPostcode);
 
           if (!newName) {
             profileMessage.textContent = "Please enter the new Gurdwara name.";
             return;
           }
 
+          if (!newAddress) {
+            profileMessage.textContent = "Please enter the new Gurdwara address.";
+            return;
+          }
+
+          if (!newPostcode) {
+            profileMessage.textContent = "Please enter the new Gurdwara postcode.";
+            return;
+          }
+
+          const gurdwarasSnapshot = await getDocs(collection(db, "gurdwaras"));
+          const duplicateExists = gurdwarasSnapshot.docs.some((docSnap) => {
+            const gurdwara = docSnap.data();
+            const existingPostcode = gurdwara.postcodeNormalised || gurdwara.postcode || "";
+            return normalisePostcode(existingPostcode) === postcodeNormalised;
+          });
+
+          if (duplicateExists) {
+            profileMessage.textContent = "A Gurdwara with this postcode already exists.";
+            return;
+          }
+
           const newGurdwaraRef = await addDoc(collection(db, "gurdwaras"), {
             name: newName,
+            gurdwaraName: newName,
+            localGurdwara: newName,
+            address: newAddress,
+            postcode: newPostcode,
+            postcodeNormalised,
             createdBy: currentUser.uid,
-            createdAt: serverTimestamp()
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
           });
 
           selectedGurdwaraId = newGurdwaraRef.id;
