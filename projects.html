@@ -54,6 +54,41 @@
         <span>Current Access</span>
         <strong id="projectsUserBadge">Member</strong>
       </div>
+
+      <div id="projectsAccountSummary" class="projects-account-summary">
+        <div>
+          <span>Selected mode</span>
+          <strong id="summaryProjectsMode">Not selected</strong>
+        </div>
+        <div>
+          <span>Homeowner projects</span>
+          <strong id="summaryHomeownerProjects">0</strong>
+        </div>
+        <div>
+          <span>Open jobs</span>
+          <strong id="summaryOpenJobs">0</strong>
+        </div>
+        <div>
+          <span>Trades Job Access</span>
+          <strong id="summaryTradesAccess">Inactive</strong>
+        </div>
+        <div>
+          <span>Access expiry</span>
+          <strong id="summaryTradesAccessExpiry">Not active</strong>
+        </div>
+        <div>
+          <span>Unlocked workspaces</span>
+          <strong id="summaryUnlockedWorkspaces">0</strong>
+        </div>
+        <div>
+          <span>Locked workspaces</span>
+          <strong id="summaryLockedWorkspaces">0</strong>
+        </div>
+        <div>
+          <span>Payment status</span>
+          <strong id="summaryPaymentStatus">Checking</strong>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -260,12 +295,21 @@
       Workspace rooms now open per project. Use the buttons in My Projects or My Accepted Project Teams
       to enter a project workspace.
     </p>
+    <p>
+      <strong>The &pound;40 Project Workspace is for homeowners/project owners only.</strong>
+      You can only unlock a workspace after you have posted a project.
+    </p>
 
     <div class="project-workspace-card">
       <strong>Workspace Unlock</strong>
-      <p>Each project workspace unlocks through Stripe as a one-off payment.</p>
-      <a href="#myProjectsSection" class="btn-primary">Choose a Project</a>
+      <p>Each project workspace unlocks through Stripe as a one-off payment. You currently have <strong id="workspaceHomeownerProjectCount">0</strong> homeowner projects.</p>
+      <p id="workspaceProtectionMessage" class="message">Post a project first to unlock a workspace.</p>
+      <a href="#myProjectsSection" class="btn-primary" id="workspaceChooseProjectBtn">Choose a Project</a>
     </div>
+  </section>
+
+  <section class="info-section project-support-section">
+    <p>Any queries, please email <a href="mailto:rajanbhamra02@gmail.com">rajanbhamra02@gmail.com</a></p>
   </section>
   <section id="buddySystemSection" class="info-section">
     <p class="eyebrow">Buddy System</p>

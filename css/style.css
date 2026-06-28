@@ -1800,6 +1800,34 @@ footer {
   font-weight: 950;
 }
 
+.projects-account-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.projects-account-summary div {
+  background: white;
+  border: 1px solid rgba(18, 60, 105, 0.12);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: var(--shadow-soft);
+}
+
+.projects-account-summary span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  margin-bottom: 4px;
+}
+
+.projects-account-summary strong {
+  color: var(--blue);
+  font-size: 1rem;
+}
+
 .projects-intro-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2030,6 +2058,24 @@ footer {
   background: linear-gradient(135deg, var(--green), #16a34a);
 }
 
+.project-trade-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.trade-open {
+  background: #ecfdf5;
+  color: var(--green);
+  border-color: #bbf7d0;
+}
+
+.trade-filled {
+  background: #eef2ff;
+  color: var(--blue);
+  border-color: rgba(18, 60, 105, 0.18);
+}
+
 .project-withdraw-btn {
   background: linear-gradient(135deg, #991b1b, #ef4444);
 }
@@ -2184,6 +2230,16 @@ footer {
 
 .project-workspace-open-btn {
   background: linear-gradient(135deg, var(--blue), var(--blue-2));
+}
+
+.disabled-link {
+  pointer-events: none;
+  opacity: 0.48;
+  filter: grayscale(0.4);
+}
+
+.project-support-section {
+  text-align: center;
 }
 
 .team-card {

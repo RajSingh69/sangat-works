@@ -16,7 +16,8 @@ import {
   serverTimestamp,
   updateDoc,
   deleteDoc,
-  increment
+  increment,
+  arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 import {
@@ -49,6 +50,17 @@ const openJobsCountText = document.getElementById("openJobsCountText");
 const tradesJobAccessStatusText = document.getElementById("tradesJobAccessStatusText");
 const tradesJobAccessCheckoutBtn = document.getElementById("tradesJobAccessCheckoutBtn");
 const tradesJobAccessMessage = document.getElementById("tradesJobAccessMessage");
+const summaryProjectsMode = document.getElementById("summaryProjectsMode");
+const summaryHomeownerProjects = document.getElementById("summaryHomeownerProjects");
+const summaryOpenJobs = document.getElementById("summaryOpenJobs");
+const summaryTradesAccess = document.getElementById("summaryTradesAccess");
+const summaryTradesAccessExpiry = document.getElementById("summaryTradesAccessExpiry");
+const summaryUnlockedWorkspaces = document.getElementById("summaryUnlockedWorkspaces");
+const summaryLockedWorkspaces = document.getElementById("summaryLockedWorkspaces");
+const summaryPaymentStatus = document.getElementById("summaryPaymentStatus");
+const workspaceHomeownerProjectCount = document.getElementById("workspaceHomeownerProjectCount");
+const workspaceProtectionMessage = document.getElementById("workspaceProtectionMessage");
+const workspaceChooseProjectBtn = document.getElementById("workspaceChooseProjectBtn");
 
 const createProjectForm = document.getElementById("createProjectForm");
 const projectFormMessage = document.getElementById("projectFormMessage");
@@ -104,6 +116,9 @@ let currentUserData = null;
 let currentUserIsMember = false;
 let currentProjectUserType = "";
 let openProjectJobCount = 0;
+let homeownerProjectCount = 0;
+let unlockedWorkspaceCount = 0;
+let lockedWorkspaceCount = 0;
 
 let myApplicationMap = new Map();
 let projectApplicationsMap = new Map();
@@ -191,6 +206,7 @@ if (createProjectForm) {
         estimatedStart,
         estimatedFinish,
         requiredTrades: selectedTrades,
+        filledTradeRoles: [],
         status: "open",
         progressStage: "planning",
         applicantCount: 0,
@@ -228,7 +244,21 @@ if (openProjectsList) {
     const withdrawButton = event.target.closest("[data-withdraw-application-id]");
 
     if (applyButton) {
-      await applyToProject(applyButton.getAttribute("data-apply-project-id"));
+      const projectId = applyButton.getAttribute("data-apply-project-id");
+      const originalText = applyButton.textContent;
+
+      applyButton.disabled = true;
+      applyButton.textContent = "Applying...";
+
+      await applyToProject(
+        projectId,
+        applyButton.getAttribute("data-selected-trade-role") || ""
+      );
+
+      if (document.body.contains(applyButton) && !myApplicationMap.has(projectId)) {
+        applyButton.disabled = false;
+        applyButton.textContent = originalText;
+      }
     }
 
     if (withdrawButton) {
@@ -348,10 +378,13 @@ async function refreshProjectsDashboard() {
   await loadOpenProjects();
   await buildWorkspaceProjectOptions();
   updateProjectsRoleUI();
+  updateProjectsAccountSummary();
+  updateWorkspaceProtectionUI();
 }
 
 function showLoggedOutState() {
   currentProjectUserType = "";
+  resetProjectSummaryCounts();
   projectsLoggedOutArea?.classList.remove("hidden");
   projectsMemberArea?.classList.add("hidden");
   projectRoleChoiceSection?.classList.add("hidden");
@@ -365,6 +398,7 @@ function showLoggedOutState() {
 
 function showBlockedState(message) {
   currentProjectUserType = "";
+  resetProjectSummaryCounts();
   projectsLoggedOutArea?.classList.remove("hidden");
   projectsMemberArea?.classList.add("hidden");
   projectRoleChoiceSection?.classList.add("hidden");
@@ -394,6 +428,9 @@ function showMemberState(userData) {
       ? "Projects is live. You can create projects, apply, build teams and use unlocked workspaces."
       : "Projects is live. You can create homeowner projects for free. Active membership is required to apply as a tradesperson.";
   }
+
+  updateProjectsAccountSummary();
+  updateWorkspaceProtectionUI();
 }
 
 if (tradesJobAccessCheckoutBtn) {
@@ -410,6 +447,15 @@ if (changeProjectRoleBtn) {
   changeProjectRoleBtn.addEventListener("click", () => {
     currentProjectUserType = "";
     showProjectRoleChoice();
+  });
+}
+
+if (workspaceChooseProjectBtn) {
+  workspaceChooseProjectBtn.addEventListener("click", (event) => {
+    if (homeownerProjectCount > 0) return;
+
+    event.preventDefault();
+    updateWorkspaceProtectionUI();
   });
 }
 
@@ -460,6 +506,8 @@ function updateProjectsRoleUI() {
     projectRoleChoiceSection?.classList.add("hidden");
     projectRoleSummarySection?.classList.add("hidden");
     setDashboardSectionsVisible([]);
+    updateProjectsAccountSummary();
+    updateWorkspaceProtectionUI();
     return;
   }
 
@@ -483,6 +531,9 @@ function updateProjectsRoleUI() {
       ? "Create projects for free, review applicants and unlock workspaces after payment."
       : "Browse open jobs, buy Job Access if needed, apply to projects and manage accepted teams.";
   }
+
+  updateProjectsAccountSummary();
+  updateWorkspaceProtectionUI();
 }
 
 function showProjectRoleChoice() {
@@ -524,6 +575,9 @@ function getMembershipLabel(userData) {
 async function loadMyProjects() {
   if (!myProjectsList || !currentUser) return;
 
+  homeownerProjectCount = 0;
+  unlockedWorkspaceCount = 0;
+  lockedWorkspaceCount = 0;
   myProjectsList.innerHTML = `<div class="empty-state">Loading your projects...</div>`;
 
   try {
@@ -534,6 +588,7 @@ async function loadMyProjects() {
     );
 
     const snapshot = await getDocs(myProjectsQuery);
+    homeownerProjectCount = snapshot.size;
 
     if (snapshot.empty) {
       myProjectsList.innerHTML = `<div class="empty-state">You have not created any projects yet.</div>`;
@@ -543,13 +598,24 @@ async function loadMyProjects() {
     myProjectsList.innerHTML = "";
 
     snapshot.forEach((docSnap) => {
-      myProjectsList.innerHTML += renderProjectCard({
+      const project = {
         id: docSnap.id,
         ...docSnap.data()
-      }, "owner");
+      };
+
+      if (project.workspaceUnlocked) {
+        unlockedWorkspaceCount += 1;
+      } else {
+        lockedWorkspaceCount += 1;
+      }
+
+      myProjectsList.innerHTML += renderProjectCard(project, "owner");
     });
   } catch (error) {
     console.error(error);
+    homeownerProjectCount = 0;
+    unlockedWorkspaceCount = 0;
+    lockedWorkspaceCount = 0;
     myProjectsList.innerHTML = `<div class="empty-state">Could not load your projects. Firestore may ask you to create an index.</div>`;
   }
 }
@@ -729,7 +795,7 @@ async function loadMyTeamMemberships() {
   }
 }
 
-async function applyToProject(projectId) {
+async function applyToProject(projectId, selectedTradeRole = "") {
   if (!currentUser || !projectId) return;
 
   if (!canAccessProjectJobs()) {
@@ -757,9 +823,39 @@ async function applyToProject(projectId) {
     }
 
     const project = projectSnap.data();
+    const requiredTrades = Array.isArray(project.requiredTrades) ? project.requiredTrades : [];
+    const filledTradeRoles = Array.isArray(project.filledTradeRoles) ? project.filledTradeRoles : [];
+    const openTradeRoles = requiredTrades.filter((trade) => !filledTradeRoles.includes(trade));
 
     if (project.ownerId === currentUser.uid) {
       alert("You cannot apply to your own project.");
+      return;
+    }
+
+    const existingApplicationQuery = query(
+      collection(db, "applications"),
+      where("applicantId", "==", currentUser.uid),
+      where("projectId", "==", projectId)
+    );
+    const existingApplicationSnap = await getDocs(existingApplicationQuery);
+
+    if (!existingApplicationSnap.empty) {
+      alert("You have already applied to this project.");
+      return;
+    }
+
+    if (requiredTrades.length > 0 && !requiredTrades.includes(selectedTradeRole)) {
+      alert("Please choose which trade role you are applying for.");
+      return;
+    }
+
+    if (selectedTradeRole && filledTradeRoles.includes(selectedTradeRole)) {
+      alert("That trade role has already been filled on this project.");
+      return;
+    }
+
+    if (requiredTrades.length > 0 && openTradeRoles.length === 0) {
+      alert("All required trade roles are currently covered on this project.");
       return;
     }
 
@@ -776,6 +872,7 @@ async function applyToProject(projectId) {
       applicantName: getCurrentUserDisplayName(),
       applicantService: currentUserData?.service || currentUserData?.businessCategory || currentUserData?.category || "",
       applicantProfileId: currentUser.uid,
+      selectedTradeRole,
       status: "pending",
       message: "",
       createdAt: serverTimestamp(),
@@ -794,6 +891,7 @@ async function applyToProject(projectId) {
       projectTitle: project.title || "",
       projectLocation: project.location || "",
       projectType: project.projectType || "",
+      selectedTradeRole,
       status: "pending"
     });
 
@@ -883,6 +981,24 @@ async function acceptApplication(applicationId) {
     }
 
     const project = projectSnap.data();
+    const selectedTradeRole = application.selectedTradeRole || "";
+    const requiredTrades = Array.isArray(project.requiredTrades) ? project.requiredTrades : [];
+    const filledTradeRoles = Array.isArray(project.filledTradeRoles) ? project.filledTradeRoles : [];
+
+    if (requiredTrades.length > 0 && !selectedTradeRole) {
+      alert("This application is missing a selected trade role and cannot be accepted.");
+      return;
+    }
+
+    if (selectedTradeRole && requiredTrades.length > 0 && !requiredTrades.includes(selectedTradeRole)) {
+      alert("This applicant selected a trade role that is no longer required on this project.");
+      return;
+    }
+
+    if (selectedTradeRole && filledTradeRoles.includes(selectedTradeRole)) {
+      alert(`${selectedTradeRole} is already covered on this project.`);
+      return;
+    }
 
     await updateDoc(applicationRef, {
       status: "accepted",
@@ -899,6 +1015,7 @@ async function acceptApplication(applicationId) {
       memberEmail: application.applicantEmail || "",
       memberName: application.applicantName || "",
       memberService: application.applicantService || "",
+      selectedTradeRole,
       role: "trade",
       status: "active",
       sourceApplicationId: applicationId,
@@ -912,6 +1029,10 @@ async function acceptApplication(applicationId) {
       teamCount: increment(1),
       updatedAt: serverTimestamp()
     };
+
+    if (selectedTradeRole) {
+      projectUpdates.filledTradeRoles = arrayUnion(selectedTradeRole);
+    }
 
     if (application.status === "pending") projectUpdates.pendingApplicantCount = increment(-1);
     if (application.status === "rejected") projectUpdates.rejectedApplicantCount = increment(-1);
@@ -1451,6 +1572,30 @@ async function startWorkspaceUnlockCheckout(projectId, button) {
   if (!currentUser || !projectId) return;
 
   try {
+    if (homeownerProjectCount === 0 && !isSuperAdmin(currentUserData)) {
+      alert("Please post a project before unlocking a Project Workspace.");
+      return;
+    }
+
+    const projectSnap = await getDoc(doc(db, "projects", projectId));
+
+    if (!projectSnap.exists()) {
+      alert("Project not found.");
+      return;
+    }
+
+    const project = projectSnap.data();
+
+    if (project.ownerId !== currentUser.uid && !isSuperAdmin(currentUserData)) {
+      alert("Only the homeowner/project owner can unlock a Project Workspace.");
+      return;
+    }
+
+    if (project.workspaceUnlocked) {
+      alert("This workspace is already unlocked.");
+      return;
+    }
+
     if (button) {
       button.disabled = true;
       button.textContent = isSuperAdmin(currentUserData)
@@ -1556,7 +1701,7 @@ function renderTradesJobAccessBox() {
   if (openProjectJobCount === 0) {
     tradesJobAccessStatusText.textContent = "There are currently no open projects available. Please check back soon.";
     tradesJobAccessCheckoutBtn.disabled = true;
-    tradesJobAccessCheckoutBtn.classList.remove("hidden");
+    tradesJobAccessCheckoutBtn.classList.add("hidden");
     return;
   }
 
@@ -1565,15 +1710,98 @@ function renderTradesJobAccessBox() {
   tradesJobAccessCheckoutBtn.classList.remove("hidden");
 }
 
+function updateProjectsAccountSummary() {
+  const tradesAccessActive = hasActiveTradesJobAccess(currentUserData);
+  const modeLabel = currentProjectUserType === "homeowner"
+    ? "Homeowner"
+    : currentProjectUserType === "tradesperson"
+    ? "Tradesperson"
+    : "Not selected";
+
+  if (summaryProjectsMode) summaryProjectsMode.textContent = modeLabel;
+  if (summaryHomeownerProjects) summaryHomeownerProjects.textContent = String(homeownerProjectCount);
+  if (summaryOpenJobs) summaryOpenJobs.textContent = String(openProjectJobCount);
+  if (summaryTradesAccess) summaryTradesAccess.textContent = tradesAccessActive ? "Active" : "Inactive";
+  if (summaryTradesAccessExpiry) {
+    summaryTradesAccessExpiry.textContent = tradesAccessActive
+      ? formatDate(currentUserData?.tradesJobAccessExpiresAt)
+      : "Not active";
+  }
+  if (summaryUnlockedWorkspaces) summaryUnlockedWorkspaces.textContent = String(unlockedWorkspaceCount);
+  if (summaryLockedWorkspaces) summaryLockedWorkspaces.textContent = String(lockedWorkspaceCount);
+  if (summaryPaymentStatus) summaryPaymentStatus.textContent = getProjectsPaymentStatusLabel(tradesAccessActive);
+}
+
+function updateWorkspaceProtectionUI() {
+  if (workspaceHomeownerProjectCount) {
+    workspaceHomeownerProjectCount.textContent = String(homeownerProjectCount);
+  }
+
+  if (workspaceProtectionMessage) {
+    workspaceProtectionMessage.textContent = homeownerProjectCount === 0
+      ? "Post a project first before unlocking paid workspace software."
+      : "Choose one of your projects below to unlock its homeowner workspace.";
+  }
+
+  if (workspaceChooseProjectBtn) {
+    const disabled = homeownerProjectCount === 0;
+    workspaceChooseProjectBtn.classList.toggle("disabled-link", disabled);
+    workspaceChooseProjectBtn.setAttribute("aria-disabled", disabled ? "true" : "false");
+    workspaceChooseProjectBtn.tabIndex = disabled ? -1 : 0;
+  }
+}
+
+function resetProjectSummaryCounts() {
+  openProjectJobCount = 0;
+  homeownerProjectCount = 0;
+  unlockedWorkspaceCount = 0;
+  lockedWorkspaceCount = 0;
+  updateProjectsAccountSummary();
+  updateWorkspaceProtectionUI();
+}
+
+function getProjectsPaymentStatusLabel(tradesAccessActive) {
+  if (currentUserIsMember) {
+    return `${getMembershipLabel(currentUserData)} active`;
+  }
+
+  if (tradesAccessActive) {
+    return "30-day Trades Job Access active";
+  }
+
+  if (currentProjectUserType === "homeowner") {
+    return homeownerProjectCount > 0
+      ? "Homeowner workspace unlock available per project"
+      : "Free homeowner account - post a project first";
+  }
+
+  if (currentProjectUserType === "tradesperson") {
+    return openProjectJobCount > 0
+      ? "Trades Job Access available"
+      : "No open jobs - payment hidden";
+  }
+
+  return "Choose a Projects mode";
+}
+
 function setTradesJobAccessMessage(message) {
   if (tradesJobAccessMessage) tradesJobAccessMessage.textContent = message;
 }
 
 function renderProjectCard(project, mode) {
   const requiredTrades = Array.isArray(project.requiredTrades) ? project.requiredTrades : [];
+  const filledTradeRoles = Array.isArray(project.filledTradeRoles) ? project.filledTradeRoles : [];
+  const openTradeRoles = requiredTrades.filter((trade) => !filledTradeRoles.includes(trade));
 
   const tradeTags = requiredTrades.length
-    ? requiredTrades.map((trade) => `<span class="tag">${escapeHtml(trade)}</span>`).join("")
+    ? requiredTrades.map((trade) => {
+        const isFilled = filledTradeRoles.includes(trade);
+        return `
+          <span class="tag project-trade-tag ${isFilled ? "trade-filled" : "trade-open"}">
+            ${escapeHtml(trade)} · ${isFilled ? "Filled" : "Open"}
+          </span>
+        `;
+      }).join("")
     : `<span class="tag">No trades selected</span>`;
 
   const existingApplication = myApplicationMap.get(project.id);
@@ -1599,11 +1827,17 @@ function renderProjectCard(project, mode) {
   } else if (project.ownerId === currentUser?.uid) {
     tradeActions = `<div class="project-card-actions"><span class="project-mini-stat">Your project</span></div>`;
   } else if (existingTeam) {
-    tradeActions = `<div class="project-card-actions"><span class="project-status-pill">You are on this team</span></div>`;
+    tradeActions = `
+      <div class="project-card-actions">
+        <span class="project-status-pill">You are on this team</span>
+        <span class="project-mini-stat">${escapeHtml(existingTeam.selectedTradeRole || "Trade role")}</span>
+      </div>
+    `;
   } else if (existingApplication) {
     tradeActions = `
       <div class="project-card-actions">
         <span class="project-status-pill">Applied: ${escapeHtml(existingApplication.status || "pending")}</span>
+        <span class="project-mini-stat">${escapeHtml(existingApplication.selectedTradeRole || "Trade role not set")}</span>
         ${
           existingApplication.status === "pending" || existingApplication.status === "rejected"
             ? `
@@ -1620,9 +1854,7 @@ function renderProjectCard(project, mode) {
   } else {
     tradeActions = `
       <div class="project-card-actions">
-        <button class="btn-small project-apply-btn" type="button" data-apply-project-id="${project.id}">
-          Apply
-        </button>
+        ${renderApplyRoleButtons(project.id, requiredTrades, openTradeRoles)}
         <span class="project-mini-stat">${project.applicantCount || 0} applicants</span>
       </div>
     `;
@@ -1652,6 +1884,24 @@ function renderProjectCard(project, mode) {
   `;
 }
 
+function renderApplyRoleButtons(projectId, requiredTrades, openTradeRoles) {
+  if (!requiredTrades.length) {
+    return `<span class="project-mini-stat">No trade roles listed</span>`;
+  }
+
+  if (!openTradeRoles.length) {
+    return `<span class="project-mini-stat">All listed trade roles are filled</span>`;
+  }
+
+  return openTradeRoles.map((trade) => `
+    <button class="btn-small project-apply-btn" type="button"
+      data-apply-project-id="${projectId}"
+      data-selected-trade-role="${escapeHtml(trade)}">
+      Apply as ${escapeHtml(trade)}
+    </button>
+  `).join("");
+}
+
 function renderOwnerApplicantReview(project) {
   const applications = projectApplicationsMap.get(project.id) || [];
 
@@ -1677,6 +1927,7 @@ function renderApplicantRow(application) {
       <div>
         <strong>${escapeHtml(application.applicantName || "Applicant")}</strong>
         <span>${escapeHtml(application.applicantService || "Trade / Service not set")}</span>
+        <span>Applied as: ${escapeHtml(application.selectedTradeRole || "Trade role not selected")}</span>
         <span>${escapeHtml(application.applicantEmail || "")}</span>
       </div>
 
@@ -1719,6 +1970,7 @@ function renderTeamMemberRow(member) {
       <div>
         <strong>${escapeHtml(member.memberName || "Team Member")}</strong>
         <span>${escapeHtml(member.memberService || "Trade / Service")}</span>
+        <span>Role covered: ${escapeHtml(member.selectedTradeRole || "Trade role not set")}</span>
       </div>
       <span class="project-status-pill">Active</span>
     </div>
@@ -1763,6 +2015,7 @@ function renderApplicationCard(application) {
       <h3>${escapeHtml(application.projectTitle || "Untitled Project")}</h3>
       <p class="project-location">📍 ${escapeHtml(application.projectLocation || "Location not provided")}</p>
       <p class="project-description">Your application is currently marked as <strong>${escapeHtml(status)}</strong>.</p>
+      <p class="project-description">Applied as: <strong>${escapeHtml(application.selectedTradeRole || "Trade role not selected")}</strong>.</p>
 
       <div class="project-card-actions">
         ${
@@ -1793,7 +2046,7 @@ function renderTeamMembershipCard(teamMember) {
       <p class="project-description">You have been accepted onto this project team.</p>
 
       <div class="project-details-grid">
-        <div><strong>Role</strong><span>${escapeHtml(teamMember.role || "Trade")}</span></div>
+        <div><strong>Role</strong><span>${escapeHtml(teamMember.selectedTradeRole || teamMember.role || "Trade")}</span></div>
         <div><strong>Status</strong><span>${escapeHtml(teamMember.status || "Active")}</span></div>
         <div><strong>Buddy Ready</strong><span>${teamMember.trustedTradeEligible ? "Yes" : "No"}</span></div>
       </div>
