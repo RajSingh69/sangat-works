@@ -85,6 +85,13 @@ a {
   color: var(--blue);
   letter-spacing: -0.04em;
   white-space: nowrap;
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+.logo:hover,
+.logo:focus-visible {
+  color: var(--orange-dark);
 }
 
 .logo::after {
