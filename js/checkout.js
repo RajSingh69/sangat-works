@@ -4,7 +4,8 @@ const PRICE_IDS = {
   yearly_subscription: "price_1Tkm1gDbE6tXsxNU9veTZwPE",
   monthly_subscription: "price_1Tkm19DbE6tXsxNUxU6b7NUI",
   yearly_pass: "price_1Tl90wDbE6tXsxNUPMzfGO5m",
-  monthly_pass: "price_1Tl8zyDbE6tXsxNUpynPPWft"
+  monthly_pass: "price_1Tl8zyDbE6tXsxNUpynPPWft",
+  featured_listing: "price_1TlZxODbE6tXsxNUzI1ng4Iy"
 };
 
 const FUNCTION_URL =
@@ -32,9 +33,11 @@ document.querySelectorAll(".checkout-btn").forEach((button) => {
       return;
     }
 
-    const billingType = selectedPlan.includes("_pass")
-      ? "oneoff"
-      : "subscription";
+    const billingType = selectedPlan === "featured_listing"
+      ? "featured"
+      : selectedPlan.includes("_pass")
+        ? "oneoff"
+        : "subscription";
 
     console.log("Selected plan:", selectedPlan);
     console.log("Selected price:", selectedPrice);
