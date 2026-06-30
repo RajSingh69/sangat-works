@@ -247,6 +247,18 @@ button:hover {
   flex-wrap: wrap;
 }
 
+.auth-switch-note {
+  margin-top: 18px;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.auth-switch-note a {
+  color: var(--blue);
+  font-weight: 950;
+}
+
 .hero-back-link {
   display: flex;
   justify-content: center;

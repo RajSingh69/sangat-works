@@ -7,19 +7,10 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 import {
-  collection,
   doc,
-  getDocs,
   setDoc,
-  serverTimestamp,
-  Timestamp
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
-import {
-  isExcludedFromFoundingMemberCount
-} from "./roles.js";
-
-const FOUNDING_MEMBER_LIMIT = 30;
 
 const showLogin = document.getElementById("showLogin");
 const showRegister = document.getElementById("showRegister");
@@ -27,29 +18,26 @@ const loginForm = document.getElementById("loginForm");
 const registerForm = document.getElementById("registerForm");
 const authMessage = document.getElementById("authMessage");
 
-function getOneYearFromNowTimestamp() {
-  const expiryDate = new Date();
-  expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-  return Timestamp.fromDate(expiryDate);
-}
+const MEMBERSHIP_PLANS = [
+  "yearly_subscription",
+  "monthly_subscription",
+  "yearly_pass",
+  "monthly_pass"
+];
 
-async function getFoundingMemberCount() {
-  const usersSnap = await getDocs(collection(db, "users"));
+const requestedPlan = new URLSearchParams(window.location.search).get("plan");
+const selectedMembershipPlan = MEMBERSHIP_PLANS.includes(requestedPlan)
+  ? requestedPlan
+  : "";
 
-  let count = 0;
-
-  usersSnap.forEach((docSnap) => {
-    const user = docSnap.data();
-
-    if (
-      user.isFoundingMember === true &&
-      !isExcludedFromFoundingMemberCount(user)
-    ) {
-      count++;
-    }
-  });
-
-  return count;
+function showPaidPlanRequiredMessage() {
+  authMessage.innerHTML = `
+    The free founding member spaces are now full. Please choose a membership plan to continue.
+    <br />
+    <a class="btn-primary" href="pricing.html" style="display:inline-block; margin-top:12px;">
+      Choose a membership plan
+    </a>
+  `;
 }
 
 showLogin.addEventListener("click", () => {
@@ -78,6 +66,13 @@ loginForm.addEventListener("submit", async (e) => {
     await signInWithEmailAndPassword(auth, email, password);
 
     authMessage.textContent = "Login successful.";
+
+    if (selectedMembershipPlan) {
+      window.location.href =
+        `pricing.html?checkout=${encodeURIComponent(selectedMembershipPlan)}`;
+      return;
+    }
+
     window.location.href = "profile.html";
   } catch (error) {
     authMessage.textContent = error.message;
@@ -92,14 +87,16 @@ registerForm.addEventListener("submit", async (e) => {
   const password = document.getElementById("registerPassword").value;
 
   try {
-    authMessage.textContent = "Checking founding member spaces...";
+    authMessage.textContent = "Checking signup options...";
 
-    const foundingCount = await getFoundingMemberCount();
-    const isFoundingMember = foundingCount < FOUNDING_MEMBER_LIMIT;
-    const memberNumber = isFoundingMember ? foundingCount + 1 : null;
-    const subscriptionExpiresAt = isFoundingMember
-      ? getOneYearFromNowTimestamp()
-      : null;
+    if (!selectedMembershipPlan) {
+      showPaidPlanRequiredMessage();
+      return;
+    }
+
+    const isFoundingMember = false;
+    const memberNumber = null;
+    const subscriptionExpiresAt = null;
 
     authMessage.textContent = "Creating account...";
 
@@ -146,9 +143,17 @@ registerForm.addEventListener("submit", async (e) => {
       createdAt: serverTimestamp()
     });
 
-    authMessage.textContent = isFoundingMember
+    authMessage.textContent = selectedMembershipPlan
+      ? "Account created. Continuing to secure checkout..."
+      : isFoundingMember
       ? "Account created. You are a founding member with 1 year free access."
       : "Account created. Please choose a membership plan.";
+
+    if (selectedMembershipPlan) {
+      window.location.href =
+        `pricing.html?checkout=${encodeURIComponent(selectedMembershipPlan)}`;
+      return;
+    }
 
     window.location.href = isFoundingMember ? "profile.html" : "pricing.html";
   } catch (error) {

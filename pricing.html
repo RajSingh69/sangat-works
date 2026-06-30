@@ -20,10 +20,10 @@
 
   <section class="hero small-hero">
     <p class="eyebrow">Membership & Services</p>
-    <h1>Choose your membership and boost your profile.</h1>
+    <h1>Choose your membership plan first.</h1>
     <p class="hero-text">
-      Join Sangat Works, access member features, and use paid profile boosts
-      to get seen by more of the Sangat.
+      New members start here. Choose Monthly or Yearly, then we will guide you
+      through secure payment and account creation.
     </p>
   </section>
 
@@ -76,60 +76,9 @@
       </div>
     </div>
 
-    <div class="section-heading">
-      <p class="eyebrow">Services To Buy</p>
-      <h2>Promote your profile across Sangat Works.</h2>
-      <p>
-        These are optional paid boosts for members who want extra visibility.
-      </p>
-    </div>
-
-    <div class="pricing-grid">
-
-      <div class="pricing-card highlighted">
-        <p class="eyebrow">Available Now</p>
-        <h3>Featured Listing</h3>
-        <strong>£5 / 30 days</strong>
-        <p>
-          Promote your profile across the directory and map. Featured members appear
-          more prominently and receive a highlighted marker on the map.
-        </p>
-        <button class="btn-primary full checkout-btn" data-plan="featured_listing">
-          Buy Featured Listing
-        </button>
-      </div>
-
-    </div>
-
-    <div class="founding-counter-box" style="margin-top: 28px;">
-      <strong id="foundingClaimed">0</strong>
-      <span>/ 30 founding places claimed</span>
-
-      <div class="strength-bar">
-        <div id="foundingCounterFill"></div>
-      </div>
-
-      <p id="foundingRemaining">30 founding spaces remaining</p>
-    </div>
-
-    <div class="pricing-grid">
-
-      <div class="pricing-card highlighted">
-        <p class="eyebrow">Limited Offer</p>
-        <h3>Founding Member</h3>
-        <strong>Free for 1 year</strong>
-        <p>
-          For the first 30 free members who help shape Sangat Works from the beginning.
-          Includes profile, directory access, map visibility and member features.
-        </p>
-        <a href="login.html" class="btn-primary full">Join as Founding Member</a>
-      </div>
-
-    </div>
-
-    <div class="section-heading">
-      <p class="eyebrow">Auto-Renewing Membership</p>
-      <h2>Keep your access active automatically.</h2>
+    <div class="section-heading" style="margin-top: 0;">
+      <p class="eyebrow">Start Here</p>
+      <h2>Choose Monthly or Yearly membership.</h2>
       <p>
         These plans renew automatically through Stripe. You can cancel your subscription
         and keep access until the end of your current billing period.
@@ -137,18 +86,6 @@
     </div>
 
     <div class="pricing-grid">
-
-      <div class="pricing-card">
-        <h3>Yearly Subscription</h3>
-        <strong>£25/year</strong>
-        <p>
-          Best value for members who want continuous access to the directory, map,
-          reviews, profile features, Skills Network and Young Professionals.
-        </p>
-        <button class="btn-primary full checkout-btn" data-plan="yearly_subscription">
-          Subscribe Yearly
-        </button>
-      </div>
 
       <div class="pricing-card">
         <h3>Monthly Subscription</h3>
@@ -162,8 +99,27 @@
         </button>
       </div>
 
+      <div class="pricing-card highlighted">
+        <h3>Yearly Subscription</h3>
+        <strong>£25/year</strong>
+        <p>
+          Best value for members who want continuous access to the directory, map,
+          reviews, profile features, Skills Network and Young Professionals.
+        </p>
+        <button class="btn-primary full checkout-btn" data-plan="yearly_subscription">
+          Subscribe Yearly
+        </button>
+      </div>
+
     </div>
 
+    <div class="section-heading">
+      <p class="eyebrow">Founding Spaces Full</p>
+      <h2>The free founding member places are now full.</h2>
+      <p>
+        Please choose a paid membership plan above to continue with Sangat Works.
+      </p>
+    </div>
     <div class="section-heading">
       <p class="eyebrow">One-Off Access</p>
       <h2>Pay once. No automatic renewal.</h2>
@@ -201,6 +157,31 @@
 
     </div>
 
+    <div class="section-heading">
+      <p class="eyebrow">Services To Buy</p>
+      <h2>Promote your profile across Sangat Works.</h2>
+      <p>
+        Featured listings are optional paid boosts for active members who want extra visibility.
+      </p>
+    </div>
+
+    <div class="pricing-grid">
+
+      <div class="pricing-card highlighted">
+        <p class="eyebrow">Available Now</p>
+        <h3>Featured Listing</h3>
+        <strong>GBP 5 / 30 days</strong>
+        <p>
+          Promote your profile across the directory and map. Featured members appear
+          more prominently and receive a highlighted marker on the map.
+        </p>
+        <button class="btn-primary full checkout-btn" data-plan="featured_listing">
+          Buy Featured Listing
+        </button>
+      </div>
+
+    </div>
+
     <p id="checkoutMessage" class="message"></p>
 
     <div class="hero-actions">
@@ -216,7 +197,6 @@
 </footer>
 
 <script type="module" src="js/nav.js"></script>
-<script type="module" src="js/founding-counter.js"></script>
 <script type="module" src="./js/checkout.js?v=1006"></script>
 <script type="module" src="./js/pricing.js?v=1001"></script>
 
