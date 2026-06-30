@@ -240,6 +240,65 @@ button:hover {
   color: var(--muted);
 }
 
+.membership-options-banner {
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: clamp(18px, 3vw, 26px);
+  background: rgba(255, 253, 248, 0.94);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow-soft);
+  text-align: left;
+}
+
+.membership-options-banner h2 {
+  color: var(--blue);
+  font-size: clamp(1.25rem, 2.5vw, 1.65rem);
+  margin-bottom: 14px;
+  letter-spacing: -0.02em;
+}
+
+.membership-option-lines {
+  display: grid;
+  gap: 10px;
+}
+
+.membership-option-lines p,
+.membership-options-note {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.membership-option-lines strong {
+  color: var(--blue);
+}
+
+.membership-option-lines span:not(.membership-option-tick) {
+  color: var(--orange-dark);
+  font-weight: 900;
+}
+
+.membership-option-tick {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: rgba(255, 122, 24, 0.14);
+  color: var(--orange-dark);
+  font-weight: 950;
+}
+
+.membership-options-note {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  color: var(--blue);
+}
+
 .hero-actions {
   display: flex;
   justify-content: center;
@@ -537,6 +596,42 @@ textarea {
   margin-top: 16px;
   font-weight: 900;
   color: var(--orange-dark);
+}
+
+.profile-homepage-guide,
+.profile-payment-warning {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  margin: 22px 0;
+  box-shadow: var(--shadow-soft);
+}
+
+.profile-homepage-guide {
+  background: linear-gradient(135deg, #fffdf8, var(--sky));
+}
+
+.profile-payment-warning {
+  background: linear-gradient(135deg, #fff4df, #fffdf8);
+  border-color: rgba(255, 122, 24, 0.32);
+}
+
+.profile-homepage-guide p,
+.profile-payment-warning p {
+  margin: 0;
+  color: var(--blue);
+  font-weight: 850;
+  line-height: 1.55;
+}
+
+.profile-homepage-guide .btn-secondary,
+.profile-payment-warning .btn-primary {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 /* DASHBOARD / PROFILE BOXES */
@@ -1139,6 +1234,18 @@ footer {
 
   .profile-strength-box {
     padding: 18px;
+  }
+
+  .profile-homepage-guide,
+  .profile-payment-warning {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .profile-homepage-guide .btn-secondary,
+  .profile-payment-warning .btn-primary {
+    width: 100%;
+    text-align: center;
   }
 
   #map {

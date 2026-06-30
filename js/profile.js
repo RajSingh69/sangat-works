@@ -28,6 +28,7 @@ const CHECKOUT_FUNCTION_URL = "https://europe-west1-sangat-works.cloudfunctions.
 const profileForm = document.getElementById("profileForm");
 const profileMessage = document.getElementById("profileMessage");
 const publicProfile = document.getElementById("publicProfile");
+const pendingPaymentWarning = document.getElementById("pendingPaymentWarning");
 
 const gurdwaraSelect = document.getElementById("gurdwaraSelect");
 const newGurdwaraName = document.getElementById("newGurdwaraName");
@@ -185,6 +186,45 @@ function isActiveMember(profile) {
   }
 
   return true;
+}
+
+function isSuperAdminOrInternalAccount(profile) {
+  return (
+    profile?.role === "super_admin" ||
+    profile?.internalAccount === true
+  );
+}
+
+function isPendingPaymentAccount(profile) {
+  if (!profile) return false;
+  if (isActiveMember(profile)) return false;
+  if (profile.isFoundingMember === true) return false;
+  if (isSuperAdminOrInternalAccount(profile)) return false;
+
+  const pendingValues = new Set([
+    profile.subscriptionStatus,
+    profile.membershipStatus,
+    profile.membershipPlan,
+    profile.subscriptionPlan
+  ]);
+
+  return (
+    pendingValues.has("pending") ||
+    pendingValues.has("pending-payment") ||
+    (
+      profile.hasSubscription === false &&
+      profile.subscriptionStatus === "pending-payment"
+    )
+  );
+}
+
+function renderPendingPaymentWarning(profile) {
+  if (!pendingPaymentWarning) return;
+
+  pendingPaymentWarning.classList.toggle(
+    "hidden",
+    !isPendingPaymentAccount(profile)
+  );
 }
 
 function renderMembershipStatus(profile) {
@@ -600,6 +640,7 @@ if (profileForm) {
       fillForm(existingProfile);
       calculateProfileStrength(existingProfile);
       renderMembershipStatus(existingProfile);
+      renderPendingPaymentWarning(existingProfile);
       renderFeaturedListingStatus(existingProfile);
       renderMemberDashboard(existingProfile);
     } else {
@@ -611,6 +652,7 @@ if (profileForm) {
       fillForm(existingProfile);
       calculateProfileStrength(existingProfile);
       renderMembershipStatus(existingProfile);
+      renderPendingPaymentWarning(existingProfile);
       renderFeaturedListingStatus(existingProfile);
       renderMemberDashboard(existingProfile);
     }
@@ -756,6 +798,7 @@ if (profileForm) {
 
       calculateProfileStrength(existingProfile);
       renderMembershipStatus(existingProfile);
+      renderPendingPaymentWarning(existingProfile);
       renderFeaturedListingStatus(existingProfile);
       renderMemberDashboard(existingProfile);
 
