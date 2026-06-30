@@ -27,12 +27,13 @@
       businesses and skills across the UK.
     </p>
 
-    <div class="hero-actions">
-      <a href="pricing.html" class="btn-primary">Sign Up Now</a>
+    <div class="hero-actions" id="homepageHeroActions">
+      <a href="pricing.html" class="btn-primary" id="homepageSignupCta">Sign Up Now</a>
       <a href="directory.html" class="btn-secondary">Browse Directory</a>
+      <a href="profile.html" class="btn-primary hidden" id="homepageProfileCta">Go to My Profile</a>
     </div>
 
-    <p class="auth-switch-note">
+    <p class="auth-switch-note" id="homepageLoginPrompt">
       Already have an account? <a href="login.html">Log in</a>
     </p>
   </section>
@@ -501,9 +502,29 @@
 
 <script type="module">
   import { auth, db } from "./js/firebase.js";
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
   import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
   const restartWalkthroughBtn = document.getElementById("restartWalkthroughBtn");
+  const homepageSignupCta = document.getElementById("homepageSignupCta");
+  const homepageProfileCta = document.getElementById("homepageProfileCta");
+  const homepageLoginPrompt = document.getElementById("homepageLoginPrompt");
+
+  onAuthStateChanged(auth, (user) => {
+    const isLoggedIn = Boolean(user);
+
+    if (homepageSignupCta) {
+      homepageSignupCta.classList.toggle("hidden", isLoggedIn);
+    }
+
+    if (homepageProfileCta) {
+      homepageProfileCta.classList.toggle("hidden", !isLoggedIn);
+    }
+
+    if (homepageLoginPrompt) {
+      homepageLoginPrompt.classList.toggle("hidden", isLoggedIn);
+    }
+  });
 
   if (restartWalkthroughBtn) {
     restartWalkthroughBtn.addEventListener("click", async () => {
