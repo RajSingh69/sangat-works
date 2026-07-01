@@ -33,6 +33,7 @@ const statPendingFaqs = document.getElementById("statPendingFaqs");
 
 const adminQuestions = document.getElementById("adminQuestions");
 const adminFeatures = document.getElementById("adminFeatures");
+const adminMessagePreview = document.getElementById("adminMessagePreview");
 
 let currentAdminData = null;
 
@@ -421,6 +422,8 @@ onAuthStateChanged(auth, async (user) => {
     adminStatus.textContent = "Access denied. Admins only.";
     return;
   }
+
+  adminMessagePreview?.classList.remove("hidden");
 
   await loadAdminDashboard();
 });

@@ -72,6 +72,75 @@
     <div id="adminFeatures" class="admin-users"></div>
   </section>
 
+  <section id="adminMessagePreview" class="form-card wide hidden">
+    <h2>User Message Preview</h2>
+    <p>Read-only previews of conditional messages users see across Sangat Works.</p>
+
+    <div class="admin-message-preview-grid">
+      <article class="admin-user-card message-preview-card">
+        <p class="eyebrow">User has free/pending account and cannot access services</p>
+
+        <div class="profile-payment-warning message-preview-surface">
+          <p>
+            You are currently operating as a free account. You may edit your profile,
+            however you do not have access to service functionality. To gain access,
+            please choose a subscription plan to continue.
+          </p>
+
+          <a href="pricing.html" class="btn-primary">Choose Subscription Plan</a>
+        </div>
+      </article>
+
+      <article class="admin-user-card message-preview-card">
+        <p class="eyebrow">New user lands on profile page after signup</p>
+
+        <div class="profile-homepage-guide message-preview-surface">
+          <p>
+            To new users: Click this button to go to the homepage and go exploring :)
+            Best place to start would be the Directory!
+          </p>
+
+          <a href="index.html" class="btn-secondary">To the homepage</a>
+        </div>
+      </article>
+
+      <article class="admin-user-card message-preview-card">
+        <p class="eyebrow">Tradesperson sees no open project jobs</p>
+
+        <div class="empty-state message-preview-surface">
+          There are currently no open projects available. Please check back soon.
+        </div>
+      </article>
+
+      <article class="admin-user-card message-preview-card">
+        <p class="eyebrow">Tradesperson needs 30-day job access</p>
+
+        <div class="project-access-card message-preview-surface">
+          <strong>There are currently 3 open project jobs available.</strong>
+          <p>Buy a one-time 30-day pass to view and apply to open project jobs.</p>
+          <a href="projects.html#openProjectsSection" class="btn-primary">
+            Buy 30-day Job Access for &pound;14.99
+          </a>
+          <p class="message"></p>
+        </div>
+      </article>
+
+      <article class="admin-user-card message-preview-card">
+        <p class="eyebrow">Homeowner has locked project workspace</p>
+
+        <div class="project-workspace-locked message-preview-surface">
+          <p class="eyebrow">Locked</p>
+          <h3>Workspace Locked</h3>
+          <p>Unlock this project workspace with a one-off &pound;40 payment.</p>
+          <a href="projects.html#projectWorkspaceSection" class="btn-primary">
+            Unlock Workspace for &pound;40
+          </a>
+          <p class="message"></p>
+        </div>
+      </article>
+    </div>
+  </section>
+
 </main>
 
 <script type="module" src="js/nav.js"></script>

@@ -1711,7 +1711,7 @@ function renderTradesJobAccessBox() {
 }
 
 function updateProjectsAccountSummary() {
-  const tradesAccessActive = hasActiveTradesJobAccess(currentUserData);
+  const tradesAccessActive = hasActiveTradesJobAccess(currentUserData);sss
   const modeLabel = currentProjectUserType === "homeowner"
     ? "Homeowner"
     : currentProjectUserType === "tradesperson"
