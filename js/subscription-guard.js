@@ -35,11 +35,36 @@ function isAllowedStatus(status) {
   return status === "active";
 }
 
+function getFreeAccessExpiryDate(userData) {
+  if (!userData || !userData.freeAccessExpiresAt) {
+    return null;
+  }
+
+  const expiryDate = userData.freeAccessExpiresAt.toDate
+    ? userData.freeAccessExpiresAt.toDate()
+    : new Date(userData.freeAccessExpiresAt);
+
+  if (Number.isNaN(expiryDate.getTime())) {
+    return null;
+  }
+
+  return expiryDate;
+}
+
 export function hasActiveSubscription(userData) {
   if (!userData) return false;
 
   if (isAdminUser(userData)) {
     return true;
+  }
+
+  if (userData.accessType === "admin_granted_free_year") {
+    const freeAccessExpiryDate = getFreeAccessExpiryDate(userData);
+
+    return Boolean(
+      freeAccessExpiryDate &&
+      freeAccessExpiryDate > new Date()
+    );
   }
 
   const expiryDate = getExpiryDate(userData);

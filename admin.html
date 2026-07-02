@@ -51,6 +51,35 @@
     </div>
   </section>
 
+  <section id="freeCharityGrantPanel" class="form-card wide hidden">
+    <h2>Create Free Charity Account</h2>
+    <p>Only use this for approved charity accounts.</p>
+
+    <form id="createFreeCharityAccountForm" class="auth-form">
+      <input type="email" id="createFreeCharityEmail" placeholder="Charity contact email" required />
+      <input type="password" id="createFreeCharityPassword" placeholder="Temporary password" required />
+      <input type="text" id="createFreeCharityName" placeholder="Charity / organisation name" required />
+      <textarea id="createFreeCharityNotes" rows="3" placeholder="Optional admin notes"></textarea>
+      <button type="submit" class="btn-primary full">Create Free Charity Account</button>
+    </form>
+
+    <p id="createFreeCharityAccountMessage" class="message"></p>
+
+    <hr style="margin: 28px 0;" />
+
+    <h2>Grant Free Charity Year</h2>
+    <p>Create a 1-year admin-granted charity account or invite. This does not modify Stripe subscriptions.</p>
+
+    <form id="freeCharityGrantForm" class="auth-form">
+      <input type="email" id="freeCharityEmail" placeholder="Charity contact email" required />
+      <input type="text" id="freeCharityName" placeholder="Charity / organisation name" required />
+      <textarea id="freeCharityNotes" rows="3" placeholder="Optional admin notes"></textarea>
+      <button type="submit" class="btn-primary full">Grant Free 1 Year</button>
+    </form>
+
+    <p id="freeCharityGrantMessage" class="message"></p>
+  </section>
+
   <section class="form-card wide">
     <h2>Users</h2>
     <p>Click a user to expand their full admin controls.</p>

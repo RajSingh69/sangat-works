@@ -151,7 +151,19 @@ function getDaysRemaining(value) {
   return diffDays > 0 ? diffDays : 0;
 }
 
+function isFreeCharityYear(profile) {
+  return profile?.accessType === "admin_granted_free_year";
+}
+
+function getFreeAccessDaysRemaining(profile) {
+  return getDaysRemaining(profile?.freeAccessExpiresAt);
+}
+
 function formatSubscriptionPlan(profile) {
+  if (isFreeCharityYear(profile)) {
+    return "Free Charity Year";
+  }
+
   if (profile.isFoundingMember === true) {
     return `👑 Founding Member #${profile.memberNumber || ""}`;
   }
@@ -175,6 +187,10 @@ function isActiveMember(profile) {
   if (!profile) return false;
 
   if (isAdminUser(profile)) return true;
+
+  if (isFreeCharityYear(profile)) {
+    return getFreeAccessDaysRemaining(profile) > 0;
+  }
 
   if (profile.hasSubscription !== true) return false;
 
@@ -200,6 +216,7 @@ function isPendingPaymentAccount(profile) {
   if (!profile) return false;
   if (isActiveMember(profile)) return false;
   if (profile.isFoundingMember === true) return false;
+  if (isFreeCharityYear(profile)) return getFreeAccessDaysRemaining(profile) <= 0;
   if (isSuperAdminOrInternalAccount(profile)) return false;
 
   const pendingValues = new Set([
@@ -257,11 +274,17 @@ function renderMembershipStatus(profile) {
   }
 
   const active = isActiveMember(profile);
-  const daysRemaining = getDaysRemaining(profile.subscriptionExpiresAt);
+  const daysRemaining = isFreeCharityYear(profile)
+    ? getFreeAccessDaysRemaining(profile)
+    : getDaysRemaining(profile.subscriptionExpiresAt);
 
   membershipPlan.textContent = formatSubscriptionPlan(profile);
 
-  if (profile.isFoundingMember === true) {
+  if (isFreeCharityYear(profile)) {
+    membershipStatus.textContent = active
+      ? "Active (Free Charity Year)"
+      : "Expired Free Access";
+  } else if (profile.isFoundingMember === true) {
     membershipStatus.textContent = active
       ? "Active (Free Founding Membership)"
       : "Expired";
@@ -271,7 +294,9 @@ function renderMembershipStatus(profile) {
       : "Inactive";
   }
 
-  membershipExpiry.textContent = formatDate(profile.subscriptionExpiresAt);
+  membershipExpiry.textContent = isFreeCharityYear(profile)
+    ? formatDate(profile.freeAccessExpiresAt)
+    : formatDate(profile.subscriptionExpiresAt);
 
   if (active) {
     membershipDays.textContent = `${daysRemaining} days`;

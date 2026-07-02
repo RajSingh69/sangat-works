@@ -350,8 +350,19 @@ async function loadYoungProfessionals() {
       : null;
     const notExpired = !expiryDate || expiryDate > new Date();
 
+    const freeAccessExpiryDate = user.freeAccessExpiresAt?.toDate
+      ? user.freeAccessExpiresAt.toDate()
+      : user.freeAccessExpiresAt
+      ? new Date(user.freeAccessExpiresAt)
+      : null;
+    const freeAccessActive =
+      user.accessType === "admin_granted_free_year" &&
+      freeAccessExpiryDate &&
+      freeAccessExpiryDate > new Date();
+
     if (
       (user.role === "admin" || user.role === "super_admin") ||
+      freeAccessActive ||
       (
         user.hasSubscription === true &&
         user.subscriptionStatus === "active" &&

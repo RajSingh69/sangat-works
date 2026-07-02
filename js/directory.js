@@ -97,6 +97,11 @@ function isPaidDirectoryProfile(profile) {
     return true;
   }
 
+  if (profile.accessType === "admin_granted_free_year") {
+    const freeAccessExpiryDate = timestampToDate(profile.freeAccessExpiresAt);
+    return Boolean(freeAccessExpiryDate && freeAccessExpiryDate > new Date());
+  }
+
   if (profile.hasSubscription !== true) {
     return false;
   }

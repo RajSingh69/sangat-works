@@ -34,6 +34,16 @@ const statPendingFaqs = document.getElementById("statPendingFaqs");
 const adminQuestions = document.getElementById("adminQuestions");
 const adminFeatures = document.getElementById("adminFeatures");
 const adminMessagePreview = document.getElementById("adminMessagePreview");
+const freeCharityGrantPanel = document.getElementById("freeCharityGrantPanel");
+const createFreeCharityAccountForm = document.getElementById("createFreeCharityAccountForm");
+const createFreeCharityAccountMessage = document.getElementById("createFreeCharityAccountMessage");
+const freeCharityGrantForm = document.getElementById("freeCharityGrantForm");
+const freeCharityGrantMessage = document.getElementById("freeCharityGrantMessage");
+
+const CREATE_FREE_CHARITY_ACCOUNT_URL =
+  "https://europe-west1-sangat-works.cloudfunctions.net/createFreeCharityAccount";
+const GRANT_FREE_CHARITY_YEAR_URL =
+  "https://europe-west1-sangat-works.cloudfunctions.net/grantFreeCharityYear";
 
 let currentAdminData = null;
 
@@ -45,6 +55,15 @@ function getDateFromTimestamp(value) {
   if (Number.isNaN(date.getTime())) return null;
 
   return date;
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function daysAgo(value) {
@@ -82,12 +101,35 @@ function isPaidUser(user) {
   );
 }
 
+function isFreeCharityYear(user) {
+  return user?.accessType === "admin_granted_free_year";
+}
+
+function isFreeCharityYearActive(user) {
+  if (!isFreeCharityYear(user)) return false;
+
+  const expiryDate = getDateFromTimestamp(user.freeAccessExpiresAt);
+  return Boolean(expiryDate && expiryDate > new Date());
+}
+
 function getAccountLabel(user) {
   if (isAdminUser(user)) return "Admin";
+  if (isFreeCharityYear(user)) {
+    return isFreeCharityYearActive(user)
+      ? "Free Charity Year"
+      : "Expired Free Access";
+  }
+
   return isPaidUser(user) ? "Paid Member" : "Not Paid";
 }
 
 function getMembershipStatusLabel(user) {
+  if (isFreeCharityYear(user)) {
+    return isFreeCharityYearActive(user)
+      ? "Admin Granted"
+      : "Expired Free Access";
+  }
+
   if (isPaidUser(user)) return "Active";
   if (user?.subscriptionStatus === "pending-payment") return "Pending Payment";
   if (user?.membershipStatus === "pending") return "Pending Payment";
@@ -153,6 +195,8 @@ function renderUserRow(user) {
         <p><strong>Membership:</strong> ${user.membershipPlan || "not set"}</p>
         <p><strong>Status:</strong> ${getMembershipStatusLabel(user)}</p>
         <p><strong>Subscription:</strong> ${user.subscriptionStatus || "not set"}</p>
+        ${isFreeCharityYear(user) ? `<p><strong>Free access until:</strong> ${getDateFromTimestamp(user.freeAccessExpiresAt)?.toLocaleDateString("en-GB") || "not set"}</p>` : ""}
+        ${user.charityName ? `<p><strong>Charity:</strong> ${user.charityName}</p>` : ""}
         <p><strong>Member Number:</strong> ${user.memberNumber || "not assigned"}</p>
 
         <div class="admin-member-controls">
@@ -416,6 +460,140 @@ function setupFaqAdminActions() {
   });
 }
 
+async function createFreeCharityAccount(event) {
+  event.preventDefault();
+
+  if (!isAdminUser(currentAdminData)) {
+    createFreeCharityAccountMessage.textContent = "Admins only.";
+    return;
+  }
+
+  const email = document.getElementById("createFreeCharityEmail")?.value.trim();
+  const temporaryPassword = document.getElementById("createFreeCharityPassword")?.value || "";
+  const charityName = document.getElementById("createFreeCharityName")?.value.trim();
+  const notes = document.getElementById("createFreeCharityNotes")?.value.trim();
+
+  if (!email || !temporaryPassword || !charityName) {
+    createFreeCharityAccountMessage.textContent =
+      "Email, temporary password and charity name are required.";
+    return;
+  }
+
+  try {
+    createFreeCharityAccountMessage.textContent =
+      "Creating Free Charity Account...";
+
+    const idToken = await auth.currentUser.getIdToken();
+    const response = await fetch(CREATE_FREE_CHARITY_ACCOUNT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify({
+        email,
+        temporaryPassword,
+        charityName,
+        notes
+      })
+    });
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok || result.error) {
+      throw new Error(result.error || "Create account failed.");
+    }
+
+    const expiryDate = result.freeAccessExpiresAt
+      ? new Date(result.freeAccessExpiresAt).toLocaleDateString("en-GB")
+      : "1 year from today";
+
+    createFreeCharityAccountMessage.innerHTML = `
+      <strong>Free Charity Account ready.</strong><br>
+      Email: ${escapeHtml(email)}<br>
+      Temporary password: ${escapeHtml(temporaryPassword)}<br>
+      Free access expires: ${escapeHtml(expiryDate)}<br>
+      ${
+        result.passwordWasSet
+          ? "Send these details securely and ask the user to change their password after first login."
+          : "This email already had a Firebase Auth account, so the password was not changed. Ask the user to use their existing password or reset it securely."
+      }
+    `;
+
+    createFreeCharityAccountForm.reset();
+    await loadUsers();
+  } catch (error) {
+    createFreeCharityAccountMessage.textContent =
+      error.message || "Could not create Free Charity Account.";
+  }
+}
+
+async function grantFreeCharityYear(event) {
+  event.preventDefault();
+
+  if (!isAdminUser(currentAdminData)) {
+    freeCharityGrantMessage.textContent = "Admins only.";
+    return;
+  }
+
+  const email = document.getElementById("freeCharityEmail")?.value.trim();
+  const charityName = document.getElementById("freeCharityName")?.value.trim();
+  const adminNotes = document.getElementById("freeCharityNotes")?.value.trim();
+
+  if (!email || !charityName) {
+    freeCharityGrantMessage.textContent = "Email and charity name are required.";
+    return;
+  }
+
+  try {
+    freeCharityGrantMessage.textContent = "Granting Free Charity Year...";
+
+    const idToken = await auth.currentUser.getIdToken();
+    const response = await fetch(GRANT_FREE_CHARITY_YEAR_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify({
+        email,
+        charityName,
+        adminNotes
+      })
+    });
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok || result.error) {
+      throw new Error(result.error || "Grant failed.");
+    }
+
+    if (result.inviteUrl) {
+      freeCharityGrantMessage.innerHTML = `
+        Invite created. Send this signup link to the charity contact:<br>
+        <a href="${result.inviteUrl}" target="_blank">${result.inviteUrl}</a>
+      `;
+    } else {
+      freeCharityGrantMessage.textContent =
+        "Free Charity Year granted to the existing account.";
+    }
+
+    freeCharityGrantForm.reset();
+    await loadUsers();
+  } catch (error) {
+    freeCharityGrantMessage.textContent =
+      error.message || "Could not grant Free Charity Year.";
+  }
+}
+
+if (createFreeCharityAccountForm) {
+  createFreeCharityAccountForm.addEventListener("submit", createFreeCharityAccount);
+}
+
+if (freeCharityGrantForm) {
+  freeCharityGrantForm.addEventListener("submit", grantFreeCharityYear);
+}
+
 async function loadAdminDashboard() {
   await loadUsers();
   await loadFaqs();
@@ -444,6 +622,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   adminMessagePreview?.classList.remove("hidden");
+  freeCharityGrantPanel?.classList.remove("hidden");
 
   await loadAdminDashboard();
 });

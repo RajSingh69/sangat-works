@@ -32,6 +32,10 @@ function renderMembershipBadge(userData) {
     return `<span class="account-email">Lifetime Member</span>`;
   }
 
+  if (userData.accessType === "admin_granted_free_year") {
+    return `<span class="account-email">Free Charity Year</span>`;
+  }
+
   if (userData.isFoundingMember === true) {
     return `<span class="account-email">Founding #${userData.memberNumber || ""}</span>`;
   }
