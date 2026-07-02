@@ -1,4 +1,5 @@
 import { auth, db } from "./firebase.js";
+import { hasActiveSubscription } from "./subscription-guard.js";
 
 import {
   onAuthStateChanged
@@ -336,6 +337,14 @@ onAuthStateChanged(auth, async (user) => {
 
     if (userSnap.exists()) {
       currentUserProfile = userSnap.data();
+    }
+
+    if (!hasActiveSubscription(currentUserProfile)) {
+      poolName.textContent = "Payment required";
+      poolMessage.textContent =
+        "Your account is not active yet. Please complete payment to unlock Sangat Works.";
+      window.location.href = "pricing.html?payment_required=1";
+      return;
     }
 
     const poolRef = doc(db, "gurdwaras", gurdwaraId, "pools", poolId);

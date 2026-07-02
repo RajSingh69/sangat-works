@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finish Signup | Sangat Works</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">Sangat Works</a>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="pricing.html">Pricing</a>
+    <a href="login.html" class="btn-small">Login</a>
+  </nav>
+</header>
+
+<main class="page-wrap">
+  <section class="form-card" style="max-width:720px;">
+    <p class="eyebrow">Payment Verified Signup</p>
+    <h1>Finish creating your account</h1>
+    <p id="signupStatus">
+      Checking your Stripe payment before account creation...
+    </p>
+
+    <form id="paidSignupForm" class="auth-form hidden">
+      <input type="text" id="signupName" placeholder="Full name" required />
+      <input type="email" id="signupEmail" placeholder="Email address" required />
+
+      <div class="password-wrap">
+        <input type="password" id="signupPassword" placeholder="Create password" required />
+        <button class="toggle-password" type="button" data-target="signupPassword">
+          Show
+        </button>
+      </div>
+
+      <button type="submit" class="btn-primary full">
+        Create Paid Account
+      </button>
+    </form>
+
+    <p id="signupMessage" class="message"></p>
+  </section>
+</main>
+
+<script type="module" src="js/signup.js"></script>
+<script>
+  document.querySelectorAll(".toggle-password").forEach((button) => {
+    button.addEventListener("click", () => {
+      const targetId = button.getAttribute("data-target");
+      const input = document.getElementById(targetId);
+
+      if (!input) return;
+
+      const isPassword = input.type === "password";
+      input.type = isPassword ? "text" : "password";
+      button.textContent = isPassword ? "Hide" : "Show";
+    });
+  });
+</script>
+</body>
+</html>

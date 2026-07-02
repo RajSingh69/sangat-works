@@ -12,7 +12,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 import {
-  isSuperAdmin
+  isAdminUser
 } from "./roles.js";
 
 function getExpiryDate(userData) {
@@ -32,30 +32,17 @@ function getExpiryDate(userData) {
 }
 
 function isAllowedStatus(status) {
-  return (
-    status === "active" ||
-    status === "trialing" ||
-    status === "cancelling" ||
-    status === "past_due"
-  );
+  return status === "active";
 }
 
 export function hasActiveSubscription(userData) {
   if (!userData) return false;
 
-  if (isSuperAdmin(userData)) {
+  if (isAdminUser(userData)) {
     return true;
   }
 
   const expiryDate = getExpiryDate(userData);
-
-  if (userData.isFoundingMember === true) {
-    if (!expiryDate) {
-      return false;
-    }
-
-    return expiryDate > new Date();
-  }
 
   if (userData.hasSubscription !== true) {
     return false;
@@ -65,11 +52,7 @@ export function hasActiveSubscription(userData) {
     return false;
   }
 
-  if (!expiryDate) {
-    return false;
-  }
-
-  return expiryDate > new Date();
+  return !expiryDate || expiryDate > new Date();
 }
 
 export function protectPage(options = {}) {
@@ -101,7 +84,8 @@ export function protectPage(options = {}) {
       console.log("Allowed:", allowed);
 
       if (!allowed) {
-        window.location.href = redirectTo;
+        window.location.href =
+          `${redirectTo}${redirectTo.includes("?") ? "&" : "?"}payment_required=1`;
         return;
       }
 

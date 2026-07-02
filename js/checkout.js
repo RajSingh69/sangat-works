@@ -34,7 +34,7 @@ function getBillingType(selectedPlan) {
 
 function sendToLoginWithPlan(selectedPlan) {
   if (MEMBERSHIP_PLANS.includes(selectedPlan)) {
-    window.location.href = `login.html?plan=${encodeURIComponent(selectedPlan)}`;
+    window.location.href = `pricing.html?checkout=${encodeURIComponent(selectedPlan)}`;
     return;
   }
 
@@ -47,7 +47,7 @@ async function startCheckout(selectedPlan) {
 
   const user = auth.currentUser;
 
-  if (!user) {
+  if (!user && !MEMBERSHIP_PLANS.includes(selectedPlan)) {
     sendToLoginWithPlan(selectedPlan);
     return;
   }
@@ -60,6 +60,14 @@ async function startCheckout(selectedPlan) {
   }
 
   const billingType = getBillingType(selectedPlan);
+  const checkoutEmail = user?.email || window.prompt(
+    "Enter the email address you want to use for your Sangat Works account."
+  );
+
+  if (!checkoutEmail) {
+    alert("Please enter an email address to continue to checkout.");
+    return;
+  }
 
   console.log("Selected plan:", selectedPlan);
   console.log("Selected price:", selectedPrice);
@@ -74,8 +82,8 @@ async function startCheckout(selectedPlan) {
       body: JSON.stringify({
         priceId: selectedPrice,
         billingType,
-        uid: user.uid,
-        email: user.email
+        uid: user?.uid || "",
+        email: checkoutEmail.trim()
       })
     });
 

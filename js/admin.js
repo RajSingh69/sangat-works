@@ -75,6 +75,25 @@ function badgeCheckbox(user, field, label) {
   `;
 }
 
+function isPaidUser(user) {
+  return (
+    user?.hasSubscription === true &&
+    user?.subscriptionStatus === "active"
+  );
+}
+
+function getAccountLabel(user) {
+  if (isAdminUser(user)) return "Admin";
+  return isPaidUser(user) ? "Paid Member" : "Not Paid";
+}
+
+function getMembershipStatusLabel(user) {
+  if (isPaidUser(user)) return "Active";
+  if (user?.subscriptionStatus === "pending-payment") return "Pending Payment";
+  if (user?.membershipStatus === "pending") return "Pending Payment";
+  return "Not Paid";
+}
+
 function renderUserRow(user) {
   const name = user.businessName || user.fullName || user.email || "Unnamed user";
   const role = getUserRole(user);
@@ -129,10 +148,11 @@ function renderUserRow(user) {
         <p><strong>Service:</strong> ${user.serviceTitle || "Not provided"}</p>
         <p><strong>Town:</strong> ${user.town || "Not provided"}</p>
         <p><strong>Role:</strong> ${role}</p>
-        <p><strong>Account:</strong> ${user.accountType || "member"}</p>
+        <p><strong>Account:</strong> ${getAccountLabel(user)}</p>
 
         <p><strong>Membership:</strong> ${user.membershipPlan || "not set"}</p>
-        <p><strong>Status:</strong> ${user.membershipStatus || "not set"}</p>
+        <p><strong>Status:</strong> ${getMembershipStatusLabel(user)}</p>
+        <p><strong>Subscription:</strong> ${user.subscriptionStatus || "not set"}</p>
         <p><strong>Member Number:</strong> ${user.memberNumber || "not assigned"}</p>
 
         <div class="admin-member-controls">

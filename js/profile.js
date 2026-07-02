@@ -22,6 +22,10 @@ import {
   getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
+import {
+  isAdminUser
+} from "./roles.js";
+
 const FEATURED_LISTING_PRICE_ID = "price_1TlZxODbE6tXsxNUzI1ng4Iy";
 const CHECKOUT_FUNCTION_URL = "https://europe-west1-sangat-works.cloudfunctions.net/createCheckoutSession";
 
@@ -29,6 +33,7 @@ const profileForm = document.getElementById("profileForm");
 const profileMessage = document.getElementById("profileMessage");
 const publicProfile = document.getElementById("publicProfile");
 const pendingPaymentWarning = document.getElementById("pendingPaymentWarning");
+const viewWalkthroughBtn = document.getElementById("viewWalkthroughBtn");
 
 const gurdwaraSelect = document.getElementById("gurdwaraSelect");
 const newGurdwaraName = document.getElementById("newGurdwaraName");
@@ -169,15 +174,11 @@ function formatSubscriptionPlan(profile) {
 function isActiveMember(profile) {
   if (!profile) return false;
 
-  if (profile.isFoundingMember === true) return true;
+  if (isAdminUser(profile)) return true;
 
   if (profile.hasSubscription !== true) return false;
 
-  if (
-    profile.subscriptionStatus &&
-    profile.subscriptionStatus !== "active" &&
-    profile.subscriptionStatus !== "trialing"
-  ) {
+  if (profile.subscriptionStatus !== "active") {
     return false;
   }
 
@@ -225,6 +226,29 @@ function renderPendingPaymentWarning(profile) {
     "hidden",
     !isPendingPaymentAccount(profile)
   );
+}
+
+function blockUnpaidProfileAccess(profile) {
+  if (isActiveMember(profile)) return false;
+
+  if (profileForm) {
+    profileForm.classList.add("hidden");
+  }
+
+  if (pendingPaymentWarning) {
+    pendingPaymentWarning.classList.remove("hidden");
+  }
+
+  if (profileMessage) {
+    profileMessage.textContent =
+      "Your account is not active yet. Please complete payment to unlock Sangat Works.";
+  }
+
+  setTimeout(() => {
+    window.location.href = "pricing.html?payment_required=1";
+  }, 1600);
+
+  return true;
 }
 
 function renderMembershipStatus(profile) {
@@ -620,6 +644,12 @@ if (becomeFeaturedBtn) {
   becomeFeaturedBtn.addEventListener("click", startFeaturedCheckout);
 }
 
+if (viewWalkthroughBtn) {
+  viewWalkthroughBtn.addEventListener("click", () => {
+    window.dispatchEvent(new CustomEvent("openSangatWorksWalkthrough"));
+  });
+}
+
 if (profileForm) {
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
@@ -636,6 +666,11 @@ if (profileForm) {
 
     if (userSnap.exists()) {
       existingProfile = userSnap.data();
+
+      if (blockUnpaidProfileAccess(existingProfile)) {
+        return;
+      }
+
       await loadGurdwaras(existingProfile.gurdwaraId || "");
       fillForm(existingProfile);
       calculateProfileStrength(existingProfile);
@@ -648,13 +683,8 @@ if (profileForm) {
         fullName: user.displayName || "",
         email: user.email || ""
       };
-      await loadGurdwaras();
-      fillForm(existingProfile);
-      calculateProfileStrength(existingProfile);
-      renderMembershipStatus(existingProfile);
-      renderPendingPaymentWarning(existingProfile);
-      renderFeaturedListingStatus(existingProfile);
-      renderMemberDashboard(existingProfile);
+      blockUnpaidProfileAccess(existingProfile);
+      return;
     }
   });
 
@@ -663,6 +693,13 @@ if (profileForm) {
 
     if (!currentUser) {
       profileMessage.textContent = "You need to be logged in.";
+      return;
+    }
+
+    if (!isActiveMember(existingProfile)) {
+      profileMessage.textContent =
+        "Your account is not active yet. Please complete payment to unlock Sangat Works.";
+      window.location.href = "pricing.html?payment_required=1";
       return;
     }
 
@@ -840,6 +877,11 @@ if (publicProfile) {
 
       if (profile.isPublic === false) {
         publicProfile.innerHTML = `<div class="empty-state">This profile is not public.</div>`;
+        return;
+      }
+
+      if (!isActiveMember(profile)) {
+        publicProfile.innerHTML = `<div class="empty-state">This profile is not active.</div>`;
         return;
       }
 

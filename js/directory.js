@@ -90,6 +90,25 @@ function isFeaturedActive(profile) {
   return expiryDate > new Date();
 }
 
+function isPaidDirectoryProfile(profile) {
+  if (!profile) return false;
+
+  if (profile.role === "admin" || profile.role === "super_admin") {
+    return true;
+  }
+
+  if (profile.hasSubscription !== true) {
+    return false;
+  }
+
+  if (profile.subscriptionStatus !== "active") {
+    return false;
+  }
+
+  const expiryDate = timestampToDate(profile.subscriptionExpiresAt);
+  return !expiryDate || expiryDate > new Date();
+}
+
 function renderDirectoryBadges(profile) {
   const badges = [];
 
@@ -349,10 +368,14 @@ async function loadDirectory() {
     allProfiles = [];
 
     snapshot.forEach(docSnap => {
-      allProfiles.push({
+      const profile = {
         id: docSnap.id,
         ...docSnap.data()
-      });
+      };
+
+      if (isPaidDirectoryProfile(profile)) {
+        allProfiles.push(profile);
+      }
     });
 
     if (allProfiles.length === 0) {

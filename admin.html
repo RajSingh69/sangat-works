@@ -78,64 +78,55 @@
 
     <div class="admin-message-preview-grid">
       <article class="admin-user-card message-preview-card">
-        <p class="eyebrow">User has free/pending account and cannot access services</p>
-
+        <p class="eyebrow">No payment / pending payment</p>
         <div class="profile-payment-warning message-preview-surface">
-          <p>
-            You are currently operating as a free account. You may edit your profile,
-            however you do not have access to service functionality. To gain access,
-            please choose a subscription plan to continue.
-          </p>
-
-          <a href="pricing.html" class="btn-primary">Choose Subscription Plan</a>
+          <p>Your account is not active yet. Please complete payment to unlock Sangat Works.</p>
+          <a href="pricing.html" class="btn-primary">Choose Membership Plan</a>
         </div>
       </article>
 
       <article class="admin-user-card message-preview-card">
-        <p class="eyebrow">New user lands on profile page after signup</p>
-
+        <p class="eyebrow">Active paid member</p>
         <div class="profile-homepage-guide message-preview-surface">
-          <p>
-            To new users: Click this button to go to the homepage and go exploring :)
-            Best place to start would be the Directory!
-          </p>
-
-          <a href="index.html" class="btn-secondary">To the homepage</a>
+          <p>Your membership is active. You can edit your profile and use member services.</p>
+          <a href="profile.html" class="btn-secondary">Edit Profile</a>
         </div>
       </article>
 
       <article class="admin-user-card message-preview-card">
-        <p class="eyebrow">Tradesperson sees no open project jobs</p>
+        <p class="eyebrow">Cancelled or expired subscription</p>
+        <div class="profile-payment-warning message-preview-surface">
+          <p>Your membership is no longer active. Please renew payment to unlock Sangat Works.</p>
+          <a href="pricing.html" class="btn-primary">Renew Membership</a>
+        </div>
+      </article>
 
+      <article class="admin-user-card message-preview-card">
+        <p class="eyebrow">Admin / Super Admin</p>
         <div class="empty-state message-preview-surface">
-          There are currently no open projects available. Please check back soon.
+          Admin access preserved. Payment gates are bypassed only for admin and super_admin users.
         </div>
       </article>
 
       <article class="admin-user-card message-preview-card">
-        <p class="eyebrow">Tradesperson needs 30-day job access</p>
-
-        <div class="project-access-card message-preview-surface">
-          <strong>There are currently 3 open project jobs available.</strong>
-          <p>Buy a one-time 30-day pass to view and apply to open project jobs.</p>
-          <a href="projects.html#openProjectsSection" class="btn-primary">
-            Buy 30-day Job Access for &pound;14.99
-          </a>
-          <p class="message"></p>
+        <p class="eyebrow">Invalid signup session</p>
+        <div class="empty-state message-preview-surface">
+          Your signup link is invalid, expired, unpaid, or already used. Please complete payment to continue.
         </div>
       </article>
 
       <article class="admin-user-card message-preview-card">
-        <p class="eyebrow">Homeowner has locked project workspace</p>
+        <p class="eyebrow">Reused signup session</p>
+        <div class="empty-state message-preview-surface">
+          Checkout session has already been used.
+        </div>
+      </article>
 
-        <div class="project-workspace-locked message-preview-surface">
-          <p class="eyebrow">Locked</p>
-          <h3>Workspace Locked</h3>
-          <p>Unlock this project workspace with a one-off &pound;40 payment.</p>
-          <a href="projects.html#projectWorkspaceSection" class="btn-primary">
-            Unlock Workspace for &pound;40
-          </a>
-          <p class="message"></p>
+      <article class="admin-user-card message-preview-card">
+        <p class="eyebrow">Successful payment, finish signup</p>
+        <div class="profile-homepage-guide message-preview-surface">
+          <p>Your Stripe payment was successful. Create your Sangat Works account now to unlock member access.</p>
+          <a href="signup.html" class="btn-primary">Finish Creating Account</a>
         </div>
       </article>
     </div>

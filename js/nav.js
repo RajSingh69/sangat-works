@@ -25,7 +25,7 @@ const accountArea = document.getElementById("accountArea");
 
 function renderMembershipBadge(userData) {
   if (!hasActiveSubscription(userData)) {
-    return `<span class="account-email">Free</span>`;
+    return `<span class="account-email">Not Paid</span>`;
   }
 
   if (isSuperAdmin(userData)) {
@@ -82,7 +82,7 @@ if (accountArea) {
         Projects
       </a>
     `;
-    let membershipBadge = `<span class="account-email">Free</span>`;
+    let membershipBadge = `<span class="account-email">Not Paid</span>`;
     let roleBadge = "";
 
     try {

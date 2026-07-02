@@ -3,49 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Membership Activated | Sangat Works</title>
+  <title>Payment Successful | Sangat Works</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <main class="page-wrap">
-
   <section class="form-card" style="max-width:700px; text-align:center;">
-
-    <h1>🎉 Membership Activated</h1>
+    <p class="eyebrow">Payment Successful</p>
+    <h1>Finish creating your account</h1>
 
     <p>
-      Thank you for supporting Sangat Works.
+      Your Stripe payment was successful. Create your Sangat Works account now
+      to unlock member access.
     </p>
 
     <p>
-      Your payment has been received and your membership is now active.
+      This page does not grant membership. Your payment will be verified
+      securely before signup.
     </p>
-
-    <p>
-      You can now access member features including:
-    </p>
-
-    <ul style="text-align:left; max-width:400px; margin:20px auto;">
-      <li>Directory & Map</li>
-      <li>Young Professionals</li>
-      <li>Skills Network</li>
-      <li>Community Features</li>
-    </ul>
 
     <div class="hero-actions">
-      <a href="directory.html" class="btn-primary">
-        Open Directory
-      </a>
-
-      <a href="profile.html" class="btn-secondary">
-        View Profile
+      <a id="finishSignupLink" href="pricing.html" class="btn-primary">
+        Finish Creating Account
       </a>
     </div>
-
   </section>
-
 </main>
 
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get("session_id");
+  const finishSignupLink = document.getElementById("finishSignupLink");
+
+  if (!sessionId) {
+    window.location.href = "pricing.html";
+  } else {
+    finishSignupLink.href =
+      `signup.html?session_id=${encodeURIComponent(sessionId)}`;
+  }
+</script>
 </body>
 </html>

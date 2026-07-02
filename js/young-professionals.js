@@ -334,15 +334,43 @@ async function loadYoungProfessionals() {
     ypCount.textContent = "Loading profiles...";
   }
 
-  const snapshot = await getDocs(collection(db, "youngProfessionals"));
+  const [snapshot, usersSnapshot] = await Promise.all([
+    getDocs(collection(db, "youngProfessionals")),
+    getDocs(collection(db, "users"))
+  ]);
+
+  const activeUserIds = new Set();
+
+  usersSnapshot.forEach(docSnap => {
+    const user = docSnap.data();
+    const expiryDate = user.subscriptionExpiresAt?.toDate
+      ? user.subscriptionExpiresAt.toDate()
+      : user.subscriptionExpiresAt
+      ? new Date(user.subscriptionExpiresAt)
+      : null;
+    const notExpired = !expiryDate || expiryDate > new Date();
+
+    if (
+      (user.role === "admin" || user.role === "super_admin") ||
+      (
+        user.hasSubscription === true &&
+        user.subscriptionStatus === "active" &&
+        notExpired
+      )
+    ) {
+      activeUserIds.add(docSnap.id);
+    }
+  });
 
   youngProfiles = [];
 
   snapshot.forEach(docSnap => {
-    youngProfiles.push({
-      id: docSnap.id,
-      ...docSnap.data()
-    });
+    if (activeUserIds.has(docSnap.id)) {
+      youngProfiles.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
+    }
   });
 
   populateFilters();

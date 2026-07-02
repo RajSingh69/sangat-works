@@ -1,8 +1,5 @@
-import { auth, db } from "./firebase.js";
-
-import {
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { db } from "./firebase.js";
+import { protectPage } from "./subscription-guard.js";
 
 import {
   collection,
@@ -177,7 +174,8 @@ async function loadPools(profile) {
 
 
 
-onAuthStateChanged(auth, async (user) => {
+protectPage({
+  onAllowed: async (user) => {
   if (!user) {
     window.location.href = "login.html";
     return;
@@ -291,5 +289,6 @@ onAuthStateChanged(auth, async (user) => {
   } catch (error) {
     userGurdwaraName.textContent = "Could not load your Gurdwara.";
     skillsNetworkMessage.textContent = error.message;
+  }
   }
 });

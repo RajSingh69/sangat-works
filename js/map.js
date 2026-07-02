@@ -113,6 +113,25 @@ function isFeatured(profile) {
   return expiryDate > new Date();
 }
 
+function isPaidMapProfile(profile) {
+  if (!profile) return false;
+
+  if (profile.role === "admin" || profile.role === "super_admin") {
+    return true;
+  }
+
+  if (profile.hasSubscription !== true) {
+    return false;
+  }
+
+  if (profile.subscriptionStatus !== "active") {
+    return false;
+  }
+
+  const expiryDate = timestampToDate(profile.subscriptionExpiresAt);
+  return !expiryDate || expiryDate > new Date();
+}
+
 
 function createMarkerIcon(profile) {
   const featured = isFeatured(profile);
@@ -517,11 +536,15 @@ async function loadMapProfiles() {
   snapshot.forEach(docSnap => {
     const data = docSnap.data();
 
-    allProfiles.push({
+    const profile = {
       id: docSnap.id,
       uid: data.uid || docSnap.id,
       ...data
-    });
+    };
+
+    if (isPaidMapProfile(profile)) {
+      allProfiles.push(profile);
+    }
   });
 
   populateFilters();

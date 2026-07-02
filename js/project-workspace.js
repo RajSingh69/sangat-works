@@ -23,6 +23,10 @@ import {
   isSuperAdmin
 } from "./roles.js";
 
+import {
+  hasActiveSubscription
+} from "./subscription-guard.js";
+
 const projectId = new URLSearchParams(window.location.search).get("id");
 const PROJECT_WORKSPACE_UNLOCK_CHECKOUT_URL =
   "https://europe-west1-sangat-works.cloudfunctions.net/createProjectWorkspaceUnlockSession";
@@ -160,6 +164,17 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     currentUserData = userSnap.data();
+
+    if (!hasActiveSubscription(currentUserData)) {
+      showBlockedState(
+        "Payment required",
+        "Your account is not active yet. Please complete payment to unlock Sangat Works."
+      );
+      setTimeout(() => {
+        window.location.href = "pricing.html?payment_required=1";
+      }, 1600);
+      return;
+    }
 
     const projectSnap = await getDoc(doc(db, "projects", projectId));
 

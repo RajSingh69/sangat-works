@@ -150,6 +150,16 @@ onAuthStateChanged(auth, async (user) => {
     currentUserIsMember = hasActiveSubscription(currentUserData);
     currentProjectUserType = getProjectUserType(currentUserData);
 
+    if (!currentUserIsMember) {
+      showBlockedState(
+        "Your account is not active yet. Please complete payment to unlock Sangat Works."
+      );
+      setTimeout(() => {
+        window.location.href = "pricing.html?payment_required=1";
+      }, 1600);
+      return;
+    }
+
     showMemberState(currentUserData);
     await refreshProjectsDashboard();
   } catch (error) {
@@ -420,13 +430,13 @@ function showMemberState(userData) {
       ? "Super Admin"
       : currentUserIsMember
       ? getMembershipLabel(userData)
-      : "Free Homeowner";
+      : "Not Paid";
   }
 
   if (projectsAuthMessage) {
     projectsAuthMessage.textContent = currentUserIsMember
       ? "Projects is live. You can create projects, apply, build teams and use unlocked workspaces."
-      : "Projects is live. You can create homeowner projects for free. Active membership is required to apply as a tradesperson.";
+      : "Your account is not active yet. Please complete payment to unlock Sangat Works.";
   }
 
   updateProjectsAccountSummary();
@@ -1711,7 +1721,7 @@ function renderTradesJobAccessBox() {
 }
 
 function updateProjectsAccountSummary() {
-  const tradesAccessActive = hasActiveTradesJobAccess(currentUserData);sss
+  const tradesAccessActive = hasActiveTradesJobAccess(currentUserData);
   const modeLabel = currentProjectUserType === "homeowner"
     ? "Homeowner"
     : currentProjectUserType === "tradesperson"

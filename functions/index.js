@@ -64,6 +64,13 @@ const ALL_PRICE_IDS = [
   FEATURED_LISTING_PRICE_ID
 ];
 
+const MEMBERSHIP_PRICE_IDS = [
+  YEARLY_SUBSCRIPTION_PRICE_ID,
+  MONTHLY_SUBSCRIPTION_PRICE_ID,
+  YEARLY_PASS_PRICE_ID,
+  MONTHLY_PASS_PRICE_ID
+];
+
 function getPlanFromPriceId(priceId) {
   if (
     priceId === YEARLY_SUBSCRIPTION_PRICE_ID ||
@@ -127,15 +134,11 @@ function getPassExpiryDate(priceId) {
 function isActiveMember(userData) {
   if (!userData) return false;
 
-  if (isSuperAdmin(userData)) return true;
+  if (isAdmin(userData) || isSuperAdmin(userData)) return true;
 
   if (userData.hasSubscription !== true) return false;
 
-  if (
-    userData.subscriptionStatus !== "active" &&
-    userData.subscriptionStatus !== "trialing" &&
-    userData.subscriptionStatus !== "cancelling"
-  ) {
+  if (userData.subscriptionStatus !== "active") {
     return false;
   }
 
@@ -172,6 +175,10 @@ function getUserRole(userData) {
 
 function isSuperAdmin(userData) {
   return getUserRole(userData) === "super_admin";
+}
+
+function isAdmin(userData) {
+  return getUserRole(userData) === "admin";
 }
 
 function getRoleAfterMembershipActivation(userData) {
@@ -358,6 +365,79 @@ function getSubscriptionFirestoreStatus(subscription) {
   return subscription.status || "unknown";
 }
 
+function getCheckoutSessionPriceId(session) {
+  return (
+    session.line_items?.data?.[0]?.price?.id ||
+    session.metadata?.priceId ||
+    ""
+  );
+}
+
+function isCheckoutSessionPaid(session) {
+  return (
+    session &&
+    session.status === "complete" &&
+    (
+      session.payment_status === "paid" ||
+      session.payment_status === "no_payment_required"
+    )
+  );
+}
+
+function getSafeSignupSessionData(session, priceId) {
+  return {
+    planName: getPlanFromPriceId(priceId),
+    priceId,
+    billingType: getBillingTypeFromPriceId(priceId),
+    stripeCustomerId:
+      typeof session.customer === "string"
+        ? session.customer
+        : session.customer?.id || "",
+    stripeSubscriptionId:
+      typeof session.subscription === "string"
+        ? session.subscription
+        : session.subscription?.id || "",
+    checkoutSessionId: session.id,
+    email: session.customer_details?.email || session.customer_email || ""
+  };
+}
+
+async function verifyStripeSignupSession(stripe, sessionId) {
+  if (!sessionId || typeof sessionId !== "string") {
+    throw new Error("Missing checkout session ID");
+  }
+
+  const session = await stripe.checkout.sessions.retrieve(sessionId, {
+    expand: ["line_items.data.price"]
+  });
+
+  if (!session || !isCheckoutSessionPaid(session)) {
+    throw new Error("Checkout session is not paid");
+  }
+
+  const priceId = getCheckoutSessionPriceId(session);
+
+  if (!MEMBERSHIP_PRICE_IDS.includes(priceId)) {
+    throw new Error("Checkout session is not for a valid membership plan");
+  }
+
+  if (
+    session.mode === "subscription" &&
+    getBillingTypeFromPriceId(priceId) !== "subscription"
+  ) {
+    throw new Error("Checkout session billing type does not match the plan");
+  }
+
+  if (
+    session.mode === "payment" &&
+    getBillingTypeFromPriceId(priceId) !== "oneoff"
+  ) {
+    throw new Error("Checkout session billing type does not match the plan");
+  }
+
+  return { session, priceId };
+}
+
 async function findUserByStripeSubscriptionId(subscriptionId) {
   const snapshot = await admin
     .firestore()
@@ -390,17 +470,15 @@ async function updateUserFromStripeSubscription(subscription) {
   const status = getSubscriptionFirestoreStatus(subscription);
   const expiresAt = getSubscriptionExpiryTimestamp(subscription);
 
-  const hasSubscription =
-    status === "active" ||
-    status === "trialing" ||
-    status === "cancelling" ||
-    status === "past_due";
+  const hasSubscription = status === "active";
 
   await userDoc.ref.set(
     {
       role: getRoleAfterMembershipActivation(userDoc.data()),
       hasSubscription,
       subscriptionStatus: status,
+      membershipStatus: hasSubscription ? "active" : "not_paid",
+      accountType: hasSubscription ? "member" : "lead",
       subscriptionPlan: getPlanFromPriceId(priceId),
       subscriptionBillingType: "subscription",
       subscriptionExpiresAt: expiresAt,
@@ -422,6 +500,97 @@ async function updateUserFromStripeSubscription(subscription) {
 
   console.log(`Subscription updated for user ${userDoc.id}`);
 }
+
+exports.verifyPaidSignupSession = onRequest(
+  {
+    region: "europe-west1",
+    cors: true,
+    secrets: [stripeSecret],
+    maxInstances: 10
+  },
+  async (req, res) => {
+    res.set("Access-Control-Allow-Origin", "https://sangatworks.co.uk");
+    res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+    if (req.method === "OPTIONS") {
+      return res.status(204).send("");
+    }
+
+    try {
+      if (req.method !== "POST") {
+        return res.status(405).json({ error: "Method not allowed" });
+      }
+
+      const body =
+        typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+
+      const { sessionId, claimForUid } = body;
+      const stripe = Stripe(stripeSecret.value());
+      const { session, priceId } = await verifyStripeSignupSession(
+        stripe,
+        sessionId
+      );
+      const safeSessionData = getSafeSignupSessionData(session, priceId);
+      const sessionRef = admin
+        .firestore()
+        .collection("usedSignupCheckoutSessions")
+        .doc(session.id);
+
+      if (claimForUid) {
+        if (!(await verifyRequestUser(req, claimForUid))) {
+          return res.status(403).json({ error: "Invalid user token" });
+        }
+
+        await admin.firestore().runTransaction(async (transaction) => {
+          const usedSnap = await transaction.get(sessionRef);
+
+          if (usedSnap.exists) {
+            throw new Error("Checkout session has already been used");
+          }
+
+          transaction.set(sessionRef, {
+            checkoutSessionId: session.id,
+            uid: claimForUid,
+            email: safeSessionData.email,
+            stripeCustomerId: safeSessionData.stripeCustomerId,
+            stripeSubscriptionId: safeSessionData.stripeSubscriptionId,
+            stripePriceId: priceId,
+            billingType: safeSessionData.billingType,
+            planName: safeSessionData.planName,
+            claimedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+        });
+
+        return res.status(200).json({
+          verified: true,
+          claimed: true,
+          signup: safeSessionData
+        });
+      }
+
+      const usedSnap = await sessionRef.get();
+
+      if (usedSnap.exists) {
+        return res.status(409).json({
+          error: "Checkout session has already been used"
+        });
+      }
+
+      return res.status(200).json({
+        verified: true,
+        claimed: false,
+        signup: safeSessionData
+      });
+    } catch (error) {
+      console.error("Paid signup session verification error:", error);
+      return res.status(400).json({
+        verified: false,
+        error: error.message || "Checkout session could not be verified"
+      });
+    }
+  }
+);
 
 exports.createCheckoutSession = onRequest(
   {
@@ -449,9 +618,9 @@ exports.createCheckoutSession = onRequest(
 
       const { priceId, billingType, uid, email } = body;
 
-      if (!priceId || !billingType || !uid || !email) {
+      if (!priceId || !billingType || !email) {
         return res.status(400).json({
-          error: "Missing priceId, billingType, uid or email"
+          error: "Missing priceId, billingType or email"
         });
       }
 
@@ -466,6 +635,12 @@ exports.createCheckoutSession = onRequest(
       if (billingType !== expectedBillingType) {
         return res.status(400).json({
           error: "Invalid billing type for selected price"
+        });
+      }
+
+      if (billingType === "featured" && !uid) {
+        return res.status(400).json({
+          error: "Missing uid for Featured Listing checkout"
         });
       }
 
@@ -484,6 +659,12 @@ exports.createCheckoutSession = onRequest(
       }
 
       const stripe = Stripe(stripeSecret.value());
+      const metadata = {
+        uid: uid || "",
+        email,
+        priceId,
+        billingType
+      };
 
       const session = await stripe.checkout.sessions.create({
         mode: billingType === "subscription" ? "subscription" : "payment",
@@ -494,34 +675,20 @@ exports.createCheckoutSession = onRequest(
             quantity: 1
           }
         ],
-        success_url: "https://sangatworks.co.uk/success.html",
+        success_url:
+          "https://sangatworks.co.uk/success.html?session_id={CHECKOUT_SESSION_ID}",
         cancel_url: "https://sangatworks.co.uk/cancel.html",
-        metadata: {
-          uid,
-          email,
-          priceId,
-          billingType
-        },
+        metadata,
         payment_intent_data:
           billingType === "oneoff" || billingType === "featured"
             ? {
-                metadata: {
-                  uid,
-                  email,
-                  priceId,
-                  billingType
-                }
+                metadata
               }
             : undefined,
         subscription_data:
           billingType === "subscription"
             ? {
-                metadata: {
-                  uid,
-                  email,
-                  priceId,
-                  billingType
-                }
+                metadata
               }
             : undefined
       });
@@ -1121,12 +1288,12 @@ exports.stripeWebhook = onRequest(
         const billingType = session.metadata?.billingType;
         let priceId = session.metadata?.priceId || "";
 
-        if (!uid) {
-          console.error("No uid found in checkout session metadata");
-          return res.status(200).send("No uid metadata");
-        }
-
         if (billingType === "featured") {
+          if (!uid) {
+            console.error("No uid found in featured checkout session metadata");
+            return res.status(200).send("Featured ignored: no uid metadata");
+          }
+
           const userRef = admin.firestore().collection("users").doc(uid);
           const userSnap = await userRef.get();
 
@@ -1162,6 +1329,11 @@ exports.stripeWebhook = onRequest(
         }
 
         if (billingType === "project_workspace_unlock") {
+          if (!uid) {
+            console.error("No uid found in workspace checkout session metadata");
+            return res.status(200).send("Workspace ignored: no uid metadata");
+          }
+
           const projectId = session.metadata?.projectId;
 
           if (!projectId) {
@@ -1204,6 +1376,11 @@ exports.stripeWebhook = onRequest(
         }
 
         if (billingType === "trades_job_access") {
+          if (!uid) {
+            console.error("No uid found in trades job checkout session metadata");
+            return res.status(200).send("Trades job access ignored: no uid metadata");
+          }
+
           const userRef = admin.firestore().collection("users").doc(uid);
 
           await userRef.set(
@@ -1256,6 +1433,14 @@ exports.stripeWebhook = onRequest(
         }
 
         const plan = getPlanFromPriceId(priceId);
+
+        if (!uid) {
+          console.log(
+            `Paid membership checkout ${session.id} completed before signup`
+          );
+          return res.status(200).send("Membership checkout awaiting signup");
+        }
+
         const userRef = admin.firestore().collection("users").doc(uid);
         const existingUserSnap = await userRef.get();
         const existingUserData = existingUserSnap.exists
@@ -1267,6 +1452,8 @@ exports.stripeWebhook = onRequest(
             role: getRoleAfterMembershipActivation(existingUserData),
             hasSubscription: true,
             subscriptionStatus,
+            membershipStatus: "active",
+            accountType: "member",
             subscriptionPlan: plan,
             subscriptionBillingType: billingType,
             subscriptionExpiresAt: expiresAt,

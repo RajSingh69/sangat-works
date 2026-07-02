@@ -103,6 +103,40 @@ const onboardingHTML = `
 
 let currentStep = 0;
 
+function openOnboarding(uid = "") {
+  document.getElementById("onboardingOverlay")?.remove();
+  currentStep = 0;
+
+  document.body.insertAdjacentHTML(
+    "beforeend",
+    onboardingHTML
+  );
+
+  showStep(0);
+
+  const steps = document.querySelectorAll(".onboarding-step");
+
+  document
+    .getElementById("onboardingPrev")
+    .addEventListener("click", () => {
+      if (currentStep > 0) {
+        currentStep--;
+        showStep(currentStep);
+      }
+    });
+
+  document
+    .getElementById("onboardingNext")
+    .addEventListener("click", async () => {
+      if (currentStep < steps.length - 1) {
+        currentStep++;
+        showStep(currentStep);
+      } else {
+        await completeOnboarding(uid);
+      }
+    });
+}
+
 function showStep(index) {
   const steps = document.querySelectorAll(".onboarding-step");
 
@@ -130,9 +164,11 @@ function showStep(index) {
 
 async function completeOnboarding(uid) {
   try {
-    await updateDoc(doc(db, "users", uid), {
-      hasSeenIntro: true
-    });
+    if (uid) {
+      await updateDoc(doc(db, "users", uid), {
+        hasSeenIntro: true
+      });
+    }
   } catch (error) {
     console.error(error);
   }
@@ -142,6 +178,10 @@ async function completeOnboarding(uid) {
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) return;
+
+  window.addEventListener("openSangatWorksWalkthrough", () => {
+    openOnboarding(user.uid);
+  });
 
   const userRef = doc(db, "users", user.uid);
   const userSnap = await getDoc(userRef);
@@ -154,32 +194,5 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  document.body.insertAdjacentHTML(
-    "beforeend",
-    onboardingHTML
-  );
-
-  showStep(0);
-
-  const steps = document.querySelectorAll(".onboarding-step");
-
-  document
-    .getElementById("onboardingPrev")
-    .addEventListener("click", () => {
-      if (currentStep > 0) {
-        currentStep--;
-        showStep(currentStep);
-      }
-    });
-
-  document
-    .getElementById("onboardingNext")
-    .addEventListener("click", async () => {
-      if (currentStep < steps.length - 1) {
-        currentStep++;
-        showStep(currentStep);
-      } else {
-        await completeOnboarding(user.uid);
-      }
-    });
+  openOnboarding(user.uid);
 });
