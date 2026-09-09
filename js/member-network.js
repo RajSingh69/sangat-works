@@ -1,4 +1,4 @@
-﻿import { auth, db } from "./firebase.js";
+import { auth, db } from "./firebase.js";
 
 import {
   collection,
@@ -61,22 +61,33 @@ async function callMemberFunction(name, body = {}) {
   if (!user) throw new Error("Please sign in first.");
 
   const token = await user.getIdToken();
-  const response = await fetch(`${FUNCTIONS_BASE_URL}/${name}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(body)
-  });
+  let response;
+  try {
+    response = await fetch(`${FUNCTIONS_BASE_URL}/${name}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(body)
+    });
+  } catch (error) {
+    console.error(`Cloud Function ${name} was not reachable`, error);
+    throw new Error("Messaging is temporarily unavailable.");
+  }
 
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || "That request could not be completed.");
+  if (!response.ok) throw new Error(data.error || "Messaging is temporarily unavailable.");
   return data;
 }
 
 export async function getUserProfile(uid) {
   const snap = await getDoc(doc(db, "users", uid));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+export async function getConversationById(conversationId) {
+  const snap = await getDoc(doc(db, "conversations", conversationId));
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
@@ -115,6 +126,12 @@ export async function createOrOpenDirectConversation(currentUserId, otherUserId)
   return data.conversationId;
 }
 
+export async function openConversationWithUser(currentUserId, otherUserId) {
+  const conversationId = await createOrOpenDirectConversation(currentUserId, otherUserId);
+  window.location.href = `messages.html?conversation=${encodeURIComponent(conversationId)}`;
+  return conversationId;
+}
+
 export async function sendMessage(currentUserId, conversationId, text) {
   const cleanText = String(text || "").trim();
   if (!cleanText) throw new Error("Write a message first.");
@@ -139,7 +156,7 @@ export async function setConversationUserFlag(currentUserId, conversationId, fie
   return callMemberFunction("setConversationUserFlag", { conversationId, field, value: Boolean(value) });
 }
 
-export function listenToConversations(currentUserId, callback) {
+export function listenToConversations(currentUserId, callback, onError) {
   const conversationsQuery = query(
     collection(db, "conversations"),
     where("participantIds", "array-contains", currentUserId),
@@ -149,10 +166,13 @@ export function listenToConversations(currentUserId, callback) {
 
   return onSnapshot(conversationsQuery, (snapshot) => {
     callback(snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })));
+  }, (error) => {
+    console.error("Could not load conversations", error);
+    if (onError) onError(error);
   });
 }
 
-export function listenToMessages(conversationId, callback) {
+export function listenToMessages(conversationId, callback, onError) {
   const messagesQuery = query(
     collection(db, "conversations", conversationId, "messages"),
     orderBy("createdAt", "desc"),
@@ -161,6 +181,9 @@ export function listenToMessages(conversationId, callback) {
 
   return onSnapshot(messagesQuery, (snapshot) => {
     callback(snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })).reverse());
+  }, (error) => {
+    console.error("Could not load messages", error);
+    if (onError) onError(error);
   });
 }
 
@@ -183,4 +206,3 @@ export async function getNetworkConnections(currentUserId) {
   ));
   return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
 }
-

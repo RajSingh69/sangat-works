@@ -1,6 +1,6 @@
 import { auth, db } from "./firebase.js";
 import { protectPage } from "./subscription-guard.js";
-import { createOrOpenDirectConversation, sendConnectionRequest } from "./member-network.js";
+import { openConversationWithUser, sendConnectionRequest } from "./member-network.js";
 
 import {
   collection,
@@ -461,11 +461,10 @@ document.addEventListener("click", async (event) => {
     }
 
     if (message) {
-      const conversationId = await createOrOpenDirectConversation(currentUser.uid, message.dataset.directoryMessageId);
-      window.location.href = `messages.html?conversation=${encodeURIComponent(conversationId)}`;
+      await openConversationWithUser(currentUser.uid, message.dataset.directoryMessageId);
     }
   } catch (error) {
-    alert(error.message);
+    if (directoryCount) directoryCount.textContent = error.message || "Messaging is temporarily unavailable.";
   }
 });
 
@@ -475,4 +474,7 @@ protectPage({
     loadDirectory();
   }
 });
+
+
+
 

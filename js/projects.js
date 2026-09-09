@@ -26,7 +26,7 @@ import {
 } from "./subscription-guard.js";
 
 import {
-  createOrOpenDirectConversation
+  openConversationWithUser
 } from "./member-network.js";
 
 import {
@@ -286,10 +286,9 @@ if (openProjectsList) {
 
     if (messageOwnerButton) {
       try {
-        const conversationId = await createOrOpenDirectConversation(currentUser.uid, messageOwnerButton.dataset.messageOwnerId);
-        window.location.href = `messages.html?conversation=${encodeURIComponent(conversationId)}`;
+        await openConversationWithUser(currentUser.uid, messageOwnerButton.dataset.messageOwnerId);
       } catch (error) {
-        alert(error.message);
+        setFormMessage(error.message || "Messaging is temporarily unavailable.");
       }
     }
   });
@@ -309,10 +308,9 @@ if (myApplicationsList) {
 
     if (messageOwnerButton) {
       try {
-        const conversationId = await createOrOpenDirectConversation(currentUser.uid, messageOwnerButton.dataset.messageOwnerId);
-        window.location.href = `messages.html?conversation=${encodeURIComponent(conversationId)}`;
+        await openConversationWithUser(currentUser.uid, messageOwnerButton.dataset.messageOwnerId);
       } catch (error) {
-        alert(error.message);
+        setFormMessage(error.message || "Messaging is temporarily unavailable.");
       }
     }
   });
@@ -2172,5 +2170,7 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+
+
 
 

@@ -3,7 +3,7 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/f
 import { protectPage } from "./subscription-guard.js";
 import {
   acceptConnection,
-  createOrOpenDirectConversation,
+  openConversationWithUser,
   declineConnection,
   escapeHtml,
   getDisplayName,
@@ -124,8 +124,7 @@ document.addEventListener("click", async (event) => {
       await refreshNetwork();
     }
     if (message) {
-      const conversationId = await createOrOpenDirectConversation(currentUser.uid, message.dataset.messageUserId);
-      window.location.href = `messages.html?conversation=${encodeURIComponent(conversationId)}`;
+      await openConversationWithUser(currentUser.uid, message.dataset.messageUserId);
     }
   } catch (error) {
     setMessage(error.message);
@@ -139,3 +138,5 @@ protectPage({
     refreshNetwork();
   }
 });
+
+

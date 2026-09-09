@@ -2886,6 +2886,10 @@ footer {
   padding-bottom: 14px;
 }
 
+.messages-back-btn {
+  display: none;
+}
+
 .chat-member-summary {
   display: flex;
   gap: 12px;
@@ -2959,6 +2963,17 @@ footer {
 }
 
 @media (max-width: 820px) {
+  .messages-shell.conversation-open .conversation-list-panel {
+    display: none;
+  }
+
+  .messages-shell:not(.conversation-open) .chat-panel {
+    display: none;
+  }
+
+  .messages-back-btn {
+    display: inline-flex;
+  }
   .messages-shell,
   .network-card,
   .message-composer {
@@ -2974,3 +2989,5 @@ footer {
     max-width: 92%;
   }
 }
+
+

@@ -29,7 +29,7 @@ import {
 import {
   acceptConnection,
   blockMember,
-  createOrOpenDirectConversation,
+  openConversationWithUser,
   getConnection,
   removeConnection,
   reportMember,
@@ -1037,8 +1037,7 @@ document.addEventListener("click", async (event) => {
     }
 
     if (message) {
-      const conversationId = await createOrOpenDirectConversation(currentUser.uid, message.dataset.messageUserId);
-      window.location.href = `messages.html?conversation=${encodeURIComponent(conversationId)}`;
+      await openConversationWithUser(currentUser.uid, message.dataset.messageUserId);
     }
 
     if (block && window.confirm("Block this member?")) {
@@ -1057,6 +1056,8 @@ document.addEventListener("click", async (event) => {
     setActionMessage(error.message);
   }
 });
+
+
 
 
 
