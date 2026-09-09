@@ -1,5 +1,6 @@
-import { db } from "./firebase.js";
+import { auth, db } from "./firebase.js";
 import { protectPage } from "./subscription-guard.js";
+import { createOrOpenDirectConversation, sendConnectionRequest } from "./member-network.js";
 
 import {
   collection,
@@ -21,6 +22,7 @@ const clearFiltersBtn = document.getElementById("clearFiltersBtn");
 const sortBy = document.getElementById("sortBy");
 
 let allProfiles = [];
+let currentUser = null;
 
 function discountLabel(value) {
   const labels = {
@@ -217,6 +219,8 @@ function renderDirectoryProfile(profile) {
 
       <div class="card-links">
         <a href="view.html?id=${profile.uid || profile.id}">View Profile</a>
+        <button type="button" class="btn-small" data-directory-connect-id="${profile.uid || profile.id}">Connect</button>
+        <button type="button" class="btn-small" data-directory-message-id="${profile.uid || profile.id}">Message</button>
         ${profile.website ? `<a href="${profile.website}" target="_blank">Website</a>` : ""}
         ${profile.linkedin ? `<a href="${profile.linkedin}" target="_blank">LinkedIn</a>` : ""}
         ${profile.showGoogleReviews && profile.googleReviews ? `<a href="${profile.googleReviews}" target="_blank">Reviews</a>` : ""}
@@ -445,8 +449,30 @@ if (sortBy) {
   sortBy.addEventListener("change", filterProfiles);
 }
 
+document.addEventListener("click", async (event) => {
+  const connect = event.target.closest("[data-directory-connect-id]");
+  const message = event.target.closest("[data-directory-message-id]");
+
+  try {
+    if (connect) {
+      await sendConnectionRequest(currentUser.uid, connect.dataset.directoryConnectId);
+      connect.textContent = "Requested";
+      connect.disabled = true;
+    }
+
+    if (message) {
+      const conversationId = await createOrOpenDirectConversation(currentUser.uid, message.dataset.directoryMessageId);
+      window.location.href = `messages.html?conversation=${encodeURIComponent(conversationId)}`;
+    }
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
 protectPage({
-  onAllowed: () => {
+  onAllowed: (user) => {
+    currentUser = user;
     loadDirectory();
   }
 });
+

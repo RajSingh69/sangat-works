@@ -1,0 +1,274 @@
+﻿rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
+    function userPath(uid) { return /databases/$(database)/documents/users/$(uid); }
+    function userData(uid) { return get(userPath(uid)).data; }
+    function currentUser() { return userData(request.auth.uid); }
+    function role() { return currentUser().role; }
+    function isModerator() { return signedIn() && role() in ["moderator", "admin", "super_admin"]; }
+    function isAdmin() { return signedIn() && role() in ["admin", "super_admin"]; }
+    function isSuperAdmin() { return signedIn() && role() == "super_admin"; }
+    function notRestricted() { return signedIn() && currentUser().banned != true && currentUser().suspended != true; }
+
+    function hasActiveFreeCharityYear(data) {
+      return data.accessType == "admin_granted_free_year" && data.freeAccessExpiresAt > request.time;
+    }
+    function hasActivePaidAccess(data) {
+      return data.hasSubscription == true
+        && data.subscriptionStatus == "active"
+        && (!("subscriptionExpiresAt" in data) || data.subscriptionExpiresAt == null || data.subscriptionExpiresAt > request.time);
+    }
+    function hasActiveMembership() {
+      return signedIn() && notRestricted() && (
+        role() in ["admin", "super_admin"] ||
+        hasActiveFreeCharityYear(currentUser()) ||
+        hasActivePaidAccess(currentUser())
+      );
+    }
+
+    function publicProfileKeys() {
+      return [
+        "uid", "fullName", "displayName", "businessName", "serviceTitle", "description", "whyContact", "tags",
+        "yearsExperience", "specialistWork", "googleReviews", "gurdwaraId", "gurdwaraName", "associatedGurdwara",
+        "localGurdwara", "communityDiscount", "funFactOne", "funFactTwo", "phone", "email", "website", "linkedin",
+        "town", "postcode", "serviceArea", "layoutStyle", "themeColour", "isPublic", "showPhone", "showEmail",
+        "showPostcode", "showGurdwara", "showGoogleReviews", "profilePhotoUrl", "businessLogoUrl",
+        "connectionPrivacy", "messagePrivacy", "allowMessageNotifications", "hasSeenIntro", "updatedAt"
+      ];
+    }
+    function privilegedUserKeys() {
+      return [
+        "role", "accountType", "isAdmin", "internalAccount", "excludeFromFoundingMemberCount", "canImpersonateUsers",
+        "impersonationReady", "canViewHiddenDiagnostics", "hasSubscription", "subscriptionStatus", "subscriptionPlan",
+        "subscriptionBillingType", "subscriptionExpiresAt", "subscriptionUpdatedAt", "subscriptionCancelAtPeriodEnd",
+        "subscriptionCancelledAt", "subscriptionEndedAt", "subscriptionPaymentFailedAt", "stripeCustomerId",
+        "stripeSubscriptionId", "stripePriceId", "stripeCheckoutSessionId", "checkoutSessionId", "membershipPlan",
+        "membershipStatus", "isFoundingMember", "memberNumber", "accessType", "freeAccessReason", "freeAccessExpiresAt",
+        "freeAccessGrantedAt", "freeAccessGrantedBy", "charityName", "adminNotes", "featuredListing",
+        "featuredListingStatus", "featuredExpiresAt", "featuredStripePriceId", "featuredStripeSessionId",
+        "featuredStripeCustomerId", "featuredUpdatedAt", "tradesJobAccess", "tradesJobAccessStatus",
+        "tradesJobAccessPaidAt", "tradesJobAccessExpiresAt", "tradesJobAccessAmount", "tradesJobAccessStripePriceId",
+        "tradesJobAccessStripeSessionId", "tradesJobAccessStripeCustomerId", "tradesJobAccessUpdatedAt",
+        "messagingRestricted", "messagingRestrictedAt", "messagingRestrictedBy", "banned", "suspended"
+      ];
+    }
+    function validSelfProfileUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(publicProfileKeys())
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(privilegedUserKeys())
+        && request.resource.data.uid == resource.data.uid;
+    }
+    function validPaidSignupCreate(uid) {
+      return request.resource.data.uid == uid
+        && request.resource.data.stripeCheckoutSessionId is string
+        && exists(/databases/$(database)/documents/usedSignupCheckoutSessions/$(request.resource.data.stripeCheckoutSessionId))
+        && get(/databases/$(database)/documents/usedSignupCheckoutSessions/$(request.resource.data.stripeCheckoutSessionId)).data.uid == uid;
+    }
+    function validBasicUserCreate(uid) {
+      return request.resource.data.uid == uid
+        && !request.resource.data.keys().hasAny(privilegedUserKeys());
+    }
+
+    function project(projectId) { return get(/databases/$(database)/documents/projects/$(projectId)).data; }
+    function isProjectOwner(projectId) { return signedIn() && project(projectId).ownerId == request.auth.uid; }
+    function teamDocId(projectId, uid) { return projectId + "__" + uid; }
+    function isProjectTeamMember(projectId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/projectTeams/$(teamDocId(projectId, request.auth.uid)))
+        && get(/databases/$(database)/documents/projectTeams/$(teamDocId(projectId, request.auth.uid))).data.status == "active";
+    }
+    function canAccessWorkspace(projectId) {
+      return hasActiveMembership()
+        && (isSuperAdmin() || isProjectOwner(projectId) || isProjectTeamMember(projectId))
+        && (isSuperAdmin() || project(projectId).workspaceUnlocked == true);
+    }
+    function isWorkspaceCollection(name) {
+      return name in [
+        "workspaceTasks", "workspaceNotes", "workspaceActivity", "workspaceMilestones", "workspaceDocuments",
+        "workspacePhotos", "workspaceQuotes", "workspaceMessages", "workspaceBudgetItems"
+      ];
+    }
+    function participates(ids) { return signedIn() && request.auth.uid in ids; }
+    function isDirectPair(ids) { return ids is list && ids.size() == 2 && ids[0] != ids[1]; }
+    function noBlockBetween(a, b) {
+      return !exists(/databases/$(database)/documents/blocks/$(a + "__" + b))
+        && !exists(/databases/$(database)/documents/blocks/$(b + "__" + a));
+    }
+    function hasAcceptedConnection(a, b) {
+      return (
+        exists(/databases/$(database)/documents/connections/$(a + "__" + b)) &&
+        get(/databases/$(database)/documents/connections/$(a + "__" + b)).data.status == "accepted"
+      ) || (
+        exists(/databases/$(database)/documents/connections/$(b + "__" + a)) &&
+        get(/databases/$(database)/documents/connections/$(b + "__" + a)).data.status == "accepted"
+      );
+    }
+
+    match /users/{uid} {
+      allow get: if true;
+      allow list: if hasActiveMembership() || isAdmin();
+      allow create: if isSelf(uid) && (validBasicUserCreate(uid) || validPaidSignupCreate(uid));
+      allow update: if (isSelf(uid) && validSelfProfileUpdate()) || isSuperAdmin() || (isAdmin() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["role", "internalAccount", "isAdmin", "canImpersonateUsers", "canViewHiddenDiagnostics"]));
+      allow delete: if isSuperAdmin() && resource.data.internalAccount != true;
+
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if hasActiveMembership() && request.resource.data.createdAt == request.time;
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    match /projects/{projectId} {
+      allow read: if hasActiveMembership();
+      allow create: if hasActiveMembership()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.workspaceUnlocked == false
+        && request.resource.data.workspacePaymentStatus == "locked";
+      allow update: if hasActiveMembership() && (
+        isSuperAdmin() ||
+        (resource.data.ownerId == request.auth.uid
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "title", "titleLower", "projectType", "description", "location", "locationLower", "budget",
+            "estimatedStart", "estimatedFinish", "requiredTrades", "filledTradeRoles", "status", "progressStage",
+            "applicantCount", "pendingApplicantCount", "acceptedApplicantCount", "rejectedApplicantCount", "teamCount", "updatedAt"
+          ]))
+      );
+      allow delete: if isSuperAdmin();
+    }
+
+    match /applications/{applicationId} {
+      allow read: if hasActiveMembership() && (resource.data.applicantId == request.auth.uid || resource.data.projectOwnerId == request.auth.uid || isSuperAdmin());
+      allow create: if hasActiveMembership()
+        && request.resource.data.applicantId == request.auth.uid
+        && request.resource.data.projectOwnerId != request.auth.uid
+        && request.resource.data.status == "pending";
+      allow update: if hasActiveMembership() && (
+        (resource.data.projectOwnerId == request.auth.uid && request.resource.data.projectOwnerId == resource.data.projectOwnerId && request.resource.data.applicantId == resource.data.applicantId)
+        || (resource.data.applicantId == request.auth.uid && request.resource.data.status in ["withdrawn"])
+        || isSuperAdmin()
+      );
+      allow delete: if hasActiveMembership() && (resource.data.applicantId == request.auth.uid || isSuperAdmin());
+    }
+
+    match /projectTeams/{teamId} {
+      allow read: if hasActiveMembership() && (resource.data.memberId == request.auth.uid || resource.data.projectOwnerId == request.auth.uid || isSuperAdmin());
+      allow create: if hasActiveMembership()
+        && teamId == request.resource.data.projectId + "__" + request.resource.data.memberId
+        && request.resource.data.projectOwnerId == request.auth.uid
+        && request.resource.data.memberId != request.auth.uid
+        && request.resource.data.status == "active";
+      allow update: if hasActiveMembership() && (resource.data.projectOwnerId == request.auth.uid || isSuperAdmin());
+      allow delete: if isSuperAdmin();
+    }
+
+    match /{workspaceCollection}/{itemId} {
+      allow read: if isWorkspaceCollection(workspaceCollection) && canAccessWorkspace(resource.data.projectId);
+      allow create: if isWorkspaceCollection(workspaceCollection)
+        && canAccessWorkspace(request.resource.data.projectId)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow update: if isWorkspaceCollection(workspaceCollection)
+        && canAccessWorkspace(resource.data.projectId)
+        && request.resource.data.projectId == resource.data.projectId;
+      allow delete: if isWorkspaceCollection(workspaceCollection) && canAccessWorkspace(resource.data.projectId);
+    }
+
+    match /gurdwaras/{gurdwaraId} {
+      allow read: if hasActiveMembership();
+      allow create: if hasActiveMembership() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isAdmin();
+      match /pools/{poolId} {
+        allow read: if hasActiveMembership();
+        allow create, update, delete: if isAdmin();
+      }
+    }
+
+    match /pools/{poolId} {
+      allow read: if hasActiveMembership();
+      allow create: if hasActiveMembership() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    match /roles/{roleId} {
+      allow read: if hasActiveMembership();
+      allow create: if hasActiveMembership() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    match /roleMembers/{roleMemberId} {
+      allow read: if hasActiveMembership();
+      allow create: if hasActiveMembership() && request.resource.data.userId == request.auth.uid;
+      allow update: if false;
+      allow delete: if hasActiveMembership() && resource.data.userId == request.auth.uid;
+    }
+
+    match /youngProfessionals/{uid} {
+      allow read: if hasActiveMembership();
+      allow create, update: if isSelf(uid) && hasActiveMembership() && request.resource.data.uid == request.auth.uid;
+      allow delete: if isSelf(uid) || isAdmin();
+    }
+
+    match /faqs/{faqId} {
+      allow read: if resource.data.status == "answered" || isAdmin();
+      allow create: if request.resource.data.status == "pending" && request.resource.data.answer == "";
+      allow update, delete: if isAdmin();
+    }
+
+    match /futureFeatures/{featureId} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if signedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["upvotes", "downvotes"]);
+      match /votes/{uid} {
+        allow read: if isSelf(uid) || isAdmin();
+        allow create, update: if isSelf(uid) && request.resource.data.userId == request.auth.uid && request.resource.data.vote in ["up", "down"];
+        allow delete: if isSelf(uid) || isAdmin();
+      }
+    }
+
+    match /connections/{connectionId} {
+      allow read: if participates(resource.data.userIds);
+      allow create, update, delete: if false;
+    }
+
+    match /blocks/{blockId} {
+      allow read: if signedIn() && resource.data.blockerId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    match /conversations/{conversationId} {
+      allow read: if participates(resource.data.participantIds);
+      allow create, update, delete: if false;
+      match /messages/{messageId} {
+        function parent() { return get(/databases/$(database)/documents/conversations/$(conversationId)).data; }
+        allow read: if participates(parent().participantIds);
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow update: if signedIn() && resource.data.userId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["read", "readAt", "archived", "updatedAt"]);
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if false;
+    }
+
+    match /reports/{reportId} {
+      allow read: if isModerator() || resource.data.reporterId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    match /usedSignupCheckoutSessions/{sessionId} { allow read: if signedIn() && resource.data.uid == request.auth.uid; allow write: if false; }
+    match /freeAccessInvites/{inviteId} { allow read, write: if false; }
+    match /freeAccessGrantLogs/{logId} { allow read: if isAdmin(); allow write: if false; }
+    match /adminAuditLogs/{logId} { allow read: if isAdmin(); allow write: if false; }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}
+
+
+
+
+

@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase.js";
+﻿import { auth, db } from "./firebase.js";
 
 import {
   onAuthStateChanged
@@ -34,6 +34,7 @@ const statPendingFaqs = document.getElementById("statPendingFaqs");
 const adminQuestions = document.getElementById("adminQuestions");
 const adminFeatures = document.getElementById("adminFeatures");
 const adminMessagePreview = document.getElementById("adminMessagePreview");
+const adminReports = document.getElementById("adminReports");
 const freeCharityGrantPanel = document.getElementById("freeCharityGrantPanel");
 const createFreeCharityAccountForm = document.getElementById("createFreeCharityAccountForm");
 const createFreeCharityAccountMessage = document.getElementById("createFreeCharityAccountMessage");
@@ -44,6 +45,10 @@ const CREATE_FREE_CHARITY_ACCOUNT_URL =
   "https://europe-west1-sangat-works.cloudfunctions.net/createFreeCharityAccount";
 const GRANT_FREE_CHARITY_YEAR_URL =
   "https://europe-west1-sangat-works.cloudfunctions.net/grantFreeCharityYear";
+const RESOLVE_REPORT_URL =
+  "https://europe-west1-sangat-works.cloudfunctions.net/resolveReport";
+const RESTRICT_MESSAGING_URL =
+  "https://europe-west1-sangat-works.cloudfunctions.net/restrictMessaging";
 
 let currentAdminData = null;
 
@@ -66,6 +71,24 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+
+async function callAdminFunction(url, body = {}) {
+  if (!auth.currentUser) throw new Error("Please sign in first.");
+
+  const idToken = await auth.currentUser.getIdToken();
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`
+    },
+    body: JSON.stringify(body)
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) throw new Error(data.error || "Admin action failed.");
+  return data;
+}
 function daysAgo(value) {
   const date = getDateFromTimestamp(value);
 
@@ -456,6 +479,8 @@ function setupFaqAdminActions() {
 
       adminStatus.textContent = "FAQ response saved.";
       await loadFaqs();
+  await loadReports();
+  setupReportActions();
     });
   });
 }
@@ -594,9 +619,71 @@ if (freeCharityGrantForm) {
   freeCharityGrantForm.addEventListener("submit", grantFreeCharityYear);
 }
 
+
+function renderReportCard(report) {
+  return `
+    <article class="admin-user-card">
+      <p class="eyebrow">${escapeHtml(report.type || "report")}</p>
+      <h3>${escapeHtml(report.reason || "No reason provided")}</h3>
+      <p><strong>Reporter:</strong> ${escapeHtml(report.reporterId || "Unknown")}</p>
+      <p><strong>Reported member:</strong> ${escapeHtml(report.reportedUserId || "Unknown")}</p>
+      ${report.reportedMessage ? `<p><strong>Reported message:</strong> ${escapeHtml(report.reportedMessage)}</p>` : ""}
+      ${report.conversationId ? `<p><strong>Conversation:</strong> ${escapeHtml(report.conversationId)}</p>` : ""}
+      <p><strong>Status:</strong> ${escapeHtml(report.status || "open")}</p>
+      <p><strong>Created:</strong> ${escapeHtml(getDateFromTimestamp(report.createdAt)?.toLocaleString("en-GB") || "Unknown")}</p>
+      <div class="card-links">
+        ${report.reportedUserId ? `<a href="view.html?id=${encodeURIComponent(report.reportedUserId)}" target="_blank">View Member</a>` : ""}
+        <button type="button" class="btn-small project-accept-btn" data-dismiss-report-id="${report.id}">Dismiss</button>
+        <button type="button" class="btn-small project-withdraw-btn" data-restrict-report-user-id="${report.reportedUserId || ""}" data-report-id="${report.id}">Restrict Messaging</button>
+      </div>
+    </article>
+  `;
+}
+
+async function loadReports() {
+  if (!adminReports) return;
+  const reportsSnap = await getDocs(query(collection(db, "reports"), orderBy("createdAt", "desc")));
+  const reports = reportsSnap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+  adminReports.innerHTML = reports.length
+    ? reports.map(renderReportCard).join("")
+    : `<div class="empty-state">No safety reports yet.</div>`;
+}
+
+function setupReportActions() {
+  if (!adminReports) return;
+  adminReports.addEventListener("click", async (event) => {
+    const dismiss = event.target.closest("[data-dismiss-report-id]");
+    const restrict = event.target.closest("[data-restrict-report-user-id]");
+
+    try {
+      if (dismiss) {
+        await callAdminFunction(RESOLVE_REPORT_URL, {
+          reportId: dismiss.dataset.dismissReportId,
+          status: "dismissed"
+        });
+        await loadReports();
+      }
+
+      if (restrict?.dataset.restrictReportUserId) {
+        await callAdminFunction(RESTRICT_MESSAGING_URL, {
+          targetUserId: restrict.dataset.restrictReportUserId
+        });
+        await callAdminFunction(RESOLVE_REPORT_URL, {
+          reportId: restrict.dataset.reportId,
+          status: "actioned"
+        });
+        await loadReports();
+      }
+    } catch (error) {
+      adminStatus.textContent = error.message || "Admin action failed.";
+    }
+  }, { once: true });
+}
 async function loadAdminDashboard() {
   await loadUsers();
   await loadFaqs();
+  await loadReports();
+  setupReportActions();
 }
 
 onAuthStateChanged(auth, async (user) => {
@@ -626,3 +713,5 @@ onAuthStateChanged(auth, async (user) => {
 
   await loadAdminDashboard();
 });
+
+

@@ -6,8 +6,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 import {
+  collection,
   doc,
-  getDoc
+  getDoc,
+  onSnapshot,
+  query,
+  where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 import {
@@ -22,6 +26,7 @@ import {
 } from "./roles.js";
 
 const accountArea = document.getElementById("accountArea");
+let unsubscribeMessageBadge = null;
 
 function renderMembershipBadge(userData) {
   if (!hasActiveSubscription(userData)) {
@@ -72,6 +77,11 @@ function renderRoleBadge(userData) {
 if (accountArea) {
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
+      if (unsubscribeMessageBadge) {
+        unsubscribeMessageBadge();
+        unsubscribeMessageBadge = null;
+      }
+
       accountArea.innerHTML = `
         <a href="login.html" class="btn-small">Login</a>
       `;
@@ -79,6 +89,7 @@ if (accountArea) {
     }
 
     let adminButton = "";
+    let networkButton = "";
     let skillsNetworkButton = "";
     let youngProfessionalsButton = "";
     let projectsButton = `
@@ -103,6 +114,12 @@ if (accountArea) {
           skillsNetworkButton = `
             <a href="skills-network.html" class="btn-small">
               Skills Network
+            </a>
+          `;
+
+          networkButton = `
+            <a href="network.html" class="btn-small">
+              My Network
             </a>
           `;
 
@@ -134,9 +151,15 @@ if (accountArea) {
 
       ${skillsNetworkButton}
 
+      ${networkButton}
+
       ${youngProfessionalsButton}
 
       ${projectsButton}
+
+      <a href="messages.html" class="btn-small" id="messagesNavLink">
+        Messages
+      </a>
 
       ${adminButton}
 
@@ -148,6 +171,30 @@ if (accountArea) {
         Logout
       </button>
     `;
+
+    if (unsubscribeMessageBadge) {
+      unsubscribeMessageBadge();
+      unsubscribeMessageBadge = null;
+    }
+
+    const messagesNavLink = document.getElementById("messagesNavLink");
+    if (messagesNavLink) {
+      const conversationsQuery = query(
+        collection(db, "conversations"),
+        where("participantIds", "array-contains", user.uid)
+      );
+
+      unsubscribeMessageBadge = onSnapshot(conversationsQuery, (snapshot) => {
+        const unreadTotal = snapshot.docs.reduce((total, docSnap) => {
+          const data = docSnap.data();
+          return total + Number(data.unreadCounts?.[user.uid] || 0);
+        }, 0);
+
+        messagesNavLink.textContent = unreadTotal
+          ? `Messages (${unreadTotal})`
+          : "Messages";
+      });
+    }
 
     document
       .getElementById("logoutBtn")

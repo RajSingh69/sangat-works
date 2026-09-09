@@ -273,6 +273,26 @@
         Show my Google Reviews link publicly
       </label>
 
+      <label>
+        Who can send me connection requests?
+        <select id="connectionPrivacy">
+          <option value="everyone">Everyone</option>
+          <option value="nobody">Nobody</option>
+        </select>
+      </label>
+
+      <label>
+        Who can message me?
+        <select id="messagePrivacy">
+          <option value="requests">Anyone / Message Requests</option>
+          <option value="connections">Connections only</option>
+        </select>
+      </label>
+
+      <label class="check-row">
+        <input type="checkbox" id="allowMessageNotifications" checked />
+        Allow message notifications
+      </label>
       <button type="submit" class="btn-primary full">Save Profile</button>
     </form>
 
@@ -285,3 +305,5 @@
 <script type="module" src="js/onboarding.js"></script>
 </body>
 </html>
+
+

@@ -10,6 +10,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  setDoc,
   query,
   where,
   orderBy,
@@ -23,6 +24,10 @@ import {
 import {
   hasActiveSubscription
 } from "./subscription-guard.js";
+
+import {
+  createOrOpenDirectConversation
+} from "./member-network.js";
 
 import {
   canAccessAnyWorkspace,
@@ -252,6 +257,7 @@ if (openProjectsList) {
   openProjectsList.addEventListener("click", async (event) => {
     const applyButton = event.target.closest("[data-apply-project-id]");
     const withdrawButton = event.target.closest("[data-withdraw-application-id]");
+    const messageOwnerButton = event.target.closest("[data-message-owner-id]");
 
     if (applyButton) {
       const projectId = applyButton.getAttribute("data-apply-project-id");
@@ -277,18 +283,37 @@ if (openProjectsList) {
         withdrawButton.getAttribute("data-project-id")
       );
     }
+
+    if (messageOwnerButton) {
+      try {
+        const conversationId = await createOrOpenDirectConversation(currentUser.uid, messageOwnerButton.dataset.messageOwnerId);
+        window.location.href = `messages.html?conversation=${encodeURIComponent(conversationId)}`;
+      } catch (error) {
+        alert(error.message);
+      }
+    }
   });
 }
 
 if (myApplicationsList) {
   myApplicationsList.addEventListener("click", async (event) => {
     const withdrawButton = event.target.closest("[data-withdraw-application-id]");
+    const messageOwnerButton = event.target.closest("[data-message-owner-id]");
 
     if (withdrawButton) {
       await withdrawApplication(
         withdrawButton.getAttribute("data-withdraw-application-id"),
         withdrawButton.getAttribute("data-project-id")
       );
+    }
+
+    if (messageOwnerButton) {
+      try {
+        const conversationId = await createOrOpenDirectConversation(currentUser.uid, messageOwnerButton.dataset.messageOwnerId);
+        window.location.href = `messages.html?conversation=${encodeURIComponent(conversationId)}`;
+      } catch (error) {
+        alert(error.message);
+      }
     }
   });
 }
@@ -1015,7 +1040,7 @@ async function acceptApplication(applicationId) {
       updatedAt: serverTimestamp()
     });
 
-    await addDoc(collection(db, "projectTeams"), {
+    await setDoc(doc(db, "projectTeams", `${application.projectId}__${application.applicantId}`), {
       projectId: application.projectId,
       projectTitle: application.projectTitle || project.title || "",
       projectOwnerId: currentUser.uid,
@@ -1865,6 +1890,7 @@ function renderProjectCard(project, mode) {
     tradeActions = `
       <div class="project-card-actions">
         ${renderApplyRoleButtons(project.id, requiredTrades, openTradeRoles)}
+        <button class="btn-small" type="button" data-message-owner-id="${project.ownerId}">Message Owner</button>
         <span class="project-mini-stat">${project.applicantCount || 0} applicants</span>
       </div>
     `;
@@ -2146,3 +2172,5 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+
+

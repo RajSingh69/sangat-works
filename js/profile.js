@@ -26,6 +26,16 @@ import {
   isAdminUser
 } from "./roles.js";
 
+import {
+  acceptConnection,
+  blockMember,
+  createOrOpenDirectConversation,
+  getConnection,
+  removeConnection,
+  reportMember,
+  sendConnectionRequest
+} from "./member-network.js";
+
 const FEATURED_LISTING_PRICE_ID = "price_1TlZxODbE6tXsxNUzI1ng4Iy";
 const CHECKOUT_FUNCTION_URL = "https://europe-west1-sangat-works.cloudfunctions.net/createCheckoutSession";
 
@@ -43,6 +53,9 @@ const associatedGurdwaraInput = document.getElementById("associatedGurdwara");
 
 let currentUser = null;
 let existingProfile = {};
+let viewedProfileId = "";
+let viewedPublicProfile = null;
+let currentConnection = null;
 
 const profileStrengthPercent = document.getElementById("profileStrengthPercent");
 const profileStrengthFill = document.getElementById("profileStrengthFill");
@@ -530,6 +543,14 @@ function fillForm(profile) {
   document.getElementById("showPostcode").checked = profile.showPostcode === true;
   document.getElementById("showGurdwara").checked = profile.showGurdwara !== false;
   document.getElementById("showGoogleReviews").checked = profile.showGoogleReviews !== false;
+
+  const connectionPrivacy = document.getElementById("connectionPrivacy");
+  const messagePrivacy = document.getElementById("messagePrivacy");
+  const allowMessageNotifications = document.getElementById("allowMessageNotifications");
+
+  if (connectionPrivacy) connectionPrivacy.value = profile.connectionPrivacy || "everyone";
+  if (messagePrivacy) messagePrivacy.value = profile.messagePrivacy || "requests";
+  if (allowMessageNotifications) allowMessageNotifications.checked = profile.allowMessageNotifications !== false;
 }
 
 function renderProfile(profile) {
@@ -561,6 +582,8 @@ function renderProfile(profile) {
 
       <h1>${profile.businessName || profile.fullName}</h1>
       <p class="service">${profile.serviceTitle || ""}</p>
+
+      ${renderRelationshipActions(profile)}
 
       <div class="badges-row">
         ${featuredBadge}
@@ -606,6 +629,42 @@ function renderProfile(profile) {
   `;
 }
 
+function renderRelationshipActions() {
+  if (!currentUser || !viewedProfileId || currentUser.uid === viewedProfileId) return "";
+
+  let connectLabel = "Connect";
+  let connectAttr = `data-connect-user-id="${viewedProfileId}"`;
+  let connectClass = "";
+
+  if (currentConnection?.status === "pending" && currentConnection.requesterId === currentUser.uid) {
+    connectLabel = "Requested";
+    connectAttr = "disabled";
+  } else if (currentConnection?.status === "pending" && currentConnection.recipientId === currentUser.uid) {
+    connectLabel = "Accept Connection";
+    connectAttr = `data-accept-connection-id="${currentConnection.id}"`;
+    connectClass = "project-accept-btn";
+  } else if (currentConnection?.status === "accepted") {
+    connectLabel = "Connected";
+    connectAttr = "disabled";
+    connectClass = "project-accept-btn";
+  } else if (currentConnection?.status === "blocked") {
+    connectLabel = "Unavailable";
+    connectAttr = "disabled";
+  }
+
+  return `
+    <div class="member-action-panel">
+      <div class="card-links">
+        <button type="button" class="btn-small ${connectClass}" ${connectAttr}>${connectLabel}</button>
+        <button type="button" class="btn-small" data-message-user-id="${viewedProfileId}">Message</button>
+        ${currentConnection?.status === "accepted" ? `<button type="button" class="btn-small project-withdraw-btn" data-remove-user-id="${viewedProfileId}">Remove Connection</button>` : ""}
+        <button type="button" class="btn-small project-withdraw-btn" data-block-user-id="${viewedProfileId}">Block Member</button>
+        <button type="button" class="btn-small" data-report-user-id="${viewedProfileId}">Report Member</button>
+      </div>
+      <p id="profileActionMessage" class="message"></p>
+    </div>
+  `;
+}
 async function startFeaturedCheckout() {
   if (!currentUser) {
     if (featuredMessage) {
@@ -847,6 +906,9 @@ if (profileForm) {
         showPostcode: checked("showPostcode"),
         showGurdwara: checked("showGurdwara"),
         showGoogleReviews: checked("showGoogleReviews"),
+        connectionPrivacy: value("connectionPrivacy") || "everyone",
+        messagePrivacy: value("messagePrivacy") || "requests",
+        allowMessageNotifications: checked("allowMessageNotifications"),,
 
         updatedAt: serverTimestamp()
       };
@@ -874,6 +936,7 @@ if (profileForm) {
 if (publicProfile) {
   const params = new URLSearchParams(window.location.search);
   const profileId = params.get("id");
+  viewedProfileId = profileId || "";
 
   async function loadPublicProfile() {
     if (!profileId) {
@@ -891,6 +954,7 @@ if (publicProfile) {
       }
 
       const profile = userSnap.data();
+      viewedPublicProfile = { ...profile, uid: profileId };
 
       try {
         await updateDoc(userRef, {
@@ -908,6 +972,10 @@ if (publicProfile) {
       if (!isActiveMember(profile)) {
         publicProfile.innerHTML = `<div class="empty-state">This profile is not active.</div>`;
         return;
+      }
+
+      if (currentUser && currentUser.uid !== profileId) {
+        currentConnection = await getConnection(currentUser.uid, profileId);
       }
 
       publicProfile.innerHTML = renderProfile(profile);
@@ -934,3 +1002,62 @@ if (publicProfile) {
 
   loadPublicProfile();
 }
+
+document.addEventListener("click", async (event) => {
+  const actionMessage = document.getElementById("profileActionMessage");
+  function setActionMessage(message) {
+    if (actionMessage) actionMessage.textContent = message;
+  }
+
+  try {
+    const connect = event.target.closest("[data-connect-user-id]");
+    const accept = event.target.closest("[data-accept-connection-id]");
+    const remove = event.target.closest("[data-remove-user-id]");
+    const message = event.target.closest("[data-message-user-id]");
+    const block = event.target.closest("[data-block-user-id]");
+    const report = event.target.closest("[data-report-user-id]");
+
+    if (connect) {
+      await sendConnectionRequest(currentUser.uid, connect.dataset.connectUserId);
+      setActionMessage("Connection request sent.");
+      currentConnection = await getConnection(currentUser.uid, connect.dataset.connectUserId);
+      publicProfile.innerHTML = renderProfile({ ...existingProfile, uid: viewedProfileId });
+    }
+
+    if (accept) {
+      await acceptConnection(currentUser.uid, accept.dataset.acceptConnectionId);
+      setActionMessage("Connection accepted.");
+      currentConnection = await getConnection(currentUser.uid, viewedProfileId);
+      publicProfile.innerHTML = renderProfile({ ...existingProfile, uid: viewedProfileId });
+    }
+
+    if (remove) {
+      await declineConnection(currentUser.uid, currentConnection?.id || "");
+      setActionMessage("Connection removed.");
+    }
+
+    if (message) {
+      const conversationId = await createOrOpenDirectConversation(currentUser.uid, message.dataset.messageUserId);
+      window.location.href = `messages.html?conversation=${encodeURIComponent(conversationId)}`;
+    }
+
+    if (block && window.confirm("Block this member?")) {
+      await blockMember(currentUser.uid, block.dataset.blockUserId);
+      setActionMessage("Member blocked.");
+    }
+
+    if (report) {
+      const reason = window.prompt("Report reason: spam, harassment, scam/fraud, inappropriate content, or other", "spam");
+      if (reason) {
+        await reportMember(currentUser.uid, report.dataset.reportUserId, reason);
+        setActionMessage("Report submitted.");
+      }
+    }
+  } catch (error) {
+    setActionMessage(error.message);
+  }
+});
+
+
+
+

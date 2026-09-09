@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Messages | Sangat Works</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">Sangat Works</a>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="network.html">My Network</a>
+    <div id="accountArea"></div>
+  </nav>
+</header>
+
+<main class="messages-page">
+  <section class="messages-shell">
+    <aside class="conversation-list-panel">
+      <div class="messages-panel-header">
+        <div>
+          <p class="eyebrow">Private Messages</p>
+          <h1>Messages</h1>
+        </div>
+      </div>
+      <input type="search" id="conversationSearch" placeholder="Search conversations" />
+      <div id="conversationList" class="conversation-list">
+        <div class="empty-state">Loading conversations...</div>
+      </div>
+    </aside>
+
+    <section class="chat-panel">
+      <div id="chatHeader" class="chat-header">
+        <div class="empty-state">Select a conversation.</div>
+      </div>
+      <div id="messageRequestActions" class="message-request-actions hidden"></div>
+      <div id="messagesList" class="messages-list">
+        <div class="empty-state">No conversation selected.</div>
+      </div>
+      <form id="messageComposer" class="message-composer hidden">
+        <textarea id="messageText" rows="2" maxlength="2000" placeholder="Write a message"></textarea>
+        <button type="submit" class="btn-primary">Send</button>
+      </form>
+      <p id="messagesStatus" class="message"></p>
+    </section>
+  </section>
+</main>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/messages-page.js"></script>
+</body>
+</html>

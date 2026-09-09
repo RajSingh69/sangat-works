@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Network | Sangat Works</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">Sangat Works</a>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="directory.html">Directory</a>
+    <div id="accountArea"></div>
+  </nav>
+</header>
+
+<main class="page-wrap network-page">
+  <section class="form-card wide">
+    <p class="eyebrow">Connections</p>
+    <h1>My Network</h1>
+    <p>Manage your Sangat Works connections and requests.</p>
+
+    <div class="network-tabs" role="tablist">
+      <button type="button" class="btn-small network-tab active" data-network-tab="connections">Connections</button>
+      <button type="button" class="btn-small network-tab" data-network-tab="requests">Requests</button>
+      <button type="button" class="btn-small network-tab" data-network-tab="sent">Sent</button>
+    </div>
+
+    <p id="networkMessage" class="message"></p>
+
+    <div id="networkConnections" class="network-list"></div>
+    <div id="networkRequests" class="network-list hidden"></div>
+    <div id="networkSent" class="network-list hidden"></div>
+  </section>
+</main>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/network-page.js"></script>
+</body>
+</html>
