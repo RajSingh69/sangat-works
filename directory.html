@@ -35,6 +35,23 @@
     </div>
   </section>
 
+
+  <section class="directory-discovery" aria-labelledby="directoryDiscoveryTitle">
+    <div class="directory-discovery-head">
+      <div>
+        <p class="home-section-kicker">Member Discovery</p>
+        <h2 id="directoryDiscoveryTitle">Explore the Sangat</h2>
+        <p>Browse real members by broad service area before narrowing with filters.</p>
+      </div>
+      <div class="directory-fan-controls">
+        <button type="button" class="directory-fan-btn" id="directoryFanPrev" aria-label="Show previous member" hidden disabled>&lt;</button>
+        <span id="directoryFanPosition" class="directory-fan-position" aria-live="polite" hidden></span>
+        <button type="button" class="directory-fan-btn" id="directoryFanNext" aria-label="Show next member" hidden disabled>&gt;</button>
+      </div>
+    </div>
+    <div class="directory-industry-tabs" id="directoryIndustryTabs" role="tablist" aria-label="Member categories"></div>
+    <div class="directory-fan-stage" id="directoryFanStage" tabindex="0" aria-label="Featured directory members"><div class="directory-fan-empty is-loading">Loading members...</div></div>
+  </section>
   <section class="directory-layout">
 
     <aside class="directory-filters">

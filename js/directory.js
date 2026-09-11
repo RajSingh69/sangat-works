@@ -20,9 +20,22 @@ const serviceFilter = document.getElementById("serviceFilter");
 const featuredFilter = document.getElementById("featuredFilter");
 const clearFiltersBtn = document.getElementById("clearFiltersBtn");
 const sortBy = document.getElementById("sortBy");
+const directoryIndustryTabs = document.getElementById("directoryIndustryTabs");
+const directoryFanStage = document.getElementById("directoryFanStage");
+const directoryFanPrev = document.getElementById("directoryFanPrev");
+const directoryFanNext = document.getElementById("directoryFanNext");
+const directoryFanPosition = document.getElementById("directoryFanPosition");
 
 let allProfiles = [];
 let currentUser = null;
+let activeIndustry = "All";
+let fanIndex = 0;
+let fanProfiles = [];
+let touchStartX = 0;
+let directoryDataLoaded = false;
+let fanRenderMode = "initial";
+let hasRenderedFanMembers = false;
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function escapeHtml(value = "") {
   return String(value)
@@ -187,9 +200,211 @@ function renderExpandableDetails(detailsId, sections) {
   `;
 }
 
+
+const INDUSTRY_BUCKETS = [
+  { name: "Technology", keywords: ["software", "developer", "web", "data", "ai", "cyber", "cloud", "it", "digital", "engineer", "technical"] },
+  { name: "Trades", keywords: ["electrician", "builder", "plumber", "carpenter", "decorator", "construction", "trade", "heating", "labour", "roof", "joiner"] },
+  { name: "Property", keywords: ["property", "estate", "mortgage", "letting", "landlord", "survey", "architect", "planning", "development"] },
+  { name: "Law & Professional Services", keywords: ["law", "legal", "solicitor", "accountant", "consultant", "insurance", "advisor", "adviser", "compliance"] },
+  { name: "Business & Finance", keywords: ["business", "finance", "bookkeeping", "tax", "marketing", "sales", "operations", "startup", "strategy"] },
+  { name: "Healthcare", keywords: ["doctor", "health", "dentist", "pharmacy", "pharmacist", "therapy", "physio", "mental", "wellbeing", "care"] },
+  { name: "Education", keywords: ["teacher", "tutor", "education", "training", "coach", "mentor", "school", "learning"] },
+  { name: "Creative & Media", keywords: ["design", "designer", "media", "photo", "video", "creative", "brand", "content", "music", "film"] },
+  { name: "Community", keywords: ["charity", "community", "seva", "gurdwara", "nonprofit", "volunteer"] }
+];
+
+function getProfileUrl(profile) {
+  return `view.html?id=${encodeURIComponent(profile.uid || profile.id || "")}`;
+}
+
+function getIdentity(profile) {
+  return profile.businessName || profile.fullName || "Unnamed Profile";
+}
+
+function getPersonName(profile) {
+  return profile.businessName && profile.fullName ? profile.fullName : "";
+}
+
+function getProfileImageUrl(profile) {
+  return profile.profilePhotoUrl || profile.businessLogoUrl || profile.logoUrl || "";
+}
+
+function getCategorySource(profile) {
+  return [
+    profile.serviceTitle,
+    profile.businessType,
+    profile.category,
+    profile.profession,
+    profile.role,
+    profile.businessCategory,
+    ...(Array.isArray(profile.tags) ? profile.tags : [])
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
+function getIndustryBucket(profile) {
+  const source = getCategorySource(profile);
+  const match = INDUSTRY_BUCKETS.find(bucket => bucket.keywords.some(keyword => source.includes(keyword)));
+  return match?.name || "Other";
+}
+
+function getIndustryGroups(profiles) {
+  const groups = new Map();
+  profiles.forEach(profile => {
+    const bucket = getIndustryBucket(profile);
+    if (!groups.has(bucket)) groups.set(bucket, []);
+    groups.get(bucket).push(profile);
+  });
+  return groups;
+}
+
+function renderIndustryTabs(groups) {
+  if (!directoryIndustryTabs) return;
+  if (!allProfiles.length) {
+    directoryIndustryTabs.innerHTML = "";
+    return;
+  }
+  const tabs = [{ name: "All", count: allProfiles.length }, ...[...groups.entries()].map(([name, profiles]) => ({ name, count: profiles.length }))];
+  directoryIndustryTabs.innerHTML = tabs.map(tab => `
+    <button type="button" class="directory-industry-tab${tab.name === activeIndustry ? " is-active" : ""}" role="tab" aria-selected="${tab.name === activeIndustry}" data-industry="${escapeHtml(tab.name)}">
+      <span>${escapeHtml(tab.name)}</span>
+      <small>${tab.count}</small>
+    </button>
+  `).join("");
+}
+
+function getVisibleFanProfiles() {
+  if (activeIndustry === "All") return allProfiles;
+  return allProfiles.filter(profile => getIndustryBucket(profile) === activeIndustry);
+}
+
+function fanSlotClass(offset) {
+  if (offset === 0) return "is-center";
+  if (offset === -1) return "is-left-one";
+  if (offset === 1) return "is-right-one";
+  if (offset === -2) return "is-left-two";
+  if (offset === 2) return "is-right-two";
+  if (offset === -3) return "is-left-three";
+  return "is-right-three";
+}
+
+function setFanControlsState(count) {
+  const hasMembers = count > 0;
+  const canCycle = count > 1;
+  [directoryFanPrev, directoryFanNext, directoryFanPosition].forEach((control) => {
+    if (!control) return;
+    control.classList.toggle("is-visible", hasMembers);
+    if (hasMembers) {
+      control.hidden = false;
+    } else {
+      window.setTimeout(() => {
+        if (!control.classList.contains("is-visible")) control.hidden = true;
+      }, reducedMotion ? 0 : 180);
+    }
+  });
+  if (directoryFanPrev) directoryFanPrev.disabled = !canCycle;
+  if (directoryFanNext) directoryFanNext.disabled = !canCycle;
+}
+
+function renderFanCarousel() {
+  if (!directoryFanStage) return;
+  fanProfiles = getVisibleFanProfiles();
+  if (!directoryDataLoaded) {
+    directoryFanStage.classList.remove("is-ready", "is-cycling-next", "is-cycling-prev", "is-switching");
+    directoryFanStage.innerHTML = `<div class="directory-fan-empty is-loading">Loading members...</div>`;
+    setFanControlsState(0);
+    return;
+  }
+
+  if (!fanProfiles.length) {
+    directoryFanStage.classList.remove("is-ready", "is-cycling-next", "is-cycling-prev", "is-switching");
+    hasRenderedFanMembers = false;
+    directoryFanStage.innerHTML = `<div class="directory-fan-empty">No members in this category yet.</div>`;
+    if (directoryFanPosition) directoryFanPosition.textContent = "";
+    setFanControlsState(0);
+    return;
+  }
+
+  fanIndex = ((fanIndex % fanProfiles.length) + fanProfiles.length) % fanProfiles.length;
+  const visibleCount = Math.min(7, fanProfiles.length);
+  const half = Math.floor(visibleCount / 2);
+  const offsets = Array.from({ length: visibleCount }, (_, index) => index - half);
+
+  const stageMode = hasRenderedFanMembers ? fanRenderMode : "initial";
+  directoryFanStage.classList.remove("is-cycle-next", "is-cycle-prev", "is-category", "is-initial", "is-switching", "is-settled");
+  directoryFanStage.classList.add("is-ready", `is-${stageMode}`);
+  requestAnimationFrame(() => directoryFanStage.classList.add("is-settled"));
+
+  directoryFanStage.innerHTML = offsets.map((offset, renderIndex) => {
+    const profile = fanProfiles[(fanIndex + offset + fanProfiles.length) % fanProfiles.length];
+    const identity = getIdentity(profile);
+    const imageUrl = getProfileImageUrl(profile);
+    const service = getProfileService(profile) || "Member service";
+    const tag = (Array.isArray(profile.tags) && profile.tags[0]) || getIndustryBucket(profile);
+    const profileUrl = getProfileUrl(profile);
+    const trust = isFeaturedActive(profile)
+      ? "Featured"
+      : (profile.businessVerified || profile.isBusinessVerified ? "Verified" : "");
+    return `
+      <article class="directory-fan-card ${fanSlotClass(offset)}" style="--fan-offset: ${offset}; --fan-stagger: ${renderIndex};" data-profile-url="${profileUrl}" tabindex="0" aria-label="Open ${escapeHtml(identity)} profile">
+        <div class="directory-fan-image">
+          ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(identity)}">` : `<span>${escapeHtml(identity.slice(0, 1))}</span>`}
+        </div>
+        <div class="directory-fan-copy">
+          <small>${escapeHtml(tag)}</small>
+          <h3>${escapeHtml(identity)}</h3>
+          ${getPersonName(profile) ? `<p>${escapeHtml(getPersonName(profile))}</p>` : ""}
+          <strong>${escapeHtml(service)}</strong>
+          <span>${escapeHtml(profile.town || "UK network")}</span>
+          ${trust ? `<em>${escapeHtml(trust)}</em>` : ""}
+        </div>
+      </article>
+    `;
+  }).join("");
+
+  if (directoryFanPosition) directoryFanPosition.textContent = `${fanIndex + 1} / ${fanProfiles.length}`;
+  setFanControlsState(fanProfiles.length);
+  hasRenderedFanMembers = true;
+  fanRenderMode = "cycle-next";
+  window.setTimeout(() => {
+    directoryFanStage?.classList.remove("is-initial", "is-cycle-next", "is-cycle-prev", "is-category");
+  }, reducedMotion ? 0 : 720);
+}
+
+function renderDirectoryDiscovery() {
+  const groups = getIndustryGroups(allProfiles);
+  if (activeIndustry !== "All" && !groups.has(activeIndustry)) activeIndustry = "All";
+  renderIndustryTabs(groups);
+  renderFanCarousel();
+}
+
+function cycleFan(direction) {
+  if (!fanProfiles.length) return;
+  fanRenderMode = direction > 0 ? "cycle-next" : "cycle-prev";
+  fanIndex = (fanIndex + direction + fanProfiles.length) % fanProfiles.length;
+  renderFanCarousel();
+}
+
+function changeIndustry(nextIndustry) {
+  if (activeIndustry === nextIndustry) return;
+  const applyChange = () => {
+    activeIndustry = nextIndustry;
+    fanIndex = 0;
+    fanRenderMode = "category";
+    hasRenderedFanMembers = false;
+    renderDirectoryDiscovery();
+  };
+
+  if (reducedMotion || !directoryFanStage || !fanProfiles.length) {
+    applyChange();
+    return;
+  }
+
+  directoryFanStage.classList.add("is-switching");
+  window.setTimeout(applyChange, 180);
+}
 function renderDirectoryProfile(profile) {
-  const tags = profile.tags || [];
-  const visibleTags = tags.slice(0, 5);
+  const tags = Array.isArray(profile.tags) ? profile.tags : [];
+  const visibleTags = tags.slice(0, 2);
   const tagsHtml = visibleTags
     .map(tag => `<span class="tag">${escapeHtml(tag)}</span>`)
     .join("");
@@ -198,99 +413,93 @@ function renderDirectoryProfile(profile) {
     ? `<span class="trust-badge featured-badge">Featured</span>`
     : "";
 
-  const experienceBadge = profile.yearsExperience
-    ? `<span class="trust-badge">${escapeHtml(profile.yearsExperience)} yrs experience</span>`
+  const verifiedBadge = !featuredBadge && (profile.businessVerified === true || profile.isBusinessVerified === true)
+    ? `<span class="trust-badge verified">Business Verified</span>`
     : "";
 
+  const primaryBadge = featuredBadge || verifiedBadge;
   const rating = getRating(profile);
   const reviewCount = getReviewCount(profile);
   const badgesHtml = renderDirectoryBadges(profile);
   const rawProfileId = profile.uid || profile.id || "";
   const profileId = encodeURIComponent(rawProfileId);
+  const profileUrl = `view.html?id=${profileId}`;
   const identity = profile.businessName || profile.fullName || "Unnamed Profile";
   const personName = profile.businessName && profile.fullName ? profile.fullName : "";
   const service = profile.serviceTitle || profile.businessType || "Member service";
   const websiteUrl = safeExternalUrl(profile.website);
   const linkedInUrl = safeExternalUrl(profile.linkedin);
   const reviewsUrl = safeExternalUrl(profile.googleReviews);
-  const description = profile.description
-    ? `${profile.description.substring(0, 150)}${profile.description.length > 150 ? "..." : ""}`
-    : "";
   const detailsId = `directory-profile-details-${profileId}`;
+  const imageUrl = profile.profilePhotoUrl || profile.businessLogoUrl || profile.logoUrl || "";
   const fullTagsHtml = tags.length
-    ? `<div class="tags">${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>`
+    ? `<div class="tags expandable-tags">${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>`
     : "";
-  const detailRows = [
+  const businessRows = [
     businessNameRow(profile.businessName),
     profile.serviceArea ? `<p><strong>Service area</strong><span>${escapeHtml(profile.serviceArea)}</span></p>` : "",
-    profile.associatedGurdwara && profile.showGurdwara ? `<p><strong>Gurdwara</strong><span>${escapeHtml(profile.associatedGurdwara)}</span></p>` : "",
-    profile.yearsExperience ? `<p><strong>Experience</strong><span>${escapeHtml(profile.yearsExperience)} years</span></p>` : "",
     profile.specialistWork ? `<p><strong>Specialist work</strong><span>${escapeHtml(profile.specialistWork)}</span></p>` : ""
+  ].filter(Boolean).join("");
+  const communityRows = [
+    profile.associatedGurdwara && profile.showGurdwara ? `<p><strong>Gurdwara</strong><span>${escapeHtml(profile.associatedGurdwara)}</span></p>` : "",
+    discountLabel(profile.communityDiscount) ? `<p><strong>Community rates</strong><span>${escapeHtml(discountLabel(profile.communityDiscount))}</span></p>` : ""
+  ].filter(Boolean).join("");
+  const experienceContent = profile.yearsExperience
+    ? `<p>${escapeHtml(profile.yearsExperience)} years experience</p>`
+    : "";
+  const reviewContent = reviewCount > 0
+    ? `<div class="directory-rating-row expanded-rating"><span class="directory-stars">${renderStars(rating)}</span><strong>${rating.toFixed(1)}</strong><span>${reviewCount} review${reviewCount === 1 ? "" : "s"}</span></div>`
+    : "";
+  const contactLinks = [
+    websiteUrl ? `<a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener" class="secondary-link">Website</a>` : "",
+    linkedInUrl ? `<a href="${escapeHtml(linkedInUrl)}" target="_blank" rel="noopener" class="secondary-link">LinkedIn</a>` : "",
+    profile.showGoogleReviews && reviewsUrl ? `<a href="${escapeHtml(reviewsUrl)}" target="_blank" rel="noopener" class="secondary-link">Reviews</a>` : ""
   ].filter(Boolean).join("");
   const expandedDetails = renderExpandableDetails(detailsId, [
     { title: "About", content: profile.description ? `<p>${escapeHtml(profile.description)}</p>` : "" },
-    { title: "Skills", content: fullTagsHtml },
-    { title: "Business / Organisation", content: detailRows ? `<div class="expandable-detail-list">${detailRows}</div>` : "" },
-    { title: "Community", content: discountLabel(profile.communityDiscount) ? `<p>${escapeHtml(discountLabel(profile.communityDiscount))}</p>` : "" }
+    { title: "Skills / Services", content: fullTagsHtml },
+    { title: "Experience", content: experienceContent },
+    { title: "Business / Organisation", content: businessRows ? `<div class="expandable-detail-list">${businessRows}</div>` : "" },
+    { title: "Gurdwara / Community", content: communityRows ? `<div class="expandable-detail-list">${communityRows}</div>` : "" },
+    { title: "Trust", content: badgesHtml + reviewContent },
+    { title: "Contact / External Links", content: contactLinks ? `<div class="expanded-external-links">${contactLinks}</div>` : "" }
   ]);
 
-  const reviewHtml = reviewCount > 0
-    ? `
-      <div class="directory-rating-row">
-        <span class="directory-stars">${renderStars(rating)}</span>
-        <strong>${rating.toFixed(1)}</strong>
-        <span>${reviewCount} review${reviewCount === 1 ? "" : "s"}</span>
-      </div>
-    `
-    : "";
-
   return `
-    <article class="profile-card directory-profile-card directory-person-card expandable-profile-card theme-${escapeHtml(profile.themeColour || "gold")}">
+    <article class="profile-card directory-profile-card directory-person-card expandable-profile-card theme-${escapeHtml(profile.themeColour || "gold")}" data-profile-url="${profileUrl}">
       <div class="directory-card-head">
         <div class="directory-card-visuals">
-          ${profile.profilePhotoUrl ? `<img src="${escapeHtml(profile.profilePhotoUrl)}" class="directory-profile-photo" alt="Profile photo">` : `<span class="directory-profile-photo placeholder-avatar">${escapeHtml(identity.slice(0, 1))}</span>`}
-          ${profile.businessLogoUrl ? `<img src="${escapeHtml(profile.businessLogoUrl)}" class="directory-business-logo" alt="Business logo">` : ""}
+          ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" class="directory-profile-photo" alt="Profile photo">` : `<span class="directory-profile-photo placeholder-avatar">${escapeHtml(identity.slice(0, 1))}</span>`}
+          ${profile.businessLogoUrl && profile.businessLogoUrl !== imageUrl ? `<img src="${escapeHtml(profile.businessLogoUrl)}" class="directory-business-logo" alt="Business logo">` : ""}
         </div>
-        <div>
+        <div class="directory-card-identity">
           <h3>${escapeHtml(identity)}</h3>
           ${personName ? `<span class="directory-person-name">${escapeHtml(personName)}</span>` : ""}
           <p class="service">${escapeHtml(service)}</p>
+          <div class="directory-meta-list compact-location">
+            <span>${escapeHtml(profile.town || "Location not provided")}</span>
+          </div>
         </div>
       </div>
 
-      <div class="directory-badges-row compact-badges">
-        ${featuredBadge}
-        ${experienceBadge}
-      </div>
-      ${badgesHtml}
-      ${reviewHtml}
-
-      <div class="directory-meta-list">
-        <span>${escapeHtml(profile.town || "Location not provided")}</span>
-        ${profile.serviceArea ? `<span>${escapeHtml(profile.serviceArea)}</span>` : ""}
-        ${profile.associatedGurdwara && profile.showGurdwara ? `<span>${escapeHtml(profile.associatedGurdwara)}</span>` : ""}
-      </div>
-
-      ${description ? `<p class="directory-description">${escapeHtml(description)}</p>` : ""}
-      ${discountLabel(profile.communityDiscount) ? `<p class="directory-community-note">${escapeHtml(discountLabel(profile.communityDiscount))}</p>` : ""}
-
-      <div class="tags">${tagsHtml}</div>
+      ${tagsHtml ? `<div class="tags compact-tags">${tagsHtml}</div>` : ""}
+      ${primaryBadge ? `<div class="directory-badges-row compact-badges">${primaryBadge}</div>` : ""}
 
       <button type="button" class="expandable-profile-toggle" aria-expanded="false" aria-controls="${detailsId}" data-expand-card>More details</button>
 
       ${expandedDetails}
 
       <div class="card-links directory-card-actions">
-        <a class="directory-primary-action" href="view.html?id=${profileId}">View Profile</a>
+        <a class="directory-primary-action" href="${profileUrl}">View Profile</a>
         <button type="button" class="btn-small" data-directory-message-id="${profileId}">Message</button>
         <button type="button" class="btn-small secondary-action" data-directory-connect-id="${profileId}">Connect</button>
         ${websiteUrl ? `<a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener" class="secondary-link">Website</a>` : ""}
         ${linkedInUrl ? `<a href="${escapeHtml(linkedInUrl)}" target="_blank" rel="noopener" class="secondary-link">LinkedIn</a>` : ""}
-        ${profile.showGoogleReviews && reviewsUrl ? `<a href="${escapeHtml(reviewsUrl)}" target="_blank" rel="noopener" class="secondary-link">Reviews</a>` : ""}
       </div>
     </article>
   `;
 }
+
 function populateFilter(selectElement, values, defaultLabel) {
   if (!selectElement) return;
 
@@ -431,12 +640,17 @@ async function loadDirectory() {
     directoryCount.textContent = "Loading profiles...";
   }
 
+  directoryDataLoaded = false;
+  renderDirectoryDiscovery();
+
   try {
     const usersRef = collection(db, "users");
     const publicUsersQuery = query(usersRef, where("isPublic", "==", true));
     const snapshot = await getDocs(publicUsersQuery);
 
     allProfiles = [];
+    directoryDataLoaded = false;
+    renderDirectoryDiscovery();
 
     snapshot.forEach(docSnap => {
       const profile = {
@@ -460,10 +674,14 @@ async function loadDirectory() {
         directoryCount.textContent = "Showing 0 Sangat members";
       }
 
+      directoryDataLoaded = true;
+      renderDirectoryDiscovery();
       return;
     }
 
+    directoryDataLoaded = true;
     populateFilters();
+    renderDirectoryDiscovery();
     filterProfiles();
 
   } catch (error) {
@@ -476,9 +694,54 @@ async function loadDirectory() {
     if (directoryCount) {
       directoryCount.textContent = "Could not load profiles";
     }
+    directoryDataLoaded = true;
+    renderDirectoryDiscovery();
   }
 }
 
+
+if (directoryIndustryTabs) {
+  directoryIndustryTabs.addEventListener("click", (event) => {
+    const tab = event.target.closest("[data-industry]");
+    if (!tab) return;
+    changeIndustry(tab.dataset.industry);
+  });
+}
+
+if (directoryFanPrev) directoryFanPrev.addEventListener("click", () => cycleFan(-1));
+if (directoryFanNext) directoryFanNext.addEventListener("click", () => cycleFan(1));
+
+if (directoryFanStage) {
+  directoryFanStage.addEventListener("click", (event) => {
+    const card = event.target.closest(".directory-fan-card[data-profile-url]");
+    if (card?.dataset.profileUrl) window.location.href = card.dataset.profileUrl;
+  });
+
+  directoryFanStage.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      cycleFan(-1);
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      cycleFan(1);
+    }
+    if (event.key === "Enter") {
+      const card = event.target.closest(".directory-fan-card[data-profile-url]") || directoryFanStage.querySelector(".directory-fan-card.is-center[data-profile-url]");
+      if (card?.dataset.profileUrl) window.location.href = card.dataset.profileUrl;
+    }
+  });
+
+  directoryFanStage.addEventListener("touchstart", (event) => {
+    touchStartX = event.touches[0]?.clientX || 0;
+  }, { passive: true });
+
+  directoryFanStage.addEventListener("touchend", (event) => {
+    const endX = event.changedTouches[0]?.clientX || 0;
+    const delta = endX - touchStartX;
+    if (Math.abs(delta) > 42) cycleFan(delta > 0 ? -1 : 1);
+  }, { passive: true });
+}
 if (searchBtn) {
   searchBtn.addEventListener("click", filterProfiles);
 }
@@ -534,7 +797,7 @@ function toggleExpandableCard(button) {
   card.classList.toggle("is-expanded", shouldExpand);
   button.setAttribute("aria-expanded", String(shouldExpand));
   details.hidden = !shouldExpand;
-  button.textContent = shouldExpand ? "Hide details" : "More details";
+  button.textContent = shouldExpand ? "Less details" : "More details";
 }
 
 document.addEventListener("keydown", (event) => {
@@ -544,28 +807,43 @@ document.addEventListener("keydown", (event) => {
 document.addEventListener("click", async (event) => {
   const toggle = event.target.closest("[data-expand-card]");
   if (toggle) {
+    event.stopPropagation();
     toggleExpandableCard(toggle);
     return;
   }
 
+  const interactive = event.target.closest("a, button");
   const connect = event.target.closest("[data-directory-connect-id]");
   const message = event.target.closest("[data-directory-message-id]");
+
+  if (interactive) {
+    event.stopPropagation();
+  }
 
   try {
     if (connect) {
       await sendConnectionRequest(currentUser.uid, connect.dataset.directoryConnectId);
       connect.textContent = "Requested";
       connect.disabled = true;
+      return;
     }
 
     if (message) {
       await openConversationWithUser(currentUser.uid, message.dataset.directoryMessageId);
+      return;
     }
   } catch (error) {
     if (directoryCount) directoryCount.textContent = error.message || "Messaging is temporarily unavailable.";
+    return;
+  }
+
+  if (interactive) return;
+
+  const expandedCard = event.target.closest(".directory-person-card.is-expanded[data-profile-url]");
+  if (expandedCard?.dataset.profileUrl) {
+    window.location.href = expandedCard.dataset.profileUrl;
   }
 });
-
 protectPage({
   onAllowed: (user) => {
     currentUser = user;

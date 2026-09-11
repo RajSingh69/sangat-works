@@ -163,6 +163,38 @@
   <p>Sangat Works — built for community support.</p>
 </footer>
 
+<script>
+  (() => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const revealItems = [
+      ".home-cinematic-hero",
+      ".home-network-band",
+      ".home-discovery",
+      ".home-skills-story",
+      ".home-young-pros",
+      ".home-projects-strip",
+      ".admin-dashboard-card",
+      ".home-membership-note"
+    ];
+    const sections = revealItems.flatMap(selector => [...document.querySelectorAll(selector)]);
+    sections.forEach(section => section.classList.add("home-reveal"));
+
+    if (reduceMotion || !("IntersectionObserver" in window)) {
+      sections.forEach(section => section.classList.add("is-visible"));
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.16, rootMargin: "0px 0px -8% 0px" });
+
+    sections.forEach(section => observer.observe(section));
+  })();
+</script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/admin-dashboard.js"></script>
 <script type="module" src="js/onboarding.js"></script>
