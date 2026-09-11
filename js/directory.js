@@ -24,6 +24,27 @@ const sortBy = document.getElementById("sortBy");
 let allProfiles = [];
 let currentUser = null;
 
+function escapeHtml(value = "") {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function safeExternalUrl(value = "") {
+  const trimmed = String(value).trim();
+  if (!trimmed) return "";
+  try {
+    const url = new URL(trimmed, window.location.origin);
+    if (!["http:", "https:"].includes(url.protocol)) return "";
+    return url.href;
+  } catch (error) {
+    return "";
+  }
+}
+
 function discountLabel(value) {
   const labels = {
     yes: "Community rates available",
@@ -146,24 +167,72 @@ function renderDirectoryBadges(profile) {
   `;
 }
 
+function businessNameRow(value) {
+  return value ? `<p><strong>Business</strong><span>${escapeHtml(value)}</span></p>` : "";
+}
+
+function renderExpandableDetails(detailsId, sections) {
+  const visibleSections = sections.filter(section => section.content);
+  if (!visibleSections.length) return "";
+
+  return `
+    <div class="expandable-profile-details" id="${detailsId}" hidden>
+      ${visibleSections.map(section => `
+        <section class="expandable-detail-section">
+          <h4>${escapeHtml(section.title)}</h4>
+          ${section.content}
+        </section>
+      `).join("")}
+    </div>
+  `;
+}
+
 function renderDirectoryProfile(profile) {
   const tags = profile.tags || [];
-  const visibleTags = tags.slice(0, 6);
+  const visibleTags = tags.slice(0, 5);
   const tagsHtml = visibleTags
-    .map(tag => `<span class="tag">${tag}</span>`)
+    .map(tag => `<span class="tag">${escapeHtml(tag)}</span>`)
     .join("");
 
   const featuredBadge = isFeaturedActive(profile)
-    ? `<span class="trust-badge featured-badge">★ Featured</span>`
+    ? `<span class="trust-badge featured-badge">Featured</span>`
     : "";
 
   const experienceBadge = profile.yearsExperience
-    ? `<span class="trust-badge">${profile.yearsExperience} Years Experience</span>`
+    ? `<span class="trust-badge">${escapeHtml(profile.yearsExperience)} yrs experience</span>`
     : "";
 
   const rating = getRating(profile);
   const reviewCount = getReviewCount(profile);
   const badgesHtml = renderDirectoryBadges(profile);
+  const rawProfileId = profile.uid || profile.id || "";
+  const profileId = encodeURIComponent(rawProfileId);
+  const identity = profile.businessName || profile.fullName || "Unnamed Profile";
+  const personName = profile.businessName && profile.fullName ? profile.fullName : "";
+  const service = profile.serviceTitle || profile.businessType || "Member service";
+  const websiteUrl = safeExternalUrl(profile.website);
+  const linkedInUrl = safeExternalUrl(profile.linkedin);
+  const reviewsUrl = safeExternalUrl(profile.googleReviews);
+  const description = profile.description
+    ? `${profile.description.substring(0, 150)}${profile.description.length > 150 ? "..." : ""}`
+    : "";
+  const detailsId = `directory-profile-details-${profileId}`;
+  const fullTagsHtml = tags.length
+    ? `<div class="tags">${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>`
+    : "";
+  const detailRows = [
+    businessNameRow(profile.businessName),
+    profile.serviceArea ? `<p><strong>Service area</strong><span>${escapeHtml(profile.serviceArea)}</span></p>` : "",
+    profile.associatedGurdwara && profile.showGurdwara ? `<p><strong>Gurdwara</strong><span>${escapeHtml(profile.associatedGurdwara)}</span></p>` : "",
+    profile.yearsExperience ? `<p><strong>Experience</strong><span>${escapeHtml(profile.yearsExperience)} years</span></p>` : "",
+    profile.specialistWork ? `<p><strong>Specialist work</strong><span>${escapeHtml(profile.specialistWork)}</span></p>` : ""
+  ].filter(Boolean).join("");
+  const expandedDetails = renderExpandableDetails(detailsId, [
+    { title: "About", content: profile.description ? `<p>${escapeHtml(profile.description)}</p>` : "" },
+    { title: "Skills", content: fullTagsHtml },
+    { title: "Business / Organisation", content: detailRows ? `<div class="expandable-detail-list">${detailRows}</div>` : "" },
+    { title: "Community", content: discountLabel(profile.communityDiscount) ? `<p>${escapeHtml(discountLabel(profile.communityDiscount))}</p>` : "" }
+  ]);
 
   const reviewHtml = reviewCount > 0
     ? `
@@ -173,62 +242,55 @@ function renderDirectoryProfile(profile) {
         <span>${reviewCount} review${reviewCount === 1 ? "" : "s"}</span>
       </div>
     `
-    : `
-      <div class="directory-rating-row muted-rating">
-        <span class="directory-stars">☆☆☆☆☆</span>
-        <span>No reviews yet</span>
-      </div>
-    `;
+    : "";
 
   return `
-    <div class="profile-card directory-profile-card theme-${profile.themeColour || "gold"}">
-
-      <div class="directory-card-visuals">
-        ${profile.profilePhotoUrl ? `<img src="${profile.profilePhotoUrl}" class="directory-profile-photo" alt="Profile photo">` : ""}
-        ${profile.businessLogoUrl ? `<img src="${profile.businessLogoUrl}" class="directory-business-logo" alt="Business logo">` : ""}
+    <article class="profile-card directory-profile-card directory-person-card expandable-profile-card theme-${escapeHtml(profile.themeColour || "gold")}">
+      <div class="directory-card-head">
+        <div class="directory-card-visuals">
+          ${profile.profilePhotoUrl ? `<img src="${escapeHtml(profile.profilePhotoUrl)}" class="directory-profile-photo" alt="Profile photo">` : `<span class="directory-profile-photo placeholder-avatar">${escapeHtml(identity.slice(0, 1))}</span>`}
+          ${profile.businessLogoUrl ? `<img src="${escapeHtml(profile.businessLogoUrl)}" class="directory-business-logo" alt="Business logo">` : ""}
+        </div>
+        <div>
+          <h3>${escapeHtml(identity)}</h3>
+          ${personName ? `<span class="directory-person-name">${escapeHtml(personName)}</span>` : ""}
+          <p class="service">${escapeHtml(service)}</p>
+        </div>
       </div>
 
-      <h3>${profile.businessName || profile.fullName || "Unnamed Profile"}</h3>
-      <p class="service">${profile.serviceTitle || ""}</p>
-
-      <div class="directory-badges-row">
+      <div class="directory-badges-row compact-badges">
         ${featuredBadge}
         ${experienceBadge}
       </div>
-
-      ${reviewHtml}
       ${badgesHtml}
+      ${reviewHtml}
 
-      <p><strong>Location:</strong> ${profile.town || "Location not provided"}</p>
+      <div class="directory-meta-list">
+        <span>${escapeHtml(profile.town || "Location not provided")}</span>
+        ${profile.serviceArea ? `<span>${escapeHtml(profile.serviceArea)}</span>` : ""}
+        ${profile.associatedGurdwara && profile.showGurdwara ? `<span>${escapeHtml(profile.associatedGurdwara)}</span>` : ""}
+      </div>
 
-      ${profile.serviceArea ? `<p><strong>Service area:</strong> ${profile.serviceArea}</p>` : ""}
-
-      ${profile.associatedGurdwara && profile.showGurdwara ? `
-        <p><strong>Sangat/Gurdwara:</strong> ${profile.associatedGurdwara}</p>
-      ` : ""}
-
-      ${discountLabel(profile.communityDiscount) ? `
-        <p><strong>Community:</strong> ${discountLabel(profile.communityDiscount)}</p>
-      ` : ""}
-
-      ${profile.description ? `
-        <p>${profile.description.substring(0, 180)}${profile.description.length > 180 ? "..." : ""}</p>
-      ` : ""}
+      ${description ? `<p class="directory-description">${escapeHtml(description)}</p>` : ""}
+      ${discountLabel(profile.communityDiscount) ? `<p class="directory-community-note">${escapeHtml(discountLabel(profile.communityDiscount))}</p>` : ""}
 
       <div class="tags">${tagsHtml}</div>
 
-      <div class="card-links">
-        <a href="view.html?id=${profile.uid || profile.id}">View Profile</a>
-        <button type="button" class="btn-small" data-directory-connect-id="${profile.uid || profile.id}">Connect</button>
-        <button type="button" class="btn-small" data-directory-message-id="${profile.uid || profile.id}">Message</button>
-        ${profile.website ? `<a href="${profile.website}" target="_blank">Website</a>` : ""}
-        ${profile.linkedin ? `<a href="${profile.linkedin}" target="_blank">LinkedIn</a>` : ""}
-        ${profile.showGoogleReviews && profile.googleReviews ? `<a href="${profile.googleReviews}" target="_blank">Reviews</a>` : ""}
+      <button type="button" class="expandable-profile-toggle" aria-expanded="false" aria-controls="${detailsId}" data-expand-card>More details</button>
+
+      ${expandedDetails}
+
+      <div class="card-links directory-card-actions">
+        <a class="directory-primary-action" href="view.html?id=${profileId}">View Profile</a>
+        <button type="button" class="btn-small" data-directory-message-id="${profileId}">Message</button>
+        <button type="button" class="btn-small secondary-action" data-directory-connect-id="${profileId}">Connect</button>
+        ${websiteUrl ? `<a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener" class="secondary-link">Website</a>` : ""}
+        ${linkedInUrl ? `<a href="${escapeHtml(linkedInUrl)}" target="_blank" rel="noopener" class="secondary-link">LinkedIn</a>` : ""}
+        ${profile.showGoogleReviews && reviewsUrl ? `<a href="${escapeHtml(reviewsUrl)}" target="_blank" rel="noopener" class="secondary-link">Reviews</a>` : ""}
       </div>
-    </div>
+    </article>
   `;
 }
-
 function populateFilter(selectElement, values, defaultLabel) {
   if (!selectElement) return;
 
@@ -449,7 +511,43 @@ if (sortBy) {
   sortBy.addEventListener("change", filterProfiles);
 }
 
+function collapseExpandableCard(card) {
+  const button = card.querySelector("[data-expand-card]");
+  const details = button ? document.getElementById(button.getAttribute("aria-controls")) : null;
+  card.classList.remove("is-expanded");
+  button?.setAttribute("aria-expanded", "false");
+  if (button) button.textContent = "More details";
+  if (details) details.hidden = true;
+}
+
+function toggleExpandableCard(button) {
+  const card = button.closest(".expandable-profile-card");
+  const list = button.closest(".directory-results-grid, .network-list");
+  const details = document.getElementById(button.getAttribute("aria-controls"));
+  if (!card || !details) return;
+
+  const shouldExpand = button.getAttribute("aria-expanded") !== "true";
+  list?.querySelectorAll(".expandable-profile-card.is-expanded").forEach((openCard) => {
+    if (openCard !== card) collapseExpandableCard(openCard);
+  });
+
+  card.classList.toggle("is-expanded", shouldExpand);
+  button.setAttribute("aria-expanded", String(shouldExpand));
+  details.hidden = !shouldExpand;
+  button.textContent = shouldExpand ? "Hide details" : "More details";
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  document.querySelectorAll(".expandable-profile-card.is-expanded").forEach(collapseExpandableCard);
+});
 document.addEventListener("click", async (event) => {
+  const toggle = event.target.closest("[data-expand-card]");
+  if (toggle) {
+    toggleExpandableCard(toggle);
+    return;
+  }
+
   const connect = event.target.closest("[data-directory-connect-id]");
   const message = event.target.closest("[data-directory-message-id]");
 

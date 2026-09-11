@@ -67,27 +67,78 @@ async function renderRows() {
   lists.sent.innerHTML = sent.join("") || `<div class="empty-state">No sent connection requests.</div>`;
 }
 
+function renderExpandableDetails(detailsId, sections) {
+  const visibleSections = sections.filter(section => section.content);
+  if (!visibleSections.length) return "";
+
+  return `
+    <div class="expandable-profile-details" id="${detailsId}" hidden>
+      ${visibleSections.map(section => `
+        <section class="expandable-detail-section">
+          <h4>${escapeHtml(section.title)}</h4>
+          ${section.content}
+        </section>
+      `).join("")}
+    </div>
+  `;
+}
+
 function renderNetworkCard(connection, profile) {
   const otherId = profile?.uid || profile?.id || getOtherId(connection);
   const isIncoming = connection.status === "pending" && connection.recipientId === currentUser.uid;
   const isOutgoing = connection.status === "pending" && connection.requesterId === currentUser.uid;
+  const relationshipLabel = connection.status === "accepted"
+    ? "Connected"
+    : isIncoming
+      ? "Request received"
+      : "Request sent";
   const image = profile?.profilePhotoUrl
     ? `<img src="${escapeHtml(profile.profilePhotoUrl)}" class="network-avatar" alt="">`
     : `<div class="network-avatar placeholder-avatar">${escapeHtml(getDisplayName(profile).slice(0, 1))}</div>`;
+  const organisation = profile?.businessName || profile?.organisation || profile?.company || "";
+  const location = profile?.town || profile?.serviceArea || "";
+  const detailsId = `network-profile-details-${encodeURIComponent(otherId)}`;
+  const tags = profile?.tags || [];
+  const tagsHtml = tags.length
+    ? `<div class="tags">${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>`
+    : "";
+  const detailRows = [
+    organisation ? `<p><strong>Organisation</strong><span>${escapeHtml(organisation)}</span></p>` : "",
+    location ? `<p><strong>Location</strong><span>${escapeHtml(location)}</span></p>` : "",
+    profile?.serviceArea ? `<p><strong>Service area</strong><span>${escapeHtml(profile.serviceArea)}</span></p>` : "",
+    profile?.yearsExperience ? `<p><strong>Experience</strong><span>${escapeHtml(profile.yearsExperience)} years</span></p>` : "",
+    profile?.specialistWork ? `<p><strong>Specialist work</strong><span>${escapeHtml(profile.specialistWork)}</span></p>` : ""
+  ].filter(Boolean).join("");
+  const expandedDetails = renderExpandableDetails(detailsId, [
+    { title: "About", content: profile?.description ? `<p>${escapeHtml(profile.description)}</p>` : "" },
+    { title: "Skills", content: tagsHtml },
+    { title: "Profile details", content: detailRows ? `<div class="expandable-detail-list">${detailRows}</div>` : "" }
+  ]);
 
   return `
-    <article class="network-card">
+    <article class="network-card professional-person-card expandable-profile-card">
       ${image}
       <div class="network-card-main">
-        <h3>${escapeHtml(getDisplayName(profile))}</h3>
-        <p>${escapeHtml(getMemberLine(profile) || "Member profile")}</p>
-        <div class="card-links">
-          <a href="view.html?id=${encodeURIComponent(otherId)}">View Profile</a>
+        <div class="person-card-heading">
+          <div>
+            <h3>${escapeHtml(getDisplayName(profile))}</h3>
+            <p>${escapeHtml(getMemberLine(profile) || "Member profile")}</p>
+          </div>
+          <span class="project-status-pill ${connection.status === "accepted" ? "status-accepted" : "status-pending"}">${relationshipLabel}</span>
+        </div>
+        <div class="person-card-meta">
+          ${organisation ? `<span>${escapeHtml(organisation)}</span>` : ""}
+          ${location ? `<span>${escapeHtml(location)}</span>` : ""}
+        </div>
+        <button type="button" class="expandable-profile-toggle" aria-expanded="false" aria-controls="${detailsId}" data-expand-card>More details</button>
+        ${expandedDetails}
+        <div class="card-links person-card-actions">
           ${connection.status === "accepted" ? `<button type="button" class="btn-small" data-message-user-id="${otherId}">Message</button>` : ""}
+          <a href="view.html?id=${encodeURIComponent(otherId)}">View Profile</a>
           ${isIncoming ? `<button type="button" class="btn-small project-accept-btn" data-accept-connection-id="${connection.id}">Accept</button>` : ""}
-          ${isIncoming ? `<button type="button" class="btn-small project-reject-btn" data-decline-connection-id="${connection.id}">Decline</button>` : ""}
-          ${isOutgoing ? `<span class="project-status-pill status-pending">Requested</span><button type="button" class="btn-small project-withdraw-btn" data-decline-connection-id="${connection.id}">Cancel Request</button>` : ""}
-          ${connection.status === "accepted" ? `<button type="button" class="btn-small project-withdraw-btn" data-remove-user-id="${otherId}">Remove Connection</button>` : ""}
+          ${isIncoming ? `<button type="button" class="btn-small subtle-danger-action" data-decline-connection-id="${connection.id}">Decline</button>` : ""}
+          ${isOutgoing ? `<button type="button" class="btn-small subtle-danger-action" data-decline-connection-id="${connection.id}">Cancel Request</button>` : ""}
+          ${connection.status === "accepted" ? `<button type="button" class="btn-small subtle-danger-action" data-remove-user-id="${otherId}">Remove</button>` : ""}
         </div>
       </div>
     </article>
@@ -101,7 +152,44 @@ async function refreshNetwork() {
   setMessage("");
 }
 
+function collapseExpandableCard(card) {
+  const button = card.querySelector("[data-expand-card]");
+  const details = button ? document.getElementById(button.getAttribute("aria-controls")) : null;
+  card.classList.remove("is-expanded");
+  button?.setAttribute("aria-expanded", "false");
+  if (button) button.textContent = "More details";
+  if (details) details.hidden = true;
+}
+
+function toggleExpandableCard(button) {
+  const card = button.closest(".expandable-profile-card");
+  const list = button.closest(".network-list");
+  const details = document.getElementById(button.getAttribute("aria-controls"));
+  if (!card || !details) return;
+
+  const shouldExpand = button.getAttribute("aria-expanded") !== "true";
+  list?.querySelectorAll(".expandable-profile-card.is-expanded").forEach((openCard) => {
+    if (openCard !== card) collapseExpandableCard(openCard);
+  });
+
+  card.classList.toggle("is-expanded", shouldExpand);
+  button.setAttribute("aria-expanded", String(shouldExpand));
+  details.hidden = !shouldExpand;
+  button.textContent = shouldExpand ? "Hide details" : "More details";
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  document.querySelectorAll(".expandable-profile-card.is-expanded").forEach(collapseExpandableCard);
+});
+
 document.addEventListener("click", async (event) => {
+  const toggle = event.target.closest("[data-expand-card]");
+  if (toggle) {
+    toggleExpandableCard(toggle);
+    return;
+  }
+
   const tab = event.target.closest("[data-network-tab]");
   if (tab) setTab(tab.dataset.networkTab);
 

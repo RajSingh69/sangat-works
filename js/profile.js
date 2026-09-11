@@ -57,6 +57,27 @@ let viewedProfileId = "";
 let viewedPublicProfile = null;
 let currentConnection = null;
 
+function escapeHtml(value = "") {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function safeExternalUrl(value = "") {
+  const trimmed = String(value).trim();
+  if (!trimmed) return "";
+  try {
+    const url = new URL(trimmed, window.location.origin);
+    if (!["http:", "https:"].includes(url.protocol)) return "";
+    return url.href;
+  } catch (error) {
+    return "";
+  }
+}
+
 const profileStrengthPercent = document.getElementById("profileStrengthPercent");
 const profileStrengthFill = document.getElementById("profileStrengthFill");
 const profileStrengthChecklist = document.getElementById("profileStrengthChecklist");
@@ -555,80 +576,116 @@ function fillForm(profile) {
 
 function renderProfile(profile) {
   const tags = profile.tags || [];
-  const tagsHtml = tags.map(tag => `<span class="tag">${tag}</span>`).join("");
+  const tagsHtml = tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("");
+  const websiteUrl = safeExternalUrl(profile.website);
+  const linkedInUrl = safeExternalUrl(profile.linkedin);
+  const reviewsUrl = safeExternalUrl(profile.googleReviews);
 
   const membershipBadge = profile.isFoundingMember
-    ? `<span class="trust-badge verified">★ Founding Member #${profile.memberNumber || ""} — Free 1 Year</span>`
+    ? `<span class="trust-badge verified">Founding Member #${escapeHtml(profile.memberNumber || "")}</span>`
     : "";
 
   const featuredBadge = isFeaturedActive(profile)
-    ? `<span class="trust-badge">⭐ Featured Member</span>`
+    ? `<span class="trust-badge featured-badge">Featured Member</span>`
     : "";
 
   const discountText = {
     yes: "Offers Sangat/community rates where possible",
     sometimes: "May offer community rates depending on the job",
     no: "No fixed discount, but supports fair pricing",
-    "not-specified": "Not specified"
+    "not-specified": ""
   };
 
+  const businessName = profile.businessName || "";
+  const displayName = businessName || profile.fullName || "Member profile";
+  const title = profile.serviceTitle || "Sangat Works Member";
+  const location = `${profile.town || "Location not provided"}${profile.showPostcode && profile.postcode ? ` ${profile.postcode}` : ""}`;
+
+  const experienceRows = [
+    profile.yearsExperience ? `<p><strong>Experience</strong><span>${escapeHtml(profile.yearsExperience)} years</span></p>` : "",
+    profile.specialistWork ? `<p><strong>Specialist work</strong><span>${escapeHtml(profile.specialistWork)}</span></p>` : ""
+  ].join("");
+
+  const businessRows = [
+    profile.fullName ? `<p><strong>Name</strong><span>${escapeHtml(profile.fullName)}</span></p>` : "",
+    businessName ? `<p><strong>Business</strong><span>${escapeHtml(businessName)}</span></p>` : "",
+    profile.serviceArea ? `<p><strong>Service area</strong><span>${escapeHtml(profile.serviceArea)}</span></p>` : "",
+    profile.showGurdwara && (profile.gurdwaraName || profile.associatedGurdwara) ? `<p><strong>Local Gurdwara</strong><span>${escapeHtml(profile.gurdwaraName || profile.associatedGurdwara)}</span></p>` : "",
+    discountText[profile.communityDiscount] ? `<p><strong>Community support</strong><span>${escapeHtml(discountText[profile.communityDiscount])}</span></p>` : ""
+  ].join("");
+
+  const funFacts = [profile.funFactOne, profile.funFactTwo].filter(Boolean);
+  const contactLinks = [
+    websiteUrl ? `<a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener" class="tracked-link" data-click-type="websiteClicks">Website</a>` : "",
+    linkedInUrl ? `<a href="${escapeHtml(linkedInUrl)}" target="_blank" rel="noopener" class="tracked-link" data-click-type="linkedinClicks">LinkedIn</a>` : "",
+    profile.showGoogleReviews && reviewsUrl ? `<a href="${escapeHtml(reviewsUrl)}" target="_blank" rel="noopener" class="tracked-link" data-click-type="googleReviewClicks">Google Reviews</a>` : ""
+  ].join("");
+
   return `
-    <div class="public-profile-card theme-${profile.themeColour || "gold"}">
-
-      <div class="profile-visual-row">
-        ${profile.profilePhotoUrl ? `<img src="${profile.profilePhotoUrl}" class="profile-image" alt="Profile photo">` : ""}
-        ${profile.businessLogoUrl ? `<img src="${profile.businessLogoUrl}" class="logo-image" alt="Business logo">` : ""}
-      </div>
-
-      <h1>${profile.businessName || profile.fullName}</h1>
-      <p class="service">${profile.serviceTitle || ""}</p>
-
-      ${renderRelationshipActions(profile)}
-
-      <div class="badges-row">
-        ${featuredBadge}
-        ${membershipBadge}
-      </div>
-
-      <p>${profile.description || ""}</p>
-
-      ${profile.whyContact ? `<p><strong>Why contact me:</strong> ${profile.whyContact}</p>` : ""}
-
-      <div class="tags">${tagsHtml}</div>
-
-      <p><strong>Name:</strong> ${profile.fullName || ""}</p>
-      <p><strong>Location:</strong> ${profile.town || "Location not provided"} ${profile.showPostcode ? profile.postcode || "" : ""}</p>
-      ${profile.serviceArea ? `<p><strong>Service area:</strong> ${profile.serviceArea}</p>` : ""}
-
-      ${profile.yearsExperience ? `<p><strong>Experience:</strong> ${profile.yearsExperience} years</p>` : ""}
-      ${profile.specialistWork ? `<p><strong>Specialist work:</strong> ${profile.specialistWork}</p>` : ""}
-
-      ${profile.showGurdwara && (profile.gurdwaraName || profile.associatedGurdwara) ? `
-        <p><strong>Local Gurdwara:</strong> ${profile.gurdwaraName || profile.associatedGurdwara}</p>
-      ` : ""}
-
-      <p><strong>Community support:</strong> ${discountText[profile.communityDiscount] || "Not specified"}</p>
-
-      ${profile.funFactOne || profile.funFactTwo ? `
-        <div class="fun-facts">
-          <h3>Fun facts</h3>
-          ${profile.funFactOne ? `<p>• ${profile.funFactOne}</p>` : ""}
-          ${profile.funFactTwo ? `<p>• ${profile.funFactTwo}</p>` : ""}
+    <article class="public-profile-card professional-profile theme-${escapeHtml(profile.themeColour || "gold")}">
+      <header class="professional-profile-header">
+        <div class="profile-visual-row">
+          ${profile.profilePhotoUrl ? `<img src="${escapeHtml(profile.profilePhotoUrl)}" class="profile-image" alt="Profile photo">` : `<span class="profile-image placeholder-avatar">${escapeHtml(displayName.slice(0, 1))}</span>`}
+          ${profile.businessLogoUrl ? `<img src="${escapeHtml(profile.businessLogoUrl)}" class="logo-image" alt="Business logo">` : ""}
         </div>
-      ` : ""}
+        <div class="profile-identity-block">
+          <h1>${escapeHtml(displayName)}</h1>
+          <p class="service">${escapeHtml(title)}</p>
+          <p class="profile-location-line">${escapeHtml(location)}</p>
+          <div class="badges-row">${featuredBadge}${membershipBadge}</div>
+        </div>
+        ${renderRelationshipActions(profile)}
+      </header>
 
-      ${profile.showPhone ? `<p><strong>Phone:</strong> ${profile.phone || "Not provided"}</p>` : ""}
-      ${profile.showEmail ? `<p><strong>Email:</strong> ${profile.email || "Not provided"}</p>` : ""}
+      <div class="professional-profile-grid">
+        ${profile.description || profile.whyContact ? `
+          <section class="profile-section-card profile-section-wide">
+            <h2>About</h2>
+            ${profile.description ? `<p>${escapeHtml(profile.description)}</p>` : ""}
+            ${profile.whyContact ? `<p><strong>Why contact me:</strong> ${escapeHtml(profile.whyContact)}</p>` : ""}
+          </section>
+        ` : ""}
 
-      <div class="card-links">
-        ${profile.website ? `<a href="${profile.website}" target="_blank" class="tracked-link" data-click-type="websiteClicks">Website</a>` : ""}
-        ${profile.linkedin ? `<a href="${profile.linkedin}" target="_blank" class="tracked-link" data-click-type="linkedinClicks">LinkedIn</a>` : ""}
-        ${profile.showGoogleReviews && profile.googleReviews ? `<a href="${profile.googleReviews}" target="_blank" class="tracked-link" data-click-type="googleReviewClicks">Google Reviews</a>` : ""}
+        ${tags.length ? `
+          <section class="profile-section-card">
+            <h2>Skills</h2>
+            <div class="tags">${tagsHtml}</div>
+          </section>
+        ` : ""}
+
+        ${experienceRows ? `
+          <section class="profile-section-card profile-detail-list">
+            <h2>Experience</h2>
+            ${experienceRows}
+          </section>
+        ` : ""}
+
+        ${businessRows ? `
+          <section class="profile-section-card profile-detail-list">
+            <h2>Business / Organisation</h2>
+            ${businessRows}
+          </section>
+        ` : ""}
+
+        ${funFacts.length ? `
+          <section class="profile-section-card">
+            <h2>Activity</h2>
+            ${funFacts.map(fact => `<p>${escapeHtml(fact)}</p>`).join("")}
+          </section>
+        ` : ""}
+
+        ${profile.showPhone || profile.showEmail || contactLinks ? `
+          <section class="profile-section-card">
+            <h2>Contact</h2>
+            ${profile.showPhone ? `<p>${escapeHtml(profile.phone || "Not provided")}</p>` : ""}
+            ${profile.showEmail ? `<p>${escapeHtml(profile.email || "Not provided")}</p>` : ""}
+            <div class="card-links">${contactLinks}</div>
+          </section>
+        ` : ""}
       </div>
-    </div>
+    </article>
   `;
 }
-
 function renderRelationshipActions() {
   if (!currentUser || !viewedProfileId || currentUser.uid === viewedProfileId) return "";
 
@@ -908,7 +965,7 @@ if (profileForm) {
         showGoogleReviews: checked("showGoogleReviews"),
         connectionPrivacy: value("connectionPrivacy") || "everyone",
         messagePrivacy: value("messagePrivacy") || "requests",
-        allowMessageNotifications: checked("allowMessageNotifications"),,
+        allowMessageNotifications: checked("allowMessageNotifications"),
 
         updatedAt: serverTimestamp()
       };

@@ -26,7 +26,7 @@ const composer = document.getElementById("messageComposer");
 const messageText = document.getElementById("messageText");
 const messagesStatus = document.getElementById("messagesStatus");
 const messageRequestActions = document.getElementById("messageRequestActions");
-const messagesShell = document.querySelector(".messages-shell");
+const messagesShell = document.querySelector(".messages-shell");`r`nconst messagesContextPanel = document.getElementById("messagesContextPanel");
 
 let currentUser = null;
 let conversations = [];
@@ -190,6 +190,37 @@ async function selectConversation(conversationId) {
   }
 }
 
+
+async function renderContextPanel() {
+  if (!messagesContextPanel || !selectedConversation) return;
+  const otherId = getOtherId(selectedConversation);
+  const other = await profileFor(otherId);
+  const name = displayNameFor(selectedConversation, other);
+  const memberLine = getMemberLine(other) || "Sangat Works Member";
+  const location = other?.town || other?.serviceArea || "Location not provided";
+  const business = other?.businessName || other?.organisation || other?.company || "";
+  const connectionState = selectedConversation.status === "requested"
+    ? "Message request"
+    : "Conversation active";
+  const avatar = other?.profilePhotoUrl
+    ? `<img src="${escapeHtml(other.profilePhotoUrl)}" class="messages-context-avatar" alt="">`
+    : `<span class="messages-context-avatar">${escapeHtml(name.slice(0, 1))}</span>`;
+
+  messagesContextPanel.innerHTML = `
+    <div class="messages-context-card">
+      ${avatar}
+      <h2>${escapeHtml(name)}</h2>
+      <p>${escapeHtml(memberLine)}</p>
+      ${business ? `<span class="context-meta-line">${escapeHtml(business)}</span>` : ""}
+      <span class="context-meta-line">${escapeHtml(location)}</span>
+      <span class="trust-badge verified">${escapeHtml(connectionState)}</span>
+      <div class="context-action-stack">
+        <a href="view.html?id=${encodeURIComponent(otherId)}" class="btn-secondary">View Profile</a>
+        <button type="button" class="btn-small project-withdraw-btn" data-block-user-id="${escapeHtml(otherId)}">Block</button>
+      </div>
+    </div>
+  `;
+}
 async function renderChatHeader() {
   const otherId = getOtherId(selectedConversation);
   const other = await profileFor(otherId);

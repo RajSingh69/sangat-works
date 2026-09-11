@@ -15,152 +15,123 @@
   </nav>
 </header>
 
-<main>
+<main class="logged-homepage">
 
-  <section class="hero">
-    <p class="eyebrow">Sangat • Business • Community</p>
+  <section class="home-cinematic-hero" data-globe-anchor data-globe-x="0" data-globe-y="0" data-globe-scale="1" data-globe-opacity="1">
+    <svg class="home-background-paths" viewBox="0 0 1200 720" aria-hidden="true" focusable="false">
+      <path d="M-80 500 C 180 360, 260 120, 560 190 S 890 440, 1280 220" />
+      <path d="M-120 260 C 160 160, 330 520, 600 430 S 940 120, 1260 390" />
+      <path d="M120 740 C 240 520, 520 560, 680 330 S 930 40, 1180 130" />
+      <path d="M-60 110 C 220 240, 420 40, 700 130 S 920 340, 1250 270" />
+      <path d="M170 640 C 420 470, 560 690, 810 520 S 1000 260, 1250 480" />
+    </svg>
 
-    <h1>Support Sikh businesses, trades and professionals.</h1>
-
-    <p class="hero-text">
-      Sangat Works helps Sikhs find, support and recommend one another’s services,
-      businesses and skills across the UK.
-    </p>
-
-    <div class="hero-actions" id="homepageHeroActions">
-      <a href="pricing.html" class="btn-primary" id="homepageSignupCta">Sign Up Now</a>
-      <a href="directory.html" class="btn-secondary">Browse Directory</a>
-      <a href="profile.html" class="btn-primary hidden" id="homepageProfileCta">Go to My Profile</a>
+    <div class="home-hero-copy">
+      <p class="eyebrow">Sangat � Business � Community</p>
+      <h1>Support Sikh businesses, trades and professionals.</h1>
+      <p class="hero-text">
+        Find trusted people, build useful connections and keep opportunity moving through the Sangat.
+      </p>
+      <div class="hero-actions home-hero-actions" id="homepageHeroActions">
+        <a href="pricing.html" class="btn-primary home-hero-primary" id="homepageSignupCta">Join Sangat Works</a>
+        <a href="directory.html" class="sw-hover-button home-hero-secondary"><span class="sw-hover-button__fill"></span><span class="sw-hover-button__label">Browse Directory</span><span class="sw-hover-button__hover-content">Explore Members <span class="sw-hover-button__arrow">-&gt;</span></span></a>
+        <a href="profile.html" class="btn-primary home-hero-primary hidden" id="homepageProfileCta">Go to My Profile</a>
+      </div>
+      <p class="auth-switch-note" id="homepageLoginPrompt">Already have an account? <a href="login.html">Log in</a></p>
     </div>
 
-    <p class="auth-switch-note" id="homepageLoginPrompt">
-      Already have an account? <a href="login.html">Log in</a>
-    </p>
-  </section>
-
-
-
-
-
-
-
-
-
-
-  <section class="info-section">
-    <p class="eyebrow">Explore Sangat Works</p>
-
-    <h2>Everything you need in one place.</h2>
-
-    <p>
-      Quick access to the main tools across Sangat Works.
-    </p>
-
-    <div class="feature-grid">
-
-      <div class="feature-card theme-blue">
-        <h3>🗺️ Directory & Map</h3>
-        <p>
-          Find trusted Sikh businesses, professionals and tradespeople
-          across the United Kingdom.
-        </p>
-
-        <div class="card-links">
-          <a href="directory.html">Browse Directory</a>
-          <a href="map.html">Open Map</a>
-        </div>
-      </div>
-
-      <div class="feature-card theme-gold projects-home-card">
-        <div class="new-feature-pill">NEW</div>
-        <h3>🏗️ Projects</h3>
-        <p>
-          Post renovation and construction projects, receive applications
-          from trusted tradespeople and build your project team.
-        </p>
-
-        <div class="card-links">
-          <a href="projects.html">Open Projects</a>
-        </div>
-      </div>
-
-      <div class="feature-card theme-green">
-        <h3>🤝 Skills Network</h3>
-        <p>
-          Join Gurdwara skill pools, connect with members and discover
-          trusted expertise within your community.
-        </p>
-
-        <div class="card-links">
-          <a href="skills-network.html">Open Skills Network</a>
-        </div>
-      </div>
-
-      <div class="feature-card theme-purple">
-        <h3>🎓 Young Professionals</h3>
-        <p>
-          Connect with Sikh students, graduates and working professionals
-          for networking, mentorship and future opportunities.
-        </p>
-
-        <div class="card-links">
-          <a href="young-professionals.html">Open Young Professionals</a>
-        </div>
-      </div>
-
-      <div class="feature-card theme-gold">
-        <h3>💳 Pricing & Services</h3>
-        <p>
-          View membership options, featured listings and the services
-          available across Sangat Works.
-        </p>
-
-        <div class="card-links">
-          <a href="pricing.html">View Pricing</a>
-        </div>
-      </div>
-
-      <div class="feature-card theme-purple">
-        <h3>💬 Community Hub</h3>
-        <p>
-          Ask questions, browse FAQs, suggest new features and vote on what
-          Sangat Works should build next.
-        </p>
-
-        <div class="card-links">
-          <a href="faq.html">FAQs</a>
-          <a href="feature-board.html">Future Features</a>
-        </div>
-      </div>
-
-      <div class="feature-card theme-blue">
-        <h3>🎓 Getting Started</h3>
-        <p>
-          Need a refresher? Re-run the onboarding walkthrough at any time.
-        </p>
-
-        <div class="card-links">
-          <button id="restartWalkthroughBtn" class="btn-primary">
-            Restart Walkthrough
-          </button>
-        </div>
-      </div>
-
+    <div class="homepage-globe-visual" id="homepageGlobeVisual" aria-label="Interactive network globe showing coarse UK member regions">
+      <canvas id="sangatNetworkGlobe" width="620" height="620"></canvas>
     </div>
   </section>
 
+  <section class="home-network-band" data-globe-anchor data-globe-x="-8" data-globe-y="10" data-globe-scale="0.9" data-globe-opacity="0.9">
+    <div>
+      <span class="network-status-badge">Growing across the UK</span>
+      <h2 id="networkGlobeTitle">Your Sangat. Your Network.</h2>
+      <p>Discover Sikh professionals, businesses, projects and opportunities across the Sangat Works network.</p>
+    </div>
+    <div class="network-globe-stats" id="networkGlobeStats" aria-live="polite"></div>
+  </section>
 
+  <section class="home-discovery" aria-labelledby="homeExploreTitle" data-globe-anchor data-globe-x="8" data-globe-y="18" data-globe-scale="0.78" data-globe-opacity="0.75">
+    <div class="home-section-kicker">Explore Sangat Works</div>
+    <div class="home-discovery-head">
+      <h2 id="homeExploreTitle">Move through the network by what you need next.</h2>
+      <a href="directory.html" class="btn-secondary">Start with Directory</a>
+    </div>
+    <div class="home-discovery-grid">
+      <a class="home-discovery-tile tile-large" href="directory.html">
+        <span>Directory & Map</span>
+        <strong>Find trusted services near you.</strong>
+      </a>
+      <a class="home-discovery-tile" href="projects.html">
+        <span>Projects</span>
+        <strong>Post work and build teams.</strong>
+      </a>
+      <a class="home-discovery-tile" href="skills-network.html">
+        <span>Skills Network</span>
+        <strong>Join community skill pools.</strong>
+      </a>
+      <a class="home-discovery-tile" href="young-professionals.html">
+        <span>Young Professionals</span>
+        <strong>Meet mentors and peers.</strong>
+      </a>
+      <a class="home-discovery-tile" href="faq.html">
+        <span>Community Hub</span>
+        <strong>FAQs, ideas and future features.</strong>
+      </a>
+      <button id="restartWalkthroughBtn" class="home-discovery-tile tile-button" type="button">
+        <span>Getting Started</span>
+        <strong>Restart the walkthrough.</strong>
+      </button>
+    </div>
+  </section>
 
+  <section class="home-skills-story" data-globe-anchor data-globe-x="-16" data-globe-y="24" data-globe-scale="0.62" data-globe-opacity="0.45">
+    <div class="home-section-copy">
+      <span class="home-section-kicker">Skills Network</span>
+      <h2>Turn community knowledge into practical introductions.</h2>
+      <p>Browse construction, technology, business, healthcare and other local skill pools connected to the Sangat.</p>
+      <a href="skills-network.html" class="btn-primary">Open Skills Network</a>
+    </div>
+    <div class="skills-orbit" aria-hidden="true">
+      <span>Construction</span>
+      <span>Technology</span>
+      <span>Business</span>
+      <span>Healthcare</span>
+      <span>Education</span>
+    </div>
+  </section>
 
+  <section class="home-young-pros" data-globe-anchor data-globe-x="-28" data-globe-y="6" data-globe-scale="0.58" data-globe-opacity="0.38">
+    <div class="yp-visual-stack" aria-hidden="true">
+      <span>Mentorship</span>
+      <span>Introductions</span>
+      <span>Careers</span>
+    </div>
+    <div class="home-section-copy">
+      <span class="home-section-kicker">Young Professionals</span>
+      <h2>Networking, mentoring and opportunity for the next generation.</h2>
+      <p>Connect with Sikh students, graduates and working professionals across industries and locations.</p>
+      <a href="young-professionals.html" class="btn-primary">Open Young Professionals</a>
+    </div>
+  </section>
 
-
-  
-  
-
-
-
-
-
+  <section class="home-projects-strip projects-preview-section" data-globe-anchor data-globe-x="24" data-globe-y="42" data-globe-scale="0.45" data-globe-opacity="0.16">
+    <div>
+      <span class="home-section-kicker">Projects</span>
+      <h2>Build trusted project teams.</h2>
+      <p>Homeowners can post work, review applicants and unlock a dedicated workspace when they are ready to manage the job properly.</p>
+    </div>
+    <div class="project-flow-line" aria-hidden="true">
+      <span>Post</span>
+      <span>Apply</span>
+      <span>Team</span>
+      <span>Workspace</span>
+    </div>
+    <a href="projects.html" class="btn-secondary">Open Projects</a>
+  </section>
 
   <section id="adminDashboardCard" class="admin-dashboard-card hidden">
     <div>
@@ -168,326 +139,22 @@
       <h2>Sangat Works Dashboard</h2>
       <p>Quick platform statistics and moderation overview.</p>
     </div>
-
     <div class="admin-stats-grid">
-      <div>
-        <strong id="adminTotalUsers">0</strong>
-        <span>Total Users</span>
-      </div>
-
-      <div>
-        <strong id="adminPublicProfiles">0</strong>
-        <span>Public Profiles</span>
-      </div>
-
-      <div>
-        <strong id="adminVerifiedUsers">0</strong>
-        <span>Verified Users</span>
-      </div>
-
-      <div>
-        <strong id="adminPendingUsers">0</strong>
-        <span>Pending Verification</span>
-      </div>
+      <div><strong id="adminTotalUsers">0</strong><span>Total Users</span></div>
+      <div><strong id="adminPublicProfiles">0</strong><span>Public Profiles</span></div>
+      <div><strong id="adminVerifiedUsers">0</strong><span>Verified Users</span></div>
+      <div><strong id="adminPendingUsers">0</strong><span>Pending Verification</span></div>
     </div>
-
     <a href="admin.html" class="btn-primary">Open Admin Panel</a>
   </section>
 
-  <section class="info-section">
-    <h2>What is Sangat Works?</h2>
-    <p>
-      A community platform built to help Sikhs discover trusted businesses,
-      professionals, tradespeople and services within the Sangat.
-    </p>
-
-    <div class="feature-grid">
-      <div class="feature-card">
-        <h3>Find trusted services</h3>
-        <p>Search electricians, plumbers, tutors, accountants, developers and more.</p>
-      </div>
-
-      <div class="feature-card">
-        <h3>Support Sikh businesses</h3>
-        <p>Keep opportunities, referrals and work circulating within the community.</p>
-      </div>
-
-      <div class="feature-card">
-        <h3>Reviews & verification</h3>
-        <p>Use community reviews and admin verification badges to build trust.</p>
-      </div>
+  <section class="home-membership-note">
+    <div>
+      <span class="home-section-kicker">Membership</span>
+      <h2>The free founding member spaces are now full.</h2>
+      <p>New members can choose a paid membership plan from GBP 25 per year or GBP 3.99 per month.</p>
     </div>
-  </section>
-
-  <section class="info-section">
-    <p class="eyebrow">New Feature</p>
-
-    <h2>Gurdwara Skills Network</h2>
-
-    <p>
-      Connect with trusted members of your local Gurdwara through
-      community skill pools and professional networks.
-    </p>
-
-    <div class="feature-grid">
-
-      <div class="feature-card">
-        <h3>Join Skill Pools</h3>
-        <p>
-          Browse construction, technology, business,
-          healthcare and other community networks.
-        </p>
-      </div>
-
-      <div class="feature-card">
-        <h3>Find Trusted Members</h3>
-        <p>
-          Discover builders, electricians, developers,
-          accountants, consultants and more.
-        </p>
-      </div>
-
-      <div class="feature-card">
-        <h3>Grow Community Connections</h3>
-        <p>
-          Build relationships and opportunities within
-          your local Sangat.
-        </p>
-      </div>
-
-    </div>
-
-    <div style="margin-top:20px;">
-      <a href="skills-network.html" class="btn-primary">
-        Open Skills Network
-      </a>
-    </div>
-  </section>
-
-  <section class="info-section">
-    <p class="eyebrow">Young Professionals</p>
-
-    <h2>Helping the next generation connect.</h2>
-
-    <p>
-      Young Professionals is built for Sikh students, graduates and working
-      professionals who want to network, collaborate and discover opportunities.
-    </p>
-
-    <div class="feature-grid">
-
-      <div class="feature-card">
-        <h3>Build your network</h3>
-        <p>
-          Connect with other Sikh professionals across different industries,
-          skills and locations.
-        </p>
-      </div>
-
-      <div class="feature-card">
-        <h3>Discover opportunities</h3>
-        <p>
-          Find people who can offer advice, collaboration, introductions,
-          mentorship or career support.
-        </p>
-      </div>
-
-      <div class="feature-card">
-        <h3>Support future leaders</h3>
-        <p>
-          Help younger members of the Sangat build confidence, connections
-          and professional direction.
-        </p>
-      </div>
-
-    </div>
-
-    <div style="margin-top:20px;">
-      <a href="young-professionals.html" class="btn-primary">
-        Open Young Professionals
-      </a>
-    </div>
-  </section>
-
-  <section class="info-section">
-    <p class="eyebrow">Pricing & Services</p>
-
-    <h2>Membership that supports the platform.</h2>
-
-    <p>
-      Membership helps keep Sangat Works running while giving members access
-      to the directory, map, Young Professionals, Skills Network and future
-      community features.
-    </p>
-
-    <div class="feature-grid">
-
-      <div class="feature-card">
-        <h3>Membership Access</h3>
-        <p>
-          Access protected community tools including the directory, map,
-          Young Professionals and Skills Network.
-        </p>
-      </div>
-
-      <div class="feature-card">
-        <h3>Featured Listings</h3>
-        <p>
-          Promote your profile for 30 days and appear more prominently
-          across the directory and map.
-        </p>
-      </div>
-
-      <div class="feature-card">
-        <h3>Community Growth</h3>
-        <p>
-          Your membership supports the long-term development of useful
-          tools for the Sangat.
-        </p>
-      </div>
-
-    </div>
-
-    <div style="margin-top:20px;">
-      <a href="pricing.html" class="btn-primary">
-        View Pricing & Services
-      </a>
-    </div>
-  </section>
-
-  <section class="info-section projects-preview-section">
-    <p class="eyebrow">New Feature</p>
-
-    <h2>Projects for renovation, construction and trusted trades.</h2>
-
-    <p>
-      Projects helps homeowners post work for free, receive applications
-      from Sangat Works tradespeople and unlock a dedicated workspace when
-      they are ready to manage the job properly.
-    </p>
-
-    <div class="feature-grid">
-
-      <div class="feature-card">
-        <h3>🏠 For Homeowners</h3>
-        <p>
-          Create project requests, review applicants, accept trusted
-          tradespeople and build your project team.
-        </p>
-      </div>
-
-      <div class="feature-card">
-        <h3>🔨 For Tradespeople</h3>
-        <p>
-          Browse live projects, apply for work, set availability and invite
-          trusted tradespeople through the Buddy System.
-        </p>
-      </div>
-
-      <div class="feature-card">
-        <h3>📋 Project Workspace</h3>
-        <p>
-          Unlock timeline, tasks, documents, notes, photos, progress tracking
-          and project management tools for a one-off workspace fee.
-        </p>
-      </div>
-
-    </div>
-
-    <div style="margin-top:20px;">
-      <a href="projects.html" class="btn-primary">
-        Open Projects
-      </a>
-    </div>
-  </section>
-
-  <section class="info-section">
-    <p class="eyebrow">Our Projects</p>
-
-    <h2>Building technology for the Sangat.</h2>
-
-    <p>
-      Sangat Works is part of a wider mission to build practical, useful
-      technology for Sikh communities.
-    </p>
-
-    <div class="feature-grid">
-
-      <div class="feature-card theme-blue">
-        <h3>📱 SayVah</h3>
-
-        <p>
-          SayVah is our Sikh community platform focused on seva,
-          Gurdwara engagement and helping the Sangat support one another.
-        </p>
-
-        <ul style="margin:15px 0 20px 20px;">
-          <li>Seva Requests</li>
-          <li>Community Pulse</li>
-          <li>Gurdwara Pages</li>
-          <li>Temple Admin Tools</li>
-        </ul>
-
-        <div class="card-links">
-          <a href="sayvah.html">Explore SayVah</a>
-        </div>
-      </div>
-
-      <div class="feature-card theme-gold">
-        <h3>👨‍💻 About The Developers</h3>
-
-        <p>
-          Learn more about Rajan and Jags, why Sangat Works was created
-          and the mission behind the platform.
-        </p>
-
-        <div class="card-links">
-          <a href="developers.html">Meet The Developers</a>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-  <section class="pricing-section">
-    <p class="eyebrow">Founding Members</p>
-    <h2>The free founding member spaces are now full.</h2>
-
-    <div class="founding-counter-box">
-      <strong id="foundingClaimed">0</strong>
-      <span>/ 30 founding places claimed</span>
-
-      <div class="strength-bar">
-        <div id="foundingCounterFill"></div>
-      </div>
-
-      <p id="foundingRemaining">0 spaces remaining</p>
-    </div>
-
-    <p>
-      New members can choose a paid membership plan from GBP 25 per year or
-      GBP 3.99 per month before creating an account.
-    </p>
-
-    <div class="pricing-grid">
-      <div class="pricing-card highlighted">
-        <h3>Founding Member</h3>
-        <strong>Full</strong>
-        <p>The 30 free founding member spaces have all been claimed.</p>
-      </div>
-
-      <div class="pricing-card">
-        <h3>Standard Member</h3>
-        <strong>£25/year</strong>
-        <p>Profile, directory listing, reviews, map visibility and verification eligibility.</p>
-      </div>
-
-      <div class="pricing-card">
-        <h3>Monthly Member</h3>
-        <strong>£3.99/month</strong>
-        <p>Flexible monthly access for members who prefer not to pay yearly.</p>
-      </div>
-    </div>
+    <a href="pricing.html" class="btn-primary">View Pricing</a>
   </section>
 
 </main>
@@ -500,6 +167,83 @@
 <script type="module" src="js/admin-dashboard.js"></script>
 <script type="module" src="js/onboarding.js"></script>
 
+<script type="module">
+  import { db } from "./js/firebase.js";
+  import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+  import { attachScrollResponsiveGlobe, fallbackUkMarkers, initSangatNetworkGlobe, markersFromPublicProfiles } from "./js/network-globe.js";
+
+  const globeCanvas = document.getElementById("sangatNetworkGlobe");
+  const globeVisual = document.getElementById("homepageGlobeVisual");
+  const globeStats = document.getElementById("networkGlobeStats");
+
+  function renderNetworkStats(stats) {
+    if (!globeStats) return;
+    const items = Object.entries(stats).filter(([, value]) => Number.isFinite(value));
+    globeStats.innerHTML = items.map(([label, value]) => `
+      <div>
+        <strong>${value}</strong>
+        <span>${label}</span>
+      </div>
+    `).join("");
+  }
+
+
+  function buildBusinessLocationArcs(markers) {
+    if (!markers.length) return [];
+    return markers.slice(0, 9).map((marker, index) => ({
+      from: index,
+      to: (index + 2) % markers.length,
+      type: "business"
+    })).filter((connection) => connection.from !== connection.to);
+  }
+  async function getCollectionCount(name) {
+    try {
+      const snapshot = await getDocs(collection(db, name));
+      return snapshot.size;
+    } catch (error) {
+      console.warn(`Could not load ${name} count`, error);
+      return null;
+    }
+  }
+
+  async function loadNetworkGlobe() {
+    if (!globeCanvas) return;
+    let profiles = [];
+    try {
+      const publicProfilesQuery = query(collection(db, "users"), where("isPublic", "==", true));
+      const snapshot = await getDocs(publicProfilesQuery);
+      profiles = snapshot.docs.map((docSnap) => docSnap.data());
+    } catch (error) {
+      console.warn("Could not load public profile locations", error);
+    }
+
+    const markers = markersFromPublicProfiles(profiles);
+    const globe = initSangatNetworkGlobe(globeCanvas, {
+      markers: markers.length ? markers : fallbackUkMarkers(),
+      connections: businessLocationArcs,
+      autoRotateSpeed: 0.002,
+      dotColor: "rgba(205, 219, 232, 0.42)",
+      arcColor: "rgba(235, 111, 24, 0.36)",
+      markerColor: "#e9974d"
+    });
+    attachScrollResponsiveGlobe(globeVisual, [...document.querySelectorAll("[data-globe-anchor]")]);
+
+    const stats = {};
+    if (profiles.length) {
+      stats.Members = profiles.length;
+      const businessCount = profiles.filter((profile) => profile.businessName || profile.businessType || profile.serviceTitle).length;
+      if (businessCount) stats.Businesses = businessCount;
+    }
+
+    const projectsCount = await getCollectionCount("projects");
+    if (projectsCount !== null) stats.Projects = projectsCount;
+    const connectionsCount = await getCollectionCount("connections");
+    if (connectionsCount !== null) stats.Connections = connectionsCount;
+    renderNetworkStats(stats);
+  }
+
+  loadNetworkGlobe();
+</script>
 <script type="module">
   import { auth, db } from "./js/firebase.js";
   import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
