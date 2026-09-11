@@ -46,11 +46,13 @@
   </section>
 
   <section class="home-network-band" data-globe-anchor data-globe-x="-8" data-globe-y="10" data-globe-scale="0.9" data-globe-opacity="0.9">
-    <div>
+    <div class="home-network-copy">
       <span class="network-status-badge">Growing across the UK</span>
       <h2 id="networkGlobeTitle">Your Sangat. Your Network.</h2>
       <p>Discover Sikh professionals, businesses, projects and opportunities across the Sangat Works network.</p>
+      <a href="directory.html" class="btn-secondary">Browse Directory</a>
     </div>
+    <div class="home-member-preview-grid" id="homeMemberPreviewGrid" aria-live="polite"></div>
     <div class="network-globe-stats" id="networkGlobeStats" aria-live="polite"></div>
   </section>
 
@@ -58,7 +60,6 @@
     <div class="home-section-kicker">Explore Sangat Works</div>
     <div class="home-discovery-head">
       <h2 id="homeExploreTitle">Move through the network by what you need next.</h2>
-      <a href="directory.html" class="btn-secondary">Start with Directory</a>
     </div>
     <div class="home-discovery-grid">
       <a class="home-discovery-tile tile-large" href="directory.html">
@@ -96,6 +97,10 @@
       <a href="skills-network.html" class="btn-primary">Open Skills Network</a>
     </div>
     <div class="skills-orbit" aria-hidden="true">
+      <div class="skills-feature-visual">
+        <span>Trades</span>
+        <strong>Community skills map</strong>
+      </div>
       <span>Construction</span>
       <span>Technology</span>
       <span>Business</span>
@@ -105,7 +110,7 @@
   </section>
 
   <section class="home-young-pros" data-globe-anchor data-globe-x="-28" data-globe-y="6" data-globe-scale="0.58" data-globe-opacity="0.38">
-    <div class="yp-visual-stack" aria-hidden="true">
+    <div class="yp-visual-stack" id="homeYoungProsVisual" aria-hidden="true">
       <span>Mentorship</span>
       <span>Introductions</span>
       <span>Careers</span>
@@ -124,12 +129,7 @@
       <h2>Build trusted project teams.</h2>
       <p>Homeowners can post work, review applicants and unlock a dedicated workspace when they are ready to manage the job properly.</p>
     </div>
-    <div class="project-flow-line" aria-hidden="true">
-      <span>Post</span>
-      <span>Apply</span>
-      <span>Team</span>
-      <span>Workspace</span>
-    </div>
+    <div class="home-project-preview-grid" id="homeProjectPreviewGrid" aria-live="polite"></div>
     <a href="projects.html" class="btn-secondary">Open Projects</a>
   </section>
 
@@ -169,12 +169,15 @@
 
 <script type="module">
   import { db } from "./js/firebase.js";
-  import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+  import { collection, getDocs, limit, orderBy, query, where } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
   import { attachScrollResponsiveGlobe, fallbackUkMarkers, initSangatNetworkGlobe, markersFromPublicProfiles } from "./js/network-globe.js";
 
   const globeCanvas = document.getElementById("sangatNetworkGlobe");
   const globeVisual = document.getElementById("homepageGlobeVisual");
   const globeStats = document.getElementById("networkGlobeStats");
+  const memberPreviewGrid = document.getElementById("homeMemberPreviewGrid");
+  const projectPreviewGrid = document.getElementById("homeProjectPreviewGrid");
+  const youngProsVisual = document.getElementById("homeYoungProsVisual");
 
   function renderNetworkStats(stats) {
     if (!globeStats) return;
@@ -188,6 +191,115 @@
   }
 
 
+
+  function escapeHtml(value = "") {
+    return String(value).replace(/[&<>"]/g, (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "\"": "&quot;"
+    }[char]));
+  }
+
+  function getProfileImage(profile) {
+    return profile.profilePhotoUrl || profile.businessLogoUrl || profile.logoUrl || "";
+  }
+
+  function getProfileName(profile) {
+    return profile.businessName || profile.fullName || profile.displayName || "Sangat Works Member";
+  }
+
+  function getProfileRole(profile) {
+    return profile.serviceTitle || profile.businessType || profile.category || "Community member";
+  }
+
+  function getProjectImage(project) {
+    if (project.imageUrl) return project.imageUrl;
+    if (Array.isArray(project.images) && project.images[0]) return project.images[0];
+    if (Array.isArray(project.projectImages) && project.projectImages[0]) return project.projectImages[0];
+    return "";
+  }
+
+  function renderMemberPreviews(profiles) {
+    if (!memberPreviewGrid) return;
+    const visibleProfiles = profiles.filter((profile) => getProfileName(profile) || getProfileRole(profile)).slice(0, 5);
+    if (!visibleProfiles.length) {
+      memberPreviewGrid.innerHTML = `<div class="home-empty-preview">Public member previews will appear here as the directory grows.</div>`;
+      return;
+    }
+    memberPreviewGrid.innerHTML = visibleProfiles.map((profile) => {
+      const name = getProfileName(profile);
+      const role = getProfileRole(profile);
+      const image = getProfileImage(profile);
+      const location = profile.town || profile.serviceArea || "UK network";
+      return `
+        <article class="home-member-preview">
+          ${image ? `<img src="${escapeHtml(image)}" alt="">` : `<span class="home-preview-avatar">${escapeHtml(name.slice(0, 1))}</span>`}
+          <div>
+            <strong>${escapeHtml(name)}</strong>
+            <span>${escapeHtml(role)}</span>
+            <small>${escapeHtml(location)}</small>
+          </div>
+          <em>${escapeHtml(role.split(" ").slice(0, 2).join(" "))}</em>
+        </article>
+      `;
+    }).join("");
+  }
+
+  function renderYoungProsVisual(profiles) {
+    if (!youngProsVisual) return;
+    const people = profiles.filter((profile) => profile.profilePhotoUrl || profile.fullName || profile.displayName).slice(0, 4);
+    if (!people.length) return;
+    youngProsVisual.innerHTML = `
+      <div class="yp-avatar-cluster">
+        ${people.map((profile) => {
+          const name = profile.fullName || profile.displayName || getProfileName(profile);
+          return profile.profilePhotoUrl
+            ? `<img src="${escapeHtml(profile.profilePhotoUrl)}" alt="">`
+            : `<span>${escapeHtml(name.slice(0, 1))}</span>`;
+        }).join("")}
+      </div>
+      <span>Mentorship</span>
+      <span>Introductions</span>
+      <span>Careers</span>
+    `;
+  }
+
+  function renderProjectPreviews(projects) {
+    if (!projectPreviewGrid) return;
+    if (!projects.length) {
+      projectPreviewGrid.innerHTML = `<div class="home-empty-preview project-empty">Open project previews will appear here when members post work.</div>`;
+      return;
+    }
+    projectPreviewGrid.innerHTML = projects.slice(0, 3).map((project) => {
+      const title = project.title || project.projectTitle || "Community project";
+      const type = project.projectType || project.category || "Project";
+      const image = getProjectImage(project);
+      const owner = project.ownerName || project.createdByName || "Member project";
+      return `
+        <article class="home-project-preview">
+          ${image ? `<img src="${escapeHtml(image)}" alt="">` : `<div class="home-project-preview-fallback">${escapeHtml(type.slice(0, 1))}</div>`}
+          <div>
+            <span>${escapeHtml(project.status || "open")}</span>
+            <strong>${escapeHtml(title)}</strong>
+            <p>${escapeHtml(project.description || project.summary || "Project details available in the projects area.")}</p>
+            <small>${escapeHtml(type)}${project.location ? ` - ${escapeHtml(project.location)}` : ""} - ${escapeHtml(owner)}</small>
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
+  async function loadProjectPreviews() {
+    try {
+      const projectsQuery = query(collection(db, "projects"), where("status", "==", "open"), orderBy("createdAt", "desc"), limit(3));
+      const snapshot = await getDocs(projectsQuery);
+      renderProjectPreviews(snapshot.docs.map((docSnap) => docSnap.data()));
+    } catch (error) {
+      console.warn("Could not load homepage project previews", error);
+      renderProjectPreviews([]);
+    }
+  }
   function buildBusinessLocationArcs(markers) {
     if (!markers.length) return [];
     return markers.slice(0, 9).map((marker, index) => ({
@@ -220,7 +332,7 @@
     const markers = markersFromPublicProfiles(profiles);
     const globe = initSangatNetworkGlobe(globeCanvas, {
       markers: markers.length ? markers : fallbackUkMarkers(),
-      connections: businessLocationArcs,
+      connections: buildBusinessLocationArcs(markers),
       autoRotateSpeed: 0.002,
       dotColor: "rgba(205, 219, 232, 0.42)",
       arcColor: "rgba(235, 111, 24, 0.36)",
@@ -240,6 +352,9 @@
     const connectionsCount = await getCollectionCount("connections");
     if (connectionsCount !== null) stats.Connections = connectionsCount;
     renderNetworkStats(stats);
+    renderMemberPreviews(profiles);
+    renderYoungProsVisual(profiles);
+    loadProjectPreviews();
   }
 
   loadNetworkGlobe();
