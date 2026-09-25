@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase.js";
+﻿import { auth, db } from "./firebase.js";
 
 import {
   onAuthStateChanged
@@ -43,7 +43,7 @@ onAuthStateChanged(auth, (user) => {
 });
 
 function stars(rating) {
-  return "★".repeat(rating) + "☆".repeat(5 - rating);
+  return "â˜…".repeat(rating) + "â˜†".repeat(5 - rating);
 }
 
 async function loadReviews() {
@@ -85,12 +85,12 @@ async function loadReviews() {
     ${reviews.map(review => `
       <div class="review-card">
         <div class="review-top">
-          <strong>${review.reviewerName || "Sangat Member"}</strong>
+          <strong>${escapeHtml(review.reviewerName || "Sangat Member")}</strong>
           <span>${stars(Number(review.rating || 0))}</span>
         </div>
 
-        ${review.serviceUsed ? `<p><strong>Service used:</strong> ${review.serviceUsed}</p>` : ""}
-        <p>${review.reviewText || ""}</p>
+        ${review.serviceUsed ? `<p><strong>Service used:</strong> ${escapeHtml(review.serviceUsed)}</p>` : ""}
+        <p>${escapeHtml(review.reviewText || "")}</p>
       </div>
     `).join("")}
   `;
@@ -120,6 +120,7 @@ if (reviewForm) {
 
       await addDoc(collection(db, "users", profileId, "reviews"), {
         profileId,
+        reviewerId: currentUser.uid,
         reviewerUid: currentUser.uid,
         reviewerEmail: currentUser.email,
         reviewerName,
@@ -140,3 +141,12 @@ if (reviewForm) {
 }
 
 loadReviews();
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\"", "&quot;")
+    .replaceAll("'", "&#039;");
+}
+

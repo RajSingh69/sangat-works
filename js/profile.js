@@ -1,4 +1,4 @@
-import { auth, db, storage } from "./firebase.js";
+﻿import { auth, db, storage } from "./firebase.js";
 
 import {
   onAuthStateChanged
@@ -11,8 +11,6 @@ import {
   getDoc,
   getDocs,
   setDoc,
-  updateDoc,
-  increment,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -38,6 +36,7 @@ import {
 
 const FEATURED_LISTING_PRICE_ID = "price_1TlZxODbE6tXsxNUzI1ng4Iy";
 const CHECKOUT_FUNCTION_URL = "https://europe-west1-sangat-works.cloudfunctions.net/createCheckoutSession";
+const TRACK_PROFILE_METRIC_URL = "https://europe-west1-sangat-works.cloudfunctions.net/trackProfileMetric";
 
 const profileForm = document.getElementById("profileForm");
 const profileMessage = document.getElementById("profileMessage");
@@ -134,7 +133,7 @@ function calculateProfileStrength(profile) {
     profileStrengthChecklist.innerHTML = checks
       .map(check => `
         <li class="${check.complete ? "complete" : ""}">
-          ${check.complete ? "✓" : "○"} ${check.label}
+          ${check.complete ? "âœ“" : "â—‹"} ${check.label}
         </li>
       `)
       .join("");
@@ -199,19 +198,19 @@ function formatSubscriptionPlan(profile) {
   }
 
   if (profile.isFoundingMember === true) {
-    return `👑 Founding Member #${profile.memberNumber || ""}`;
+    return `ðŸ‘‘ Founding Member #${profile.memberNumber || ""}`;
   }
 
   if (profile.subscriptionPlan === "yearly") {
-    return "⭐ Yearly Member";
+    return "â­ Yearly Member";
   }
 
   if (profile.subscriptionPlan === "monthly") {
-    return "⭐ Monthly Member";
+    return "â­ Monthly Member";
   }
 
   if (profile.hasSubscription === true) {
-    return "⭐ Active Member";
+    return "â­ Active Member";
   }
 
   return "Free User";
@@ -371,12 +370,12 @@ function renderFeaturedListingStatus(profile) {
   becomeFeaturedBtn.disabled = false;
 
   if (featuredActive) {
-    becomeFeaturedBtn.textContent = "Extend Featured Listing (£5 / 30 Days)";
+    becomeFeaturedBtn.textContent = "Extend Featured Listing (Â£5 / 30 Days)";
     if (featuredMessage) {
       featuredMessage.textContent = "You are currently featured. Buying again adds another 30 days.";
     }
   } else {
-    becomeFeaturedBtn.textContent = "Become Featured (£5 / 30 Days)";
+    becomeFeaturedBtn.textContent = "Become Featured (Â£5 / 30 Days)";
     if (featuredMessage) {
       featuredMessage.textContent = "";
     }
@@ -574,6 +573,25 @@ function fillForm(profile) {
   if (allowMessageNotifications) allowMessageNotifications.checked = profile.allowMessageNotifications !== false;
 }
 
+
+async function trackProfileMetric(targetUserId, metric) {
+  if (!currentUser || !targetUserId) return;
+
+  const idToken = await currentUser.getIdToken();
+  const response = await fetch(TRACK_PROFILE_METRIC_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`
+    },
+    body: JSON.stringify({ targetUserId, metric })
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Profile metric was not recorded.");
+  }
+}
 function renderProfile(profile) {
   const tags = profile.tags || [];
   const tagsHtml = tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("");
@@ -1014,9 +1032,7 @@ if (publicProfile) {
       viewedPublicProfile = { ...profile, uid: profileId };
 
       try {
-        await updateDoc(userRef, {
-          profileViews: increment(1)
-        });
+        await trackProfileMetric(profileId, "profileViews");
       } catch (error) {
         console.error("Failed to track profile view:", error);
       }
@@ -1044,9 +1060,7 @@ if (publicProfile) {
           if (!clickType) return;
 
           try {
-            await updateDoc(userRef, {
-              [clickType]: increment(1)
-            });
+            await trackProfileMetric(profileId, clickType);
           } catch (error) {
             console.error("Failed to track contact click:", error);
           }
@@ -1078,14 +1092,14 @@ document.addEventListener("click", async (event) => {
       await sendConnectionRequest(currentUser.uid, connect.dataset.connectUserId);
       setActionMessage("Connection request sent.");
       currentConnection = await getConnection(currentUser.uid, connect.dataset.connectUserId);
-      publicProfile.innerHTML = renderProfile({ ...existingProfile, uid: viewedProfileId });
+      publicProfile.innerHTML = renderProfile({ ...viewedPublicProfile, uid: viewedProfileId });
     }
 
     if (accept) {
       await acceptConnection(currentUser.uid, accept.dataset.acceptConnectionId);
       setActionMessage("Connection accepted.");
       currentConnection = await getConnection(currentUser.uid, viewedProfileId);
-      publicProfile.innerHTML = renderProfile({ ...existingProfile, uid: viewedProfileId });
+      publicProfile.innerHTML = renderProfile({ ...viewedPublicProfile, uid: viewedProfileId });
     }
 
     if (remove) {
@@ -1113,6 +1127,8 @@ document.addEventListener("click", async (event) => {
     setActionMessage(error.message);
   }
 });
+
+
 
 
 

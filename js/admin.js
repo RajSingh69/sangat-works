@@ -181,7 +181,9 @@ function renderUserRow(user) {
       </button>
     `
     : "";
-  const memberNumberControls = permanentInternalAccount
+  const memberNumberControls = !currentUserIsSuperAdmin
+    ? `<p><strong>Protected:</strong> Member number and founding access changes require Super Admin backend approval.</p>`
+    : permanentInternalAccount
     ? `<p><strong>Permanent internal account:</strong> Role and member number are locked.</p>`
     : `
       <input
@@ -348,9 +350,9 @@ function setupUserAdminActions() {
         return;
       }
 
-      await updateDoc(doc(db, "users", uid), {
-        role,
-        internalAccount: role === "super_admin"
+      await callAdminFunction(UPDATE_USER_ROLE_URL, {
+        targetUserId: uid,
+        role
       });
 
       adminStatus.textContent = `Role updated to ${role}.`;
@@ -713,5 +715,6 @@ onAuthStateChanged(auth, async (user) => {
 
   await loadAdminDashboard();
 });
+
 
 

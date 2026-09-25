@@ -1662,7 +1662,7 @@ exports.unlockProjectWorkspaceAsSuperAdmin = onRequest(
   }
 );
 
-exports.seedSuperAdmins = onRequest(
+const disabledSeedSuperAdmins = onRequest(
   {
     region: "europe-west1",
     secrets: [superAdminSeedToken, superAdminAccountsJson],
@@ -1757,7 +1757,7 @@ exports.seedSuperAdmins = onRequest(
   }
 );
 
-exports.seedInternalPaymentTester = onRequest(
+const disabledSeedInternalPaymentTester = onRequest(
   {
     region: "europe-west1",
     secrets: [internalPaymentTesterSeedToken, internalPaymentTesterAccountJson],
@@ -2295,6 +2295,127 @@ function networkingEndpoint(handler) {
   );
 }
 
+
+
+async function writeAdminAuditLog(action, actorUid, targetUid, details = {}) {
+  await admin.firestore().collection("adminAuditLogs").add({
+    action,
+    actorUid,
+    targetUid,
+    details,
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+function requireSuperAdmin(authUser) {
+  if (!isSuperAdmin(authUser.data)) {
+    const error = new Error("Super Admins only");
+    error.status = 403;
+    throw error;
+  }
+}
+
+async function loadAdminTargetUser(targetUserId) {
+  const snap = await admin.firestore().collection("users").doc(targetUserId).get();
+  if (!snap.exists) {
+    const error = new Error("Target user not found");
+    error.status = 404;
+    throw error;
+  }
+  return snap;
+}
+
+function rejectInternalTarget(targetSnap) {
+  if (targetSnap.data().internalAccount === true) {
+    const error = new Error("Permanent internal accounts cannot be changed here");
+    error.status = 403;
+    throw error;
+  }
+}
+
+exports.updateUserRole = networkingEndpoint(async (req, res, authUser, body) => {
+  requireSuperAdmin(authUser);
+  const targetUserId = String(body.targetUserId || "").trim();
+  const role = String(body.role || "").trim();
+  if (!targetUserId || targetUserId === authUser.uid || !["standard", "member", "moderator", "admin", "super_admin"].includes(role)) {
+    return res.status(400).json({ error: "Invalid role change" });
+  }
+
+  const targetSnap = await loadAdminTargetUser(targetUserId);
+  rejectInternalTarget(targetSnap);
+  await targetSnap.ref.set({
+    role,
+    internalAccount: role === "super_admin",
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+  await writeAdminAuditLog("update_user_role", authUser.uid, targetUserId, { role });
+  return res.status(200).json({ updated: true, role });
+});
+exports.trackProfileMetric = networkingEndpoint(async (req, res, authUser, body) => {
+  const targetUserId = String(body.targetUserId || "").trim();
+  const metric = String(body.metric || "").trim();
+  const allowedMetrics = new Set(["profileViews", "websiteClicks", "linkedinClicks", "googleReviewClicks"]);
+
+  if (!targetUserId || !allowedMetrics.has(metric)) {
+    return res.status(400).json({ error: "Invalid profile metric" });
+  }
+
+  const targetRef = admin.firestore().collection("users").doc(targetUserId);
+  const targetSnap = await targetRef.get();
+  if (!targetSnap.exists) return res.status(404).json({ error: "Profile not found" });
+
+  await targetRef.update({ [metric]: admin.firestore.FieldValue.increment(1) });
+  return res.status(200).json({ tracked: true, metric });
+});
+
+exports.voteFeature = networkingEndpoint(async (req, res, authUser, body) => {
+  const featureId = String(body.featureId || "").trim();
+  const vote = String(body.vote || "").trim();
+
+  if (!featureId || !["up", "down", "none"].includes(vote)) {
+    return res.status(400).json({ error: "Invalid vote" });
+  }
+
+  const db = admin.firestore();
+  const featureRef = db.collection("futureFeatures").doc(featureId);
+  const voteRef = featureRef.collection("votes").doc(authUser.uid);
+
+  await db.runTransaction(async (transaction) => {
+    const featureSnap = await transaction.get(featureRef);
+    if (!featureSnap.exists || featureSnap.data().active === false) {
+      throw Object.assign(new Error("Feature not available"), { status: 404 });
+    }
+
+    const voteSnap = await transaction.get(voteRef);
+    const oldVote = voteSnap.exists ? voteSnap.data().vote : "none";
+    if (oldVote === vote) return;
+
+    let upvotes = Number(featureSnap.data().upvotes || 0);
+    let downvotes = Number(featureSnap.data().downvotes || 0);
+    if (oldVote === "up") upvotes = Math.max(0, upvotes - 1);
+    if (oldVote === "down") downvotes = Math.max(0, downvotes - 1);
+    if (vote === "up") upvotes += 1;
+    if (vote === "down") downvotes += 1;
+
+    transaction.update(featureRef, {
+      upvotes,
+      downvotes,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    if (vote === "none") {
+      transaction.delete(voteRef);
+    } else {
+      transaction.set(voteRef, {
+        vote,
+        userId: authUser.uid,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  });
+
+  return res.status(200).json({ voted: true, vote });
+});
 exports.sendConnectionRequest = networkingEndpoint(async (req, res, authUser, body) => {
   assertActiveMember(authUser);
   const targetUserId = String(body.targetUserId || body.userId || "").trim();
@@ -2439,6 +2560,12 @@ exports.blockMember = networkingEndpoint(async (req, res, authUser, body) => {
 
 exports.unblockMember = networkingEndpoint(async (req, res, authUser, body) => {
   const targetUserId = String(body.targetUserId || body.userId || "").trim();
+  if (!targetUserId || targetUserId === authUser.uid) {
+    return res.status(400).json({ error: "Choose another member to unblock" });
+  }
+  if (authUser.data.banned === true || authUser.data.suspended === true) {
+    return res.status(403).json({ error: "This account is currently restricted" });
+  }
   await admin.firestore().collection("blocks").doc(blockId(authUser.uid, targetUserId)).delete();
   return res.status(200).json({ unblocked: true });
 });
@@ -2714,5 +2841,8 @@ exports.setConversationUserFlag = networkingEndpoint(async (req, res, authUser, 
 function isModeratorOrAdminRole(userData) {
   return ["moderator", "admin", "super_admin"].includes(getUserRole(userData));
 }
+
+
+
 
 

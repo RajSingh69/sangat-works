@@ -1,4 +1,4 @@
-﻿rules_version = '2';
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
@@ -10,7 +10,11 @@ service cloud.firestore {
     function isModerator() { return signedIn() && role() in ["moderator", "admin", "super_admin"]; }
     function isAdmin() { return signedIn() && role() in ["admin", "super_admin"]; }
     function isSuperAdmin() { return signedIn() && role() == "super_admin"; }
-    function notRestricted() { return signedIn() && currentUser().banned != true && currentUser().suspended != true; }
+    function notRestricted() {
+      return signedIn()
+        && (!("banned" in currentUser()) || currentUser().banned != true)
+        && (!("suspended" in currentUser()) || currentUser().suspended != true);
+    }
 
     function hasActiveFreeCharityYear(data) {
       return data.accessType == "admin_granted_free_year" && data.freeAccessExpiresAt > request.time;
@@ -20,10 +24,22 @@ service cloud.firestore {
         && data.subscriptionStatus == "active"
         && (!("subscriptionExpiresAt" in data) || data.subscriptionExpiresAt == null || data.subscriptionExpiresAt > request.time);
     }
+    function hasActiveFoundingAccess(data) {
+      return data.isFoundingMember == true
+        && (data.subscriptionBillingType == "founding-free-year" || data.subscriptionPlan == "founding" || data.membershipPlan == "founding")
+        && (!("subscriptionExpiresAt" in data) || data.subscriptionExpiresAt == null || data.subscriptionExpiresAt > request.time);
+    }
+    function hasLifetimeAccess(data) {
+      return data.hasSubscription == true
+        && data.subscriptionStatus == "active"
+        && (data.subscriptionPlan == "lifetime" || data.membershipPlan == "lifetime" || data.subscriptionBillingType == "internal-lifetime");
+    }
     function hasActiveMembership() {
       return signedIn() && notRestricted() && (
         role() in ["admin", "super_admin"] ||
+        hasLifetimeAccess(currentUser()) ||
         hasActiveFreeCharityYear(currentUser()) ||
+        hasActiveFoundingAccess(currentUser()) ||
         hasActivePaidAccess(currentUser())
       );
     }
@@ -35,7 +51,7 @@ service cloud.firestore {
         "localGurdwara", "communityDiscount", "funFactOne", "funFactTwo", "phone", "email", "website", "linkedin",
         "town", "postcode", "serviceArea", "layoutStyle", "themeColour", "isPublic", "showPhone", "showEmail",
         "showPostcode", "showGurdwara", "showGoogleReviews", "profilePhotoUrl", "businessLogoUrl",
-        "connectionPrivacy", "messagePrivacy", "allowMessageNotifications", "hasSeenIntro", "updatedAt"
+        "connectionPrivacy", "messagePrivacy", "allowMessageNotifications", "projectsUserType", "projectsUserTypeUpdatedAt", "hasSeenIntro", "updatedAt"
       ];
     }
     function privilegedUserKeys() {
@@ -109,12 +125,15 @@ service cloud.firestore {
       allow get: if true;
       allow list: if hasActiveMembership() || isAdmin();
       allow create: if isSelf(uid) && (validBasicUserCreate(uid) || validPaidSignupCreate(uid));
-      allow update: if (isSelf(uid) && validSelfProfileUpdate()) || isSuperAdmin() || (isAdmin() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["role", "internalAccount", "isAdmin", "canImpersonateUsers", "canViewHiddenDiagnostics"]));
+      allow update: if (isSelf(uid) && validSelfProfileUpdate()) || isSuperAdmin();
       allow delete: if isSuperAdmin() && resource.data.internalAccount != true;
 
       match /reviews/{reviewId} {
         allow read: if true;
-        allow create: if hasActiveMembership() && request.resource.data.createdAt == request.time;
+        allow create: if hasActiveMembership()
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.reviewerId == request.auth.uid
+          && uid != request.auth.uid;
         allow update, delete: if isAdmin();
       }
     }
@@ -219,10 +238,10 @@ service cloud.firestore {
     match /futureFeatures/{featureId} {
       allow read: if true;
       allow create, delete: if isAdmin();
-      allow update: if signedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["upvotes", "downvotes"]);
+      allow update: if isAdmin();
       match /votes/{uid} {
         allow read: if isSelf(uid) || isAdmin();
-        allow create, update: if isSelf(uid) && request.resource.data.userId == request.auth.uid && request.resource.data.vote in ["up", "down"];
+        allow create, update, delete: if false;
         allow delete: if isSelf(uid) || isAdmin();
       }
     }
@@ -267,6 +286,7 @@ service cloud.firestore {
     match /{document=**} { allow read, write: if false; }
   }
 }
+
 
 
 

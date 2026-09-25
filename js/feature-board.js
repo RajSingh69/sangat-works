@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase.js";
+﻿import { auth, db } from "./firebase.js";
 
 import {
   onAuthStateChanged
@@ -10,8 +10,6 @@ import {
   getDoc,
   getDocs,
   setDoc,
-  updateDoc,
-  increment,
   query,
   orderBy,
   serverTimestamp
@@ -19,6 +17,7 @@ import {
 
 const featuresGrid = document.getElementById("featuresGrid");
 const featureMessage = document.getElementById("featureMessage");
+const VOTE_FEATURE_URL = "https://europe-west1-sangat-works.cloudfunctions.net/voteFeature";
 
 let currentUser = null;
 
@@ -26,7 +25,7 @@ const starterFeatures = [
   {
     id: "highlighted-flashing-card",
     title: "Highlighted Flashing Directory Card",
-    description: "Let members pay £0.99 to highlight their directory card for 2 days.",
+    description: "Let members pay Â£0.99 to highlight their directory card for 2 days.",
     category: "Paid boost"
   },
   {
@@ -166,7 +165,7 @@ function renderFeatureCard(featureId, feature, userVote) {
         type="button"
         data-vote="up"
       >
-        👍 ${feature.upvotes || 0}
+        ðŸ‘ ${feature.upvotes || 0}
       </button>
 
       <button 
@@ -174,7 +173,7 @@ function renderFeatureCard(featureId, feature, userVote) {
         type="button"
         data-vote="down"
       >
-        👎 ${feature.downvotes || 0}
+        ðŸ‘Ž ${feature.downvotes || 0}
       </button>
     </div>
   `;
@@ -201,31 +200,24 @@ async function handleVote(featureId, newVote) {
     "votes",
     currentUser.uid
   );
-
-  const featureRef = doc(db, "futureFeatures", featureId);
-
   const voteSnap = await getDoc(voteRef);
   const oldVote = voteSnap.exists() ? voteSnap.data().vote : null;
+  const vote = oldVote === newVote ? "none" : newVote;
+  const idToken = await currentUser.getIdToken();
 
-  if (oldVote === newVote) {
-    return;
-  }
-
-  const updates = {};
-
-  if (oldVote === "up") updates.upvotes = increment(-1);
-  if (oldVote === "down") updates.downvotes = increment(-1);
-
-  if (newVote === "up") updates.upvotes = increment(1);
-  if (newVote === "down") updates.downvotes = increment(1);
-
-  await updateDoc(featureRef, updates);
-
-  await setDoc(voteRef, {
-    vote: newVote,
-    userId: currentUser.uid,
-    updatedAt: serverTimestamp()
+  const response = await fetch(VOTE_FEATURE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`
+    },
+    body: JSON.stringify({ featureId, vote })
   });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Could not record your vote.");
+  }
 
   await loadFeatures();
 }
@@ -238,3 +230,4 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+
