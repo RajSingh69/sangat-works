@@ -588,3 +588,57 @@
   .home-community-mission .home-feature-grid,
   .home-community-mission .home-feature-grid.community-row-two { grid-template-columns: 1fr; }
 }
+
+/* =========================================
+   HOMEPAGE HERO: full width, roomier, big floating logo
+========================================= */
+.home-flagship-page .home-flagship-hero {
+  --hero-gutter: max(clamp(22px, 5vw, 72px), calc((100% - 1440px) / 2));
+  width: 100%;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.home-flagship-page .home-flagship-hero-inner {
+  padding: clamp(48px, 6vw, 88px) var(--hero-gutter) clamp(28px, 3vw, 40px);
+  gap: clamp(28px, 5vw, 80px);
+}
+
+.home-flagship-page .home-hero-stats {
+  margin: 0 var(--hero-gutter) clamp(28px, 3.5vw, 48px);
+}
+
+.home-flagship-page .home-hero-stats div { padding: 18px 24px; }
+
+.home-hero-logo-wrap {
+  margin: 0 0 clamp(24px, 3vw, 36px);
+}
+
+.home-hero-logo {
+  display: block;
+  width: clamp(220px, 22vw, 330px);
+  height: auto;
+  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.45));
+  animation: homeHeroLogoFloat 6s ease-in-out infinite;
+}
+
+@keyframes homeHeroLogoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-logo { animation: none; }
+}
+
+.home-flagship-page .home-hero-copy h1 { margin-bottom: 24px; }
+.home-flagship-page .home-hero-copy .hero-text { margin-bottom: 32px; }
+.home-flagship-page .home-hero-actions { gap: 14px; }
+
+@media (max-width: 760px) {
+  .home-flagship-page .home-flagship-hero-inner { padding: 36px 20px 22px; }
+  .home-flagship-page .home-hero-stats { margin: 0 14px 16px; }
+  .home-flagship-page .home-hero-stats div { padding: 12px 14px; }
+  .home-hero-logo { width: 210px; }
+}
