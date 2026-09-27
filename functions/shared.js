@@ -32,7 +32,7 @@ const MONTHLY_PASS_PRICE_ID = "price_1Tl8zyDbE6tXsxNUpynPPWft";
 
 /*
   Featured Listing
-  One-off Â£5 for 30 days.
+  One-off £5 for 30 days.
 */
 const FEATURED_LISTING_PRICE_ID = "price_1TlZxODbE6tXsxNUzI1ng4Iy";
 

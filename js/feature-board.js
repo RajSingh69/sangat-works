@@ -25,7 +25,7 @@ const starterFeatures = [
   {
     id: "highlighted-flashing-card",
     title: "Highlighted Flashing Directory Card",
-    description: "Let members pay Â£0.99 to highlight their directory card for 2 days.",
+    description: "Let members pay £0.99 to highlight their directory card for 2 days.",
     category: "Paid boost"
   },
   {
@@ -165,7 +165,7 @@ function renderFeatureCard(featureId, feature, userVote) {
         type="button"
         data-vote="up"
       >
-        ðŸ‘ ${feature.upvotes || 0}
+        👍 ${feature.upvotes || 0}
       </button>
 
       <button 
@@ -173,7 +173,7 @@ function renderFeatureCard(featureId, feature, userVote) {
         type="button"
         data-vote="down"
       >
-        ðŸ‘Ž ${feature.downvotes || 0}
+        👎 ${feature.downvotes || 0}
       </button>
     </div>
   `;

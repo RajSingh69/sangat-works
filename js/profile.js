@@ -136,7 +136,7 @@ function calculateProfileStrength(profile) {
     profileStrengthChecklist.innerHTML = checks
       .map(check => `
         <li class="${check.complete ? "complete" : ""}">
-          ${check.complete ? "âœ“" : "â—‹"} ${check.label}
+          ${check.complete ? "✓" : "○"} ${check.label}
         </li>
       `)
       .join("");
@@ -235,19 +235,19 @@ function formatSubscriptionPlan(profile) {
   }
 
   if (profile.isFoundingMember === true) {
-    return `ðŸ‘‘ Founding Member #${profile.memberNumber || ""}`;
+    return `👑 Founding Member #${profile.memberNumber || ""}`;
   }
 
   if (profile.subscriptionPlan === "yearly") {
-    return "â­ Yearly Member";
+    return "⭐ Yearly Member";
   }
 
   if (profile.subscriptionPlan === "monthly") {
-    return "â­ Monthly Member";
+    return "⭐ Monthly Member";
   }
 
   if (profile.hasSubscription === true) {
-    return "â­ Active Member";
+    return "⭐ Active Member";
   }
 
   return "Free User";
@@ -412,12 +412,12 @@ function renderFeaturedListingStatus(profile) {
   becomeFeaturedBtn.disabled = false;
 
   if (featuredActive) {
-    becomeFeaturedBtn.textContent = "Extend Featured Listing (Â£5 / 30 Days)";
+    becomeFeaturedBtn.textContent = "Extend Featured Listing (£5 / 30 Days)";
     if (featuredMessage) {
       featuredMessage.textContent = "You are currently featured. Buying again adds another 30 days.";
     }
   } else {
-    becomeFeaturedBtn.textContent = "Become Featured (Â£5 / 30 Days)";
+    becomeFeaturedBtn.textContent = "Become Featured (£5 / 30 Days)";
     if (featuredMessage) {
       featuredMessage.textContent = "";
     }

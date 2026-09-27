@@ -43,7 +43,7 @@ onAuthStateChanged(auth, (user) => {
 });
 
 function stars(rating) {
-  return "â˜…".repeat(rating) + "â˜†".repeat(5 - rating);
+  return "★".repeat(rating) + "☆".repeat(5 - rating);
 }
 
 async function loadReviews() {
