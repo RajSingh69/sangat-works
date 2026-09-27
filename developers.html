@@ -3,315 +3,172 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>About the Developers | Sangat Works</title>
+  <title>Meet the Developers | Sangat Works</title>
+  <meta name="description" content="Meet Rajan Singh and Jagdev Singh Kallha, the founders behind Sangat Works." />
   <link rel="stylesheet" href="css/style.css" />
-
-  <style>
-    .developer-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 26px;
-      align-items: stretch;
-      margin-top: 26px;
-    }
-
-    .developer-profile-card {
-      background: rgba(255, 255, 255, 0.96);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      padding: 22px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      overflow: hidden;
-    }
-
-    .developer-photo-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .developer-photo-frame {
-      width: 100%;
-      height: 280px;
-      border-radius: 18px;
-      overflow: hidden;
-      background: #fff7e8;
-      border: 1px solid var(--border);
-      box-shadow: 0 10px 24px rgba(18, 60, 105, 0.08);
-    }
-
-    .developer-photo-frame.single {
-      height: 360px;
-    }
-
-    .developer-photo-frame img {
-      width: 100%;
-      height: 100%;
-      display: block;
-      object-fit: cover;
-      object-position: center;
-    }
-
-    .developer-photo-frame.rajan-la img {
-      object-position: center 38%;
-    }
-
-    .developer-photo-frame.rajan-parna img {
-      object-position: center 30%;
-    }
-
-    .developer-photo-frame.jagdev-photo img {
-      object-position: center 28%;
-    }
-
-    .developer-profile-card h3 {
-      margin-bottom: 2px;
-    }
-
-    .developer-role {
-      color: var(--orange-dark);
-      font-weight: 900;
-      margin-top: -8px;
-    }
-
-    .developer-copy {
-      display: grid;
-      gap: 10px;
-    }
-
-    @media (max-width: 900px) {
-      .developer-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .developer-photo-frame,
-      .developer-photo-frame.single {
-        height: 320px;
-      }
-    }
-
-    @media (max-width: 560px) {
-      .developer-photo-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .developer-photo-frame,
-      .developer-photo-frame.single {
-        height: 300px;
-      }
-    }
-  </style>
 </head>
 <body>
 
 <header class="site-header">
   <a class="logo" href="index.html">Sangat Works</a>
   <nav>
+    <a href="index.html">Home</a>
+    <a href="directory.html">Directory</a>
+    <a href="pricing.html">Pricing</a>
     <div id="accountArea"></div>
   </nav>
 </header>
 
-<main>
-
-  <section class="hero">
-    <p class="eyebrow">About the Developers</p>
-
-    <h1>Built by the Sangat, for the Sangat.</h1>
-
-    <p class="hero-text">
-      Sangat Works was created by Rajan Singh and Jagdev Singh Kallha with one clear aim:
-      to help Sikhs discover, support and recommend one another’s businesses, trades,
-      services and professional skills across the UK.
-    </p>
-
-    <div class="hero-actions">
-      <a href="directory.html" class="btn-primary">Explore Directory</a>
-      <a href="pricing.html" class="btn-secondary">View Membership</a>
-    </div>
-  </section>
-
-  <section class="info-section">
-    <p class="eyebrow">Why We Built This</p>
-    <h2>Keeping opportunity within the community.</h2>
-
-    <p>
-      Sangat Works was built because we saw a real gap: many Sikhs need trusted
-      services, skilled tradespeople, professionals and business support, but do not
-      always know where to find them within the community.
-    </p>
-
-    <p>
-      This platform exists to make those connections easier. Whether someone needs
-      a builder, accountant, designer, coach, consultant, developer or local business,
-      Sangat Works helps the community find and support one another.
-    </p>
-
-    <div class="feature-grid">
-      <div class="feature-card">
-        <h3>Support Sikh Businesses</h3>
-        <p>
-          Help keep money, skills and opportunities circulating within the Sangat.
-        </p>
-      </div>
-
-      <div class="feature-card">
-        <h3>Build Trust</h3>
-        <p>
-          Profiles, reviews, verification badges and community recommendations help
-          people make better decisions.
-        </p>
-      </div>
-
-      <div class="feature-card">
-        <h3>Create Opportunities</h3>
-        <p>
-          Sangat Works is designed to help businesses grow, professionals connect
-          and younger members of the community discover pathways.
-        </p>
+<main class="home-flagship-page story-page">
+  <section class="story-hero">
+    <div class="story-wrap">
+      <span class="home-section-kicker">Meet the Developers</span>
+      <h1>Built by the Sangat, <span>for the Sangat.</span></h1>
+      <p>
+        Sangat Works was created by Rajan Singh and Jagdev Singh Kallha with one clear aim:
+        to help Sikhs discover, support and recommend one another's businesses, trades,
+        services and professional skills across the UK.
+      </p>
+      <div class="story-actions">
+        <a href="directory.html" class="btn-primary">Explore the Directory</a>
+        <a href="contact.html" class="btn-secondary">Get in Touch</a>
       </div>
     </div>
   </section>
 
-  <section class="info-section">
-    <p class="eyebrow">Meet the Developers</p>
-    <h2>The people behind Sangat Works.</h2>
+  <section class="story-section">
+    <div class="story-wrap">
+      <span class="home-section-kicker">The Founders</span>
+      <h2>The people behind Sangat Works.</h2>
+      <p class="story-lead">Two people with different backgrounds and the same belief: the Sangat is stronger when it looks after its own.</p>
 
-    <div class="developer-grid">
-
-      <div class="developer-profile-card">
-        <div class="developer-photo-grid">
-          <div class="developer-photo-frame rajan-la">
-            <img src="assets/rajanLA.jpeg" alt="Rajan Singh" />
+      <div class="story-grid two">
+        <article class="founder-card">
+          <img class="founder-photo" src="assets/rajanLA.jpeg" alt="Rajan Singh" />
+          <div>
+            <h3>Rajan Singh</h3>
+            <p class="founder-role">Founder &amp; Software Developer</p>
+            <p>
+              Fateh, I'm Rajan. I'm a 23-year-old software developer and the founder of
+              S3D Systems, where I build custom software, websites, automation tools,
+              3D models and drone media projects.
+            </p>
+            <p>
+              I built Sangat Works because I believe technology should be used to solve
+              real community problems. The goal is simple: make it easier for Sikhs to
+              find, trust and support one another.
+            </p>
+            <p>
+              I'm also building <a href="sayvah.html">SayVah</a>, a direct seva app designed to
+              help connect volunteers, Gurdwaras and people who need support.
+            </p>
+            <div class="founder-links">
+              <a href="https://www.s3dsystems.com" target="_blank" rel="noopener">S3D Systems</a>
+              <a href="mailto:rajan@s3dsystems.com">rajan@s3dsystems.com</a>
+              <a href="tel:+447826666420">07826 666 420</a>
+            </div>
           </div>
+        </article>
 
-          <div class="developer-photo-frame rajan-parna">
-            <img src="assets/rajan-parna.jpeg" alt="Rajan Singh" />
+        <article class="founder-card">
+          <img class="founder-photo" src="assets/JagdevPic.jpg" alt="Jagdev Singh Kallha" />
+          <div>
+            <h3>Jagdev Singh Kallha</h3>
+            <p class="founder-role">Co-Founder &middot; Founder &amp; CEO of NXT Gen Sports Group</p>
+            <p>
+              Jagdev is a lifelong advocate for grassroots football, equality, diversity
+              and inclusion. He founded NXT Gen Sports Group to help create a more
+              equitable and inclusive future for the game.
+            </p>
+            <p>
+              His mission is to empower the next generation of football talent by giving
+              athletes from all communities better opportunity, representation and support.
+            </p>
+            <p>
+              Through Sangat Works, Jagdev brings that same passion for fairness,
+              opportunity and community connection into a platform built to support the
+              Sikh community.
+            </p>
+            <div class="founder-links">
+              <a href="https://share.google/namNE1LerSs1RooFE" target="_blank" rel="noopener">Jagdev | Red Roots</a>
+            </div>
           </div>
-        </div>
-
-        <h3>Rajan Singh</h3>
-        <p class="developer-role">Founder & Software Developer</p>
-
-        <div class="developer-copy">
-          <p>
-            Fateh, I’m Rajan. I’m a 23-year-old software developer and the founder
-            of S3D Systems, where I build custom software, websites, automation tools,
-            3D models and drone media projects.
-          </p>
-
-          <p>
-            I built Sangat Works because I believe technology should be used to solve
-            real community problems. The goal is simple: make it easier for Sikhs to
-            find, trust and support one another.
-          </p>
-
-          <p>
-            I am also building SayVah, a direct seva app designed to help connect
-            volunteers, Gurdwaras and people who need support.
-          </p>
-        </div>
-
-        <div class="card-links">
-          <a href="tel:07826666420">07826 666 420</a>
-          <a href="https://www.s3dsystems.com" target="_blank">S3D Systems</a>
-          <a href="mailto:rajan@s3dsystems.com">rajan@s3dsystems.com</a>
-        </div>
-      </div>
-
-      <div class="developer-profile-card">
-        <div class="developer-photo-frame single jagdev-photo">
-          <img src="assets/JagdevPic.jpg" alt="Jagdev Singh Kallha" />
-        </div>
-
-        <h3>Jagdev Singh Kallha</h3>
-        <p class="developer-role">Co-Founder | Founder & CEO of NXT Gen Sports Group</p>
-
-        <div class="developer-copy">
-          <p>
-            Jagdev is a lifelong advocate for grassroots football, equality, diversity
-            and inclusion. He founded NXT Gen Sports Group to help create a more
-            equitable and inclusive future for the game.
-          </p>
-
-          <p>
-            His mission is to empower the next generation of football talent by giving
-            athletes from all communities better opportunity, representation and support.
-          </p>
-
-          <p>
-            Through Sangat Works, Jagdev brings that same passion for fairness,
-            opportunity and community connection into a platform built to support the
-            Sikh community.
-          </p>
-        </div>
-
-        <div class="card-links">
-          <a href="https://share.google/namNE1LerSs1RooFE" target="_blank">Jagdev | Red Roots</a>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-  <section class="info-section">
-    <p class="eyebrow">Our Mission</p>
-    <h2>Technology for real-world community support.</h2>
-
-    <p>
-      Sangat Works is not just a directory. It is being built as a growing community
-      platform for business support, professional networking, trusted recommendations,
-      Gurdwara-linked opportunities and future community-led features.
-    </p>
-
-    <div class="feature-grid">
-      <div class="feature-card">
-        <h3>Completed So Far</h3>
-        <p>
-          Business profiles, directory search, reviews, ratings, verification badges,
-          membership access, featured listings, map search and Young Professionals.
-        </p>
-      </div>
-
-      <div class="feature-card">
-        <h3>Coming Next</h3>
-        <p>
-          Gurdwara networking pools, jobs and opportunities, mentorship, community
-          projects and more tools shaped by member feedback.
-        </p>
-      </div>
-
-      <div class="feature-card">
-        <h3>Built Independently</h3>
-        <p>
-          Sangat Works is being built independently with a community-first mindset:
-          practical tools, real value and long-term support for the Sangat.
-        </p>
+        </article>
       </div>
     </div>
   </section>
 
-  <section class="info-section">
-    <p class="eyebrow">Join the Journey</p>
-    <h2>Help shape Sangat Works.</h2>
+  <section class="story-section alt">
+    <div class="story-wrap">
+      <span class="home-section-kicker">Why We Built This</span>
+      <h2>Keeping opportunity within the community.</h2>
+      <p class="story-lead">
+        Many Sikhs need trusted services, skilled tradespeople, professionals and business support,
+        but don't always know where to find them within the community. Whether someone needs a
+        builder, accountant, designer, coach, consultant, developer or local business, Sangat Works
+        helps the community find and support one another.
+      </p>
 
-    <p>
-      Every profile, review, recommendation and shared opportunity helps the platform
-      become more useful for the whole community.
-    </p>
-
-    <div class="hero-actions">
-      <a href="signup.html" class="btn-primary">Join Sangat Works</a>
-      <a href="contact.html" class="btn-secondary">Contact Us</a>
+      <div class="story-grid">
+        <div class="story-card">
+          <span class="story-card-icon">1</span>
+          <h3>Support Sikh Businesses</h3>
+          <p>Help keep money, skills and opportunities circulating within the Sangat.</p>
+        </div>
+        <div class="story-card">
+          <span class="story-card-icon">2</span>
+          <h3>Build Trust</h3>
+          <p>Profiles, reviews, verification badges and community recommendations help people make better decisions.</p>
+        </div>
+        <div class="story-card">
+          <span class="story-card-icon">3</span>
+          <h3>Create Opportunities</h3>
+          <p>Helping businesses grow, professionals connect and younger members of the community discover pathways.</p>
+        </div>
+      </div>
     </div>
   </section>
 
+  <section class="story-section">
+    <div class="story-wrap">
+      <span class="home-section-kicker">Our Mission</span>
+      <h2>Technology for real-world community support.</h2>
+      <p class="story-lead">
+        Sangat Works isn't just a directory. It's a growing community platform for business support,
+        professional networking, trusted recommendations, Gurdwara-linked opportunities and
+        community-led features.
+      </p>
+
+      <div class="story-grid">
+        <div class="story-card">
+          <h3>Built So Far</h3>
+          <p>Business profiles, directory and map search, reviews, verification badges, featured listings, projects, skills pools, messaging, Young Professionals and member rankings.</p>
+        </div>
+        <div class="story-card">
+          <h3>Coming Next</h3>
+          <p>More Gurdwara networking, jobs and opportunities, mentorship, community projects and tools shaped by member feedback.</p>
+        </div>
+        <div class="story-card">
+          <h3>Built Independently</h3>
+          <p>Built with a community-first mindset: practical tools, real value and long-term support for the Sangat.</p>
+        </div>
+      </div>
+
+      <div class="story-actions">
+        <a href="pricing.html" class="btn-primary">Join Sangat Works</a>
+        <a href="charities.html" class="btn-secondary">Charities We Support</a>
+      </div>
+    </div>
+  </section>
 </main>
 
-<footer>
-  <p>Sangat Works — built for community support.</p>
+<footer class="home-footer">
+  <div class="home-footer-inner">
+    <div class="home-footer-brand"><img src="assets/sangat-works-logo.png" alt="" /><strong>Sangat Works</strong><p>The Sikh business &amp; professional network. People. Opportunities. Community.</p></div>
+    <div><h2>Community</h2><a href="developers.html">Meet the Developers</a><a href="sayvah.html">SayVah</a><a href="charities.html">Charities</a></div>
+    <div><h2>Support</h2><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="directory.html">Directory</a></div>
+  </div>
+  <div class="home-footer-bottom"><span>&copy; 2026 Sangat Works. All rights reserved.</span><span>Together, we work. Together, we build the future.</span></div>
 </footer>
 
 <script type="module" src="js/nav.js"></script>
