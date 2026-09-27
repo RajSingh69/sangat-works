@@ -445,6 +445,14 @@ describe("buildPublicProfile", () => {
     assert.strictEqual(shown.fullName, "Alice");
   });
 
+  it("treats a never-saved public setting as public", () => {
+    const { isPublic, ...neverSaved } = fullRecord;
+    const profile = buildPublicProfile("alice", neverSaved);
+    assert.strictEqual(isPublic, true);
+    assert.strictEqual(profile.isPublic, true);
+    assert.strictEqual(profile.fullName, "Alice");
+  });
+
   it("only exposes membership status for private profiles", () => {
     const profile = buildPublicProfile("alice", { ...fullRecord, isPublic: false, showPhone: true });
     assert.strictEqual(profile.isPublic, false);

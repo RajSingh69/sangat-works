@@ -59,10 +59,12 @@ function buildPublicProfile(uid, userData) {
     return profile;
   }
 
-  // Matches profile.js, which treats a missing isPublic as public.
+  // Matches profile.js, which treats a missing isPublic as public. Early free-trial
+  // signups never saved the setting, so publish it explicitly for the directory query.
   if (userData.isPublic === false) {
     return profile;
   }
+  profile.isPublic = true;
 
   copyFields(profile, userData, PROFILE_FIELDS);
 
