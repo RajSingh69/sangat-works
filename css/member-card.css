@@ -314,6 +314,7 @@
 .photo-framer-stage {
   position: relative;
   aspect-ratio: 4 / 3;
+  margin: 0 auto;
   overflow: hidden;
   background: #031f36;
   border-radius: 16px;

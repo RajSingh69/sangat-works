@@ -1,5 +1,5 @@
 /*
-  Super-admin tool to frame a member's photo inside the card shape.
+  Super-admin tool to frame a photo inside its box (a member card, or any site picture).
   Drag to move, slider (or mouse wheel) to zoom, arrow keys to nudge.
   onSave receives { x, y, zoom } and should persist it; errors are shown in the dialog.
 */
@@ -11,16 +11,18 @@ import { DEFAULT_FRAMING, escapeHtml, getCardIdentity, getCardPhotoFraming, phot
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const round = value => Math.round(value * 10) / 10;
 
-export function openPhotoFramer({ imageUrl, title = "", framing = DEFAULT_FRAMING, onSave }) {
-  const state = { ...DEFAULT_FRAMING, ...framing };
+// aspectRatio is the box's width / height (default 4:3, the member card).
+export function openPhotoFramer({ imageUrl, title = "", heading = "Adjust card photo", aspectRatio = 4 / 3, framing, defaultFraming = DEFAULT_FRAMING, onSave }) {
+  const state = { ...defaultFraming, ...framing };
+  const ratio = Number.isFinite(aspectRatio) && aspectRatio > 0 ? Math.round(aspectRatio * 1000) / 1000 : 4 / 3;
 
   const backdrop = document.createElement("div");
   backdrop.className = "photo-framer-backdrop";
   backdrop.innerHTML = `
     <div class="photo-framer" role="dialog" aria-modal="true" aria-labelledby="photoFramerTitle">
-      <h2 id="photoFramerTitle">Adjust card photo</h2>
-      <p>${escapeHtml(title)}<br>Drag the photo to position it. Use the slider to zoom. This is exactly how the card will look.</p>
-      <div class="photo-framer-stage" tabindex="0" aria-label="Photo position. Use arrow keys to move.">
+      <h2 id="photoFramerTitle">${escapeHtml(heading)}</h2>
+      <p>${escapeHtml(title)}<br>Drag the photo to position it. Use the slider to zoom. This is exactly how it will look.</p>
+      <div class="photo-framer-stage" tabindex="0" aria-label="Photo position. Use arrow keys to move." style="aspect-ratio:${ratio};width:min(100%, calc(50vh * ${ratio}));">
         <img src="${escapeHtml(imageUrl)}" alt="" draggable="false">
       </div>
       <label class="photo-framer-zoom">
@@ -115,7 +117,7 @@ export function openPhotoFramer({ imageUrl, title = "", framing = DEFAULT_FRAMIN
   }
 
   backdrop.querySelector(".is-reset").addEventListener("click", () => {
-    Object.assign(state, DEFAULT_FRAMING);
+    Object.assign(state, defaultFraming);
     render();
   });
   backdrop.querySelector(".is-cancel").addEventListener("click", close);
@@ -134,7 +136,7 @@ export function openPhotoFramer({ imageUrl, title = "", framing = DEFAULT_FRAMIN
     } catch (error) {
       console.error("Could not save photo framing:", error);
       status.classList.add("is-error");
-      status.textContent = "Couldn't save. Only super admins can change card photos.";
+      status.textContent = "Couldn't save. Only super admins can change photos.";
       saveButton.disabled = false;
     }
   });

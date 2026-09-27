@@ -654,6 +654,21 @@ describe("Firestore security rules: ranking fields are admin/server only", () =>
     await assertSucceeds(updateDoc(doc(testEnv.authenticatedContext("owner").firestore(), "users/alice"), { cardPhoto: { x: 50, y: 20, zoom: 1.5 } }));
     await assertSucceeds(updateDoc(doc(testEnv.authenticatedContext("owner").firestore(), "users/alice"), { pinnedToTop: true }));
   });
+
+  it("lets only the super admin frame the site's own pictures", async () => {
+    await testEnv.clearFirestore();
+    await seed(testEnv, "users/alice", { uid: "alice", role: "admin" });
+    await seed(testEnv, "users/owner", { uid: "owner", role: "super_admin" });
+    const framing = uid => ({ x: 40, y: 25, zoom: 1.4, updatedAt: serverTimestamp(), updatedBy: uid });
+    const ownerDb = testEnv.authenticatedContext("owner").firestore();
+
+    await assertFails(setDoc(doc(testEnv.authenticatedContext("alice").firestore(), "siteImages/founder-rajan"), framing("alice")));
+    await assertFails(setDoc(doc(testEnv.unauthenticatedContext().firestore(), "siteImages/founder-rajan"), framing("nobody")));
+    await assertFails(setDoc(doc(ownerDb, "siteImages/founder-rajan"), { ...framing("owner"), zoom: 9 }));
+    await assertFails(setDoc(doc(ownerDb, "siteImages/founder-rajan"), { ...framing("owner"), note: "extra" }));
+    await assertSucceeds(setDoc(doc(ownerDb, "siteImages/founder-rajan"), framing("owner")));
+    await assertSucceeds(getDoc(doc(testEnv.unauthenticatedContext().firestore(), "siteImages/founder-rajan")));
+  });
 });
 
 assert.ok(projectId);

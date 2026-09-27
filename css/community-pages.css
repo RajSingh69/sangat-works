@@ -200,7 +200,7 @@
 
 .screenshot-strip figure { margin: 0; scroll-snap-align: start; }
 
-.screenshot-strip img {
+.screenshot-strip .site-image-frame {
   display: block;
   width: 100%;
   border-radius: 18px;
@@ -474,3 +474,43 @@
 .charity-part > .story-card { min-width: 0; }
 .website-button { box-sizing: border-box; }
 .website-button-url { min-width: 0; word-break: break-word; }
+
+/* =========================================
+   ADJUSTABLE SITE PICTURES (js/site-images.js)
+   The frame is the visible box (size, corners, border, shadow); the picture
+   inside is positioned/zoomed with the saved framing and clipped to the frame.
+========================================= */
+.site-image-frame {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.site-image-frame > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.site-image-adjust {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(3, 31, 54, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.site-image-adjust:hover { background: #ff7a18; border-color: #ff7a18; }
