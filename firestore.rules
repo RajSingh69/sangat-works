@@ -20,9 +20,15 @@ service cloud.firestore {
       return data.accessType == "admin_granted_free_year" && data.freeAccessExpiresAt > request.time;
     }
     function hasActivePaidAccess(data) {
-      return data.hasSubscription == true
-        && data.subscriptionStatus == "active"
-        && (!("subscriptionExpiresAt" in data) || data.subscriptionExpiresAt == null || data.subscriptionExpiresAt > request.time);
+      return data.hasSubscription == true && (
+        (data.subscriptionStatus == "active"
+          && (!("subscriptionExpiresAt" in data) || data.subscriptionExpiresAt == null || data.subscriptionExpiresAt > request.time))
+        // Cancelled subscriptions keep access until the paid period ends.
+        || (data.subscriptionStatus == "cancelling"
+          && "subscriptionExpiresAt" in data
+          && data.subscriptionExpiresAt is timestamp
+          && data.subscriptionExpiresAt > request.time)
+      );
     }
     function hasActiveFoundingAccess(data) {
       return data.isFoundingMember == true
@@ -75,11 +81,50 @@ service cloud.firestore {
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(privilegedUserKeys())
         && request.resource.data.uid == resource.data.uid;
     }
+    function paidSignupKeys() {
+      return [
+        "uid", "fullName", "displayName", "email", "role", "internalAccount", "accountType", "isAdmin",
+        "isFoundingMember", "memberNumber", "hasSubscription", "subscriptionStatus", "subscriptionPlan",
+        "subscriptionBillingType", "subscriptionExpiresAt", "subscriptionUpdatedAt", "membershipPlan",
+        "membershipStatus", "stripeCustomerId", "stripeSubscriptionId", "stripePriceId", "stripeCheckoutSessionId",
+        "featuredListing", "featuredListingStatus", "featuredExpiresAt", "hasSeenIntro", "isPublic", "createdAt", "updatedAt"
+      ];
+    }
+    // The claimed checkout session is written server-side by verifyPaidSignupSession, so every
+    // membership field must match it; the client can't grant itself a role, plan or longer expiry.
     function validPaidSignupCreate(uid) {
-      return request.resource.data.uid == uid
-        && request.resource.data.stripeCheckoutSessionId is string
-        && exists(/databases/$(database)/documents/usedSignupCheckoutSessions/$(request.resource.data.stripeCheckoutSessionId))
-        && get(/databases/$(database)/documents/usedSignupCheckoutSessions/$(request.resource.data.stripeCheckoutSessionId)).data.uid == uid;
+      let data = request.resource.data;
+      let sessionPath = /databases/$(database)/documents/usedSignupCheckoutSessions/$(data.stripeCheckoutSessionId);
+      let claimed = get(sessionPath).data;
+      return data.uid == uid
+        && data.stripeCheckoutSessionId is string
+        && exists(sessionPath)
+        && claimed.uid == uid
+        && data.keys().hasOnly(paidSignupKeys())
+        && data.role == "standard"
+        && data.isAdmin == false
+        && data.internalAccount == false
+        && data.accountType == "member"
+        && data.isFoundingMember == false
+        && data.memberNumber == null
+        && data.hasSubscription == true
+        && data.subscriptionStatus == "active"
+        && data.membershipStatus == "active"
+        && data.subscriptionPlan == claimed.planName
+        && data.membershipPlan == claimed.planName
+        && data.subscriptionBillingType == claimed.billingType
+        && data.stripePriceId == claimed.stripePriceId
+        && data.stripeCustomerId == claimed.stripeCustomerId
+        && data.stripeSubscriptionId == claimed.stripeSubscriptionId
+        && data.featuredListing == false
+        && data.featuredExpiresAt == null
+        && (
+          (claimed.billingType == "subscription" && data.subscriptionExpiresAt == null)
+          || (claimed.billingType == "oneoff"
+            && data.subscriptionExpiresAt is timestamp
+            && data.subscriptionExpiresAt <= request.time
+              + duration.value(claimed.planName == "yearly" ? 366 : 31, "d"))
+        );
     }
     function validBasicUserCreate(uid) {
       return request.resource.data.uid == uid

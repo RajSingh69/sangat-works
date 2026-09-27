@@ -198,6 +198,133 @@ describe("Firestore security rules: networking and messaging", () => {
   });
 });
 
+describe("Firestore security rules: paid signup and cancelling access", () => {
+  let testEnv;
+
+  before(async () => {
+    testEnv = await initializeTestEnvironment({
+      projectId,
+      firestore: {
+        rules: fs.readFileSync(path.join(__dirname, "..", "firestore.rules"), "utf8")
+      }
+    });
+  });
+
+  after(async () => {
+    await testEnv.cleanup();
+  });
+
+  beforeEach(async () => {
+    await testEnv.clearFirestore();
+    await seed(testEnv, "usedSignupCheckoutSessions/cs_monthly", {
+      checkoutSessionId: "cs_monthly",
+      uid: "newbie",
+      stripeCustomerId: "cus_1",
+      stripeSubscriptionId: "",
+      stripePriceId: "price_monthly_pass",
+      billingType: "oneoff",
+      planName: "monthly"
+    });
+    await seed(testEnv, "projects/p1", { ownerId: "someone", title: "Test project" });
+  });
+
+  function daysFromNow(days) {
+    return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  }
+
+  function paidSignupProfile(overrides = {}) {
+    return {
+      uid: "newbie",
+      fullName: "New Member",
+      displayName: "New Member",
+      email: "newbie@example.com",
+      role: "standard",
+      internalAccount: false,
+      accountType: "member",
+      isAdmin: false,
+      isFoundingMember: false,
+      memberNumber: null,
+      hasSubscription: true,
+      subscriptionStatus: "active",
+      subscriptionPlan: "monthly",
+      subscriptionBillingType: "oneoff",
+      subscriptionExpiresAt: daysFromNow(30),
+      subscriptionUpdatedAt: serverTimestamp(),
+      membershipPlan: "monthly",
+      membershipStatus: "active",
+      stripeCustomerId: "cus_1",
+      stripeSubscriptionId: "",
+      stripePriceId: "price_monthly_pass",
+      stripeCheckoutSessionId: "cs_monthly",
+      featuredListing: false,
+      featuredListingStatus: "inactive",
+      featuredExpiresAt: null,
+      hasSeenIntro: false,
+      isPublic: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      ...overrides
+    };
+  }
+
+  it("allows a genuine paid signup matching the claimed checkout session", async () => {
+    const newbieDb = testEnv.authenticatedContext("newbie").firestore();
+    await assertSucceeds(setDoc(doc(newbieDb, "users/newbie"), paidSignupProfile()));
+  });
+
+  it("rejects paid signups that try to grant extra privileges or a better plan", async () => {
+    const newbieDb = testEnv.authenticatedContext("newbie").firestore();
+    const attempts = [
+      { role: "super_admin" },
+      { role: "admin" },
+      { isAdmin: true },
+      { internalAccount: true },
+      { canImpersonateUsers: true },
+      { subscriptionPlan: "lifetime" },
+      { stripePriceId: "price_yearly_pass" },
+      { subscriptionExpiresAt: daysFromNow(365) },
+      { featuredListing: true }
+    ];
+
+    for (const overrides of attempts) {
+      await assertFails(setDoc(doc(newbieDb, "users/newbie"), paidSignupProfile(overrides)));
+    }
+  });
+
+  it("rejects a paid signup using another user's checkout session", async () => {
+    const intruderDb = testEnv.authenticatedContext("intruder").firestore();
+    await assertFails(setDoc(doc(intruderDb, "users/intruder"), paidSignupProfile({ uid: "intruder" })));
+  });
+
+  it("keeps access for cancelling subscriptions until the paid period ends", async () => {
+    await seed(testEnv, "users/leaving", {
+      uid: "leaving",
+      role: "member",
+      hasSubscription: true,
+      subscriptionStatus: "cancelling",
+      subscriptionExpiresAt: daysFromNow(10)
+    });
+    await seed(testEnv, "users/gone", {
+      uid: "gone",
+      role: "member",
+      hasSubscription: true,
+      subscriptionStatus: "cancelling",
+      subscriptionExpiresAt: daysFromNow(-1)
+    });
+    await seed(testEnv, "users/lapsed", {
+      uid: "lapsed",
+      role: "member",
+      hasSubscription: true,
+      subscriptionStatus: "past_due",
+      subscriptionExpiresAt: daysFromNow(10)
+    });
+
+    await assertSucceeds(getDoc(doc(testEnv.authenticatedContext("leaving").firestore(), "projects/p1")));
+    await assertFails(getDoc(doc(testEnv.authenticatedContext("gone").firestore(), "projects/p1")));
+    await assertFails(getDoc(doc(testEnv.authenticatedContext("lapsed").firestore(), "projects/p1")));
+  });
+});
+
 assert.ok(projectId);
 
 

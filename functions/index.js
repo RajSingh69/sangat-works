@@ -143,12 +143,19 @@ function isActiveMember(userData) {
 
   if (userData.hasSubscription !== true) return false;
 
+  const expiresAt = getDateFromFirestoreValue(userData.subscriptionExpiresAt);
+
+  // Cancelled subscriptions keep access until the paid period ends.
+  if (userData.subscriptionStatus === "cancelling") {
+    return Boolean(expiresAt && expiresAt > new Date());
+  }
+
   if (userData.subscriptionStatus !== "active") {
     return false;
   }
 
-  if (userData.subscriptionExpiresAt && userData.subscriptionExpiresAt.toDate) {
-    return userData.subscriptionExpiresAt.toDate() > new Date();
+  if (expiresAt) {
+    return expiresAt > new Date();
   }
 
   return true;
@@ -590,7 +597,7 @@ async function updateUserFromStripeSubscription(subscription) {
   const status = getSubscriptionFirestoreStatus(subscription);
   const expiresAt = getSubscriptionExpiryTimestamp(subscription);
 
-  const hasSubscription = status === "active";
+  const hasSubscription = status === "active" || status === "cancelling";
 
   await userDoc.ref.set(
     {
@@ -1336,6 +1343,10 @@ exports.cancelSubscription = onRequest(
         return res.status(400).json({
           error: "Missing uid"
         });
+      }
+
+      if (!(await verifyRequestUser(req, uid))) {
+        return res.status(403).json({ error: "Invalid user token" });
       }
 
       const userRef = admin.firestore().collection("users").doc(uid);

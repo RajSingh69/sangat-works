@@ -108,10 +108,13 @@ async function cancelCurrentSubscription() {
     setCancelButtonLoading(true);
     setCancelMessage("Cancelling your subscription...");
 
+    const idToken = await currentUser.getIdToken();
+
     const response = await fetch(CANCEL_SUBSCRIPTION_FUNCTION_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
       },
       body: JSON.stringify({
         uid: currentUser.uid

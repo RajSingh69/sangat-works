@@ -73,6 +73,11 @@ export function hasActiveSubscription(userData) {
     return false;
   }
 
+  // Cancelled subscriptions keep access until the paid period ends.
+  if (userData.subscriptionStatus === "cancelling") {
+    return Boolean(expiryDate && expiryDate > new Date());
+  }
+
   if (!isAllowedStatus(userData.subscriptionStatus)) {
     return false;
   }
