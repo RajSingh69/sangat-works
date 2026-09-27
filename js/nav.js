@@ -108,9 +108,9 @@ function renderAppShell(user, userData = {}) {
   shell.className = "member-sidebar";
   shell.innerHTML = `
     <div class="member-sidebar-top">
-      <a class="member-sidebar-brand" href="index.html">
-        <span class="brand-mark">SW</span>
-        <span>Sangat Works</span>
+      <a class="member-sidebar-brand" href="index.html" aria-label="Sangat Works home">
+        <img class="sidebar-logo-full" src="assets/sangat-works-logo-white.png" alt="Sangat Works" />
+        <img class="sidebar-logo-mark" src="assets/sangat-works-emblem-white.png" alt="" />
       </a>
       <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse navigation">=</button>
     </div>

@@ -1604,3 +1604,23 @@ select {
   }
 }
 
+
+/* Sidebar logo: full white logo when open, just the S emblem when collapsed. */
+.member-sidebar-brand { min-width: 0; }
+
+.sidebar-logo-full {
+  display: block;
+  width: 150px;
+  max-width: 100%;
+  height: auto;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.3));
+}
+
+.sidebar-logo-mark {
+  display: none;
+  width: 42px;
+  height: 42px;
+}
+
+.sidebar-collapsed .sidebar-logo-full { display: none; }
+.sidebar-collapsed .sidebar-logo-mark { display: block; }
