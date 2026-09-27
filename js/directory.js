@@ -180,11 +180,17 @@ function isPaidDirectoryProfile(profile) {
     return false;
   }
 
+  const expiryDate = timestampToDate(profile.subscriptionExpiresAt);
+
+  // Cancelled subscriptions stay listed until the paid period ends.
+  if (profile.subscriptionStatus === "cancelling") {
+    return Boolean(expiryDate && expiryDate > new Date());
+  }
+
   if (profile.subscriptionStatus !== "active") {
     return false;
   }
 
-  const expiryDate = timestampToDate(profile.subscriptionExpiresAt);
   return !expiryDate || expiryDate > new Date();
 }
 
@@ -720,7 +726,7 @@ async function loadDirectory() {
   renderDirectoryDiscovery();
 
   try {
-    const usersRef = collection(db, "users");
+    const usersRef = collection(db, "publicProfiles");
     const publicUsersQuery = query(usersRef, where("isPublic", "==", true));
     const snapshot = await getDocs(publicUsersQuery);
 

@@ -1,7 +1,9 @@
 ﻿const { onRequest } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
+const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const crypto = require("crypto");
 const Stripe = require("stripe");
+const { buildPublicProfile } = require("./public-profile");
 
 const admin = require("firebase-admin");
 
@@ -2857,3 +2859,26 @@ function isModeratorOrAdminRole(userData) {
 
 
 
+
+// =========================================
+// Public profile sync
+// =========================================
+exports.syncPublicProfile = onDocumentWritten(
+  {
+    document: "users/{uid}",
+    region: "europe-west1",
+    maxInstances: 10
+  },
+  async (event) => {
+    const uid = event.params.uid;
+    const publicRef = admin.firestore().collection("publicProfiles").doc(uid);
+    const after = event.data?.after;
+
+    if (!after || !after.exists) {
+      await publicRef.delete();
+      return;
+    }
+
+    await publicRef.set(buildPublicProfile(uid, after.data()));
+  }
+);

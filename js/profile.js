@@ -227,6 +227,11 @@ function isActiveMember(profile) {
 
   if (profile.hasSubscription !== true) return false;
 
+  // Cancelled subscriptions stay active until the paid period ends.
+  if (profile.subscriptionStatus === "cancelling") {
+    return Boolean(profile.subscriptionExpiresAt) && getDaysRemaining(profile.subscriptionExpiresAt) > 0;
+  }
+
   if (profile.subscriptionStatus !== "active") {
     return false;
   }
@@ -1020,7 +1025,7 @@ if (publicProfile) {
     }
 
     try {
-      const userRef = doc(db, "users", profileId);
+      const userRef = doc(db, "publicProfiles", profileId);
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {

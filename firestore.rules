@@ -166,9 +166,16 @@ service cloud.firestore {
       );
     }
 
-    match /users/{uid} {
+    // Full user records hold private data; other members read publicProfiles instead.
+    match /publicProfiles/{uid} {
       allow get: if true;
       allow list: if hasActiveMembership() || isAdmin();
+      allow write: if false;
+    }
+
+    match /users/{uid} {
+      allow get: if isSelf(uid) || isAdmin();
+      allow list: if isAdmin();
       allow create: if isSelf(uid) && (validBasicUserCreate(uid) || validPaidSignupCreate(uid));
       allow update: if (isSelf(uid) && validSelfProfileUpdate()) || isSuperAdmin();
       allow delete: if isSuperAdmin() && resource.data.internalAccount != true;

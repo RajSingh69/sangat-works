@@ -336,7 +336,7 @@ async function loadYoungProfessionals() {
 
   const [snapshot, usersSnapshot] = await Promise.all([
     getDocs(collection(db, "youngProfessionals")),
-    getDocs(collection(db, "users"))
+    getDocs(collection(db, "publicProfiles"))
   ]);
 
   const activeUserIds = new Set();
@@ -367,6 +367,12 @@ async function loadYoungProfessionals() {
         user.hasSubscription === true &&
         user.subscriptionStatus === "active" &&
         notExpired
+      ) ||
+      (
+        user.hasSubscription === true &&
+        user.subscriptionStatus === "cancelling" &&
+        expiryDate &&
+        expiryDate > new Date()
       )
     ) {
       activeUserIds.add(docSnap.id);

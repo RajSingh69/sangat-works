@@ -82,7 +82,7 @@ async function callMemberFunction(name, body = {}) {
 }
 
 export async function getUserProfile(uid) {
-  const snap = await getDoc(doc(db, "users", uid));
+  const snap = await getDoc(doc(db, "publicProfiles", uid));
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 

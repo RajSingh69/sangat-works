@@ -325,6 +325,114 @@ describe("Firestore security rules: paid signup and cancelling access", () => {
   });
 });
 
+describe("Firestore security rules: private user records vs public profiles", () => {
+  let testEnv;
+
+  before(async () => {
+    testEnv = await initializeTestEnvironment({
+      projectId,
+      firestore: {
+        rules: fs.readFileSync(path.join(__dirname, "..", "firestore.rules"), "utf8")
+      }
+    });
+  });
+
+  after(async () => {
+    await testEnv.cleanup();
+  });
+
+  beforeEach(async () => {
+    await testEnv.clearFirestore();
+    const member = {
+      role: "member",
+      hasSubscription: true,
+      subscriptionStatus: "active",
+      subscriptionExpiresAt: new Date("2099-01-01T00:00:00Z")
+    };
+    await seed(testEnv, "users/alice", { uid: "alice", ...member, stripeCustomerId: "cus_secret", phone: "07000" });
+    await seed(testEnv, "users/bob", { uid: "bob", ...member });
+    await seed(testEnv, "users/boss", { uid: "boss", role: "admin" });
+    await seed(testEnv, "publicProfiles/alice", { uid: "alice", fullName: "Alice", isPublic: true });
+  });
+
+  it("only lets the owner and admins read a full user record", async () => {
+    await assertSucceeds(getDoc(doc(testEnv.authenticatedContext("alice").firestore(), "users/alice")));
+    await assertSucceeds(getDoc(doc(testEnv.authenticatedContext("boss").firestore(), "users/alice")));
+    await assertFails(getDoc(doc(testEnv.authenticatedContext("bob").firestore(), "users/alice")));
+    await assertFails(getDoc(doc(testEnv.unauthenticatedContext().firestore(), "users/alice")));
+  });
+
+  it("only lets admins list full user records", async () => {
+    const { collection, getDocs } = require("firebase/firestore");
+    await assertSucceeds(getDocs(collection(testEnv.authenticatedContext("boss").firestore(), "users")));
+    await assertFails(getDocs(collection(testEnv.authenticatedContext("bob").firestore(), "users")));
+  });
+
+  it("lets anyone view a public profile, members list them, and nobody write them", async () => {
+    const { collection, getDocs } = require("firebase/firestore");
+    await assertSucceeds(getDoc(doc(testEnv.unauthenticatedContext().firestore(), "publicProfiles/alice")));
+    await assertSucceeds(getDocs(collection(testEnv.authenticatedContext("bob").firestore(), "publicProfiles")));
+    await assertFails(getDocs(collection(testEnv.unauthenticatedContext().firestore(), "publicProfiles")));
+    await assertFails(setDoc(doc(testEnv.authenticatedContext("alice").firestore(), "publicProfiles/alice"), { uid: "alice", fullName: "Hacked" }));
+    await assertFails(setDoc(doc(testEnv.authenticatedContext("bob").firestore(), "publicProfiles/bob"), { uid: "bob" }));
+  });
+});
+
+describe("buildPublicProfile", () => {
+  const { buildPublicProfile } = require("../functions/public-profile");
+
+  const fullRecord = {
+    uid: "alice",
+    fullName: "Alice",
+    businessName: "Alice Plumbing",
+    town: "Leicester",
+    isPublic: true,
+    role: "member",
+    hasSubscription: true,
+    subscriptionStatus: "active",
+    phone: "07000 000000",
+    email: "alice@example.com",
+    postcode: "LE1 1AA",
+    gurdwaraName: "Guru Nanak Gurdwara",
+    showPhone: false,
+    showEmail: true,
+    showPostcode: false,
+    showGurdwara: false,
+    stripeCustomerId: "cus_secret",
+    stripeSubscriptionId: "sub_secret",
+    adminNotes: "internal note",
+    canImpersonateUsers: true,
+    banned: false
+  };
+
+  it("keeps public fields and applies the member's privacy toggles", () => {
+    const profile = buildPublicProfile("alice", fullRecord);
+    assert.strictEqual(profile.fullName, "Alice");
+    assert.strictEqual(profile.businessName, "Alice Plumbing");
+    assert.strictEqual(profile.subscriptionStatus, "active");
+    assert.strictEqual(profile.email, "alice@example.com");
+    assert.strictEqual(profile.phone, undefined);
+    assert.strictEqual(profile.postcode, undefined);
+    assert.strictEqual(profile.gurdwaraName, undefined);
+  });
+
+  it("never copies private or internal fields", () => {
+    const profile = buildPublicProfile("alice", fullRecord);
+    ["stripeCustomerId", "stripeSubscriptionId", "adminNotes", "canImpersonateUsers", "banned"].forEach(field => {
+      assert.strictEqual(profile[field], undefined, `${field} leaked`);
+    });
+  });
+
+  it("only exposes membership status for private profiles", () => {
+    const profile = buildPublicProfile("alice", { ...fullRecord, isPublic: false, showPhone: true });
+    assert.strictEqual(profile.isPublic, false);
+    assert.strictEqual(profile.subscriptionStatus, "active");
+    assert.strictEqual(profile.fullName, undefined);
+    assert.strictEqual(profile.phone, undefined);
+    assert.strictEqual(profile.email, undefined);
+  });
+});
+
 assert.ok(projectId);
 
 
