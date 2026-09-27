@@ -1571,3 +1571,107 @@
     max-width: 88%;
   }
 }
+
+/* =========================================
+   BROWSE BY INDUSTRY (homepage)
+   Clean white tiles in the same style as the feature cards above.
+========================================= */
+.industry-section-lead {
+  margin: 10px 0 0;
+  color: var(--home-muted);
+  font-size: 1.05rem;
+}
+
+.industry-tile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.industry-tile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 96px;
+  padding: 18px 20px;
+  color: var(--home-ink);
+  text-decoration: none;
+  background: #fff;
+  border: 1px solid var(--home-border);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(8, 46, 80, 0.07);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.industry-tile:hover,
+.industry-tile:focus-visible {
+  transform: translateY(-3px);
+  border-color: rgba(255, 122, 24, 0.45);
+  box-shadow: 0 18px 40px rgba(8, 46, 80, 0.12);
+  outline: none;
+}
+
+.industry-tile-icon {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  color: var(--home-orange);
+  background: rgba(255, 122, 24, 0.1);
+  border-radius: 14px;
+}
+
+.industry-tile-icon svg { width: 26px; height: 26px; }
+
+.industry-tile-text { min-width: 0; }
+
+.industry-tile-text strong {
+  display: block;
+  font-size: 1.08rem;
+  line-height: 1.25;
+  color: var(--home-ink);
+}
+
+.industry-tile-text small {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: var(--home-muted);
+}
+
+.industry-tile-count {
+  padding: 5px 11px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+  color: var(--home-navy);
+  background: rgba(7, 54, 92, 0.07);
+  border-radius: 999px;
+}
+
+.industry-tile.is-empty .industry-tile-count {
+  color: var(--home-orange);
+  background: rgba(255, 122, 24, 0.1);
+}
+
+.industry-tile-arrow {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--home-orange);
+  transition: transform 0.2s ease;
+}
+
+.industry-tile:hover .industry-tile-arrow,
+.industry-tile:focus-visible .industry-tile-arrow { transform: translateX(3px); }
+
+@media (max-width: 1080px) {
+  .industry-tile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .industry-tile-grid { grid-template-columns: 1fr; gap: 12px; }
+  .industry-tile { grid-template-columns: auto minmax(0, 1fr) auto; min-height: 0; padding: 14px 16px; }
+  .industry-tile-arrow { display: none; }
+}

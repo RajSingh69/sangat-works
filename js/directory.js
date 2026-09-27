@@ -2,6 +2,7 @@ import { auth, db } from "./firebase.js";
 import { protectPage } from "./subscription-guard.js";
 import { openConversationWithUser, sendConnectionRequest } from "./member-network.js";
 import { compareByRanking } from "./ranking.js";
+import { getIndustryBucket, isListedInDirectory } from "./industries.js";
 import { renderCardMedia, renderMemberCard } from "./directory-card.js";
 import { adjustMemberPhoto } from "./photo-framer.js";
 import { isSuperAdmin } from "./roles.js";
@@ -43,7 +44,8 @@ const directoryFanPosition = document.getElementById("directoryFanPosition");
 let allProfiles = [];
 let currentUser = null;
 let canAdjustPhotos = false;
-let activeIndustry = "All";
+// The homepage industry tiles link here with ?industry=Technology etc.
+let activeIndustry = new URLSearchParams(window.location.search).get("industry") || "All";
 let fanIndex = 0;
 let fanProfiles = [];
 let touchStartX = 0;
@@ -135,48 +137,6 @@ function isFeaturedActive(profile) {
   return expiryDate > new Date();
 }
 
-function isPaidDirectoryProfile(profile) {
-  if (!profile) return false;
-
-  if (profile.role === "admin" || profile.role === "super_admin") {
-    return true;
-  }
-
-  if (profile.accessType === "admin_granted_free_year") {
-    const freeAccessExpiryDate = timestampToDate(profile.freeAccessExpiresAt);
-    return Boolean(freeAccessExpiryDate && freeAccessExpiryDate > new Date());
-  }
-
-  if (profile.hasSubscription !== true) {
-    return false;
-  }
-
-  const expiryDate = timestampToDate(profile.subscriptionExpiresAt);
-
-  // Cancelled subscriptions stay listed until the paid period ends.
-  if (profile.subscriptionStatus === "cancelling") {
-    return Boolean(expiryDate && expiryDate > new Date());
-  }
-
-  if (profile.subscriptionStatus !== "active") {
-    return false;
-  }
-
-  return !expiryDate || expiryDate > new Date();
-}
-
-const INDUSTRY_BUCKETS = [
-  { name: "Technology", keywords: ["software", "developer", "web", "data", "ai", "cyber", "cloud", "it", "digital", "engineer", "technical"] },
-  { name: "Trades", keywords: ["electrician", "builder", "plumber", "carpenter", "decorator", "construction", "trade", "heating", "labour", "roof", "joiner"] },
-  { name: "Property", keywords: ["property", "estate", "mortgage", "letting", "landlord", "survey", "architect", "planning", "development"] },
-  { name: "Law & Professional Services", keywords: ["law", "legal", "solicitor", "accountant", "consultant", "insurance", "advisor", "adviser", "compliance"] },
-  { name: "Business & Finance", keywords: ["business", "finance", "bookkeeping", "tax", "marketing", "sales", "operations", "startup", "strategy"] },
-  { name: "Healthcare", keywords: ["doctor", "health", "dentist", "pharmacy", "pharmacist", "therapy", "physio", "mental", "wellbeing", "care"] },
-  { name: "Education", keywords: ["teacher", "tutor", "education", "training", "coach", "mentor", "school", "learning"] },
-  { name: "Creative & Media", keywords: ["design", "designer", "media", "photo", "video", "creative", "brand", "content", "music", "film"] },
-  { name: "Community", keywords: ["charity", "community", "seva", "gurdwara", "nonprofit", "volunteer"] }
-];
-
 function getProfileUrl(profile) {
   return `view.html?id=${encodeURIComponent(profile.uid || profile.id || "")}`;
 }
@@ -217,24 +177,6 @@ function setDirectoryViewMode(mode) {
   directoryListView?.classList.toggle("is-active", directoryViewMode === "list");
   directoryGridView?.setAttribute("aria-pressed", String(directoryViewMode === "grid"));
   directoryListView?.setAttribute("aria-pressed", String(directoryViewMode === "list"));
-}
-
-function getCategorySource(profile) {
-  return [
-    profile.serviceTitle,
-    profile.businessType,
-    profile.category,
-    profile.profession,
-    profile.role,
-    profile.businessCategory,
-    ...(Array.isArray(profile.tags) ? profile.tags : [])
-  ].filter(Boolean).join(" ").toLowerCase();
-}
-
-function getIndustryBucket(profile) {
-  const source = getCategorySource(profile);
-  const match = INDUSTRY_BUCKETS.find(bucket => bucket.keywords.some(keyword => source.includes(keyword)));
-  return match?.name || "Other";
 }
 
 function getIndustryGroups(profiles) {
@@ -360,7 +302,7 @@ function renderFanCarousel() {
 
 function renderDirectoryDiscovery() {
   const groups = getIndustryGroups(allProfiles);
-  if (activeIndustry !== "All" && !groups.has(activeIndustry)) activeIndustry = "All";
+  if (directoryDataLoaded && activeIndustry !== "All" && !groups.has(activeIndustry)) activeIndustry = "All";
   renderIndustryTabs(groups);
   renderDirectoryStats(groups);
   renderFanCarousel();
@@ -562,7 +504,7 @@ async function loadDirectory() {
         ...docSnap.data()
       };
 
-      if (isPaidDirectoryProfile(profile)) {
+      if (isListedInDirectory(profile)) {
         allProfiles.push(profile);
       }
     });

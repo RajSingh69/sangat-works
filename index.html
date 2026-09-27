@@ -78,12 +78,13 @@
   <section class="home-industries-section home-reveal" aria-labelledby="homeIndustriesTitle">
     <div class="home-section-heading-row compact">
       <div>
-        <span class="home-section-kicker">Featured Industries</span>
+        <span class="home-section-kicker">Browse by Industry</span>
         <h2 id="homeIndustriesTitle">Find people in your industry.</h2>
+        <p class="industry-section-lead">Pick an industry to see the Sangat members working in it.</p>
       </div>
-      <a href="directory.html" class="home-text-link">View all industries <span aria-hidden="true">-&gt;</span></a>
+      <a href="directory.html" class="home-text-link">Open the full directory <span aria-hidden="true">-&gt;</span></a>
     </div>
-    <div class="home-industry-grid" id="homeIndustryGrid" aria-live="polite"></div>
+    <div class="industry-tile-grid" id="homeIndustryGrid" aria-live="polite"></div>
   </section>
   <section class="home-platform-intro home-community-mission home-reveal" aria-labelledby="homeCommunityTitle">
     <div class="home-section-heading-row compact">
@@ -112,33 +113,6 @@
         <div class="feature-media"><span>O</span></div><div class="feature-body"><h3>Our Other Charities</h3><p>More Sikh-led causes doing incredible work. Suggest one that matters to you.</p><small>See charities <span>-&gt;</span></small></div>
       </a>
     </div>
-  </section>
-  <section class="home-join-network home-reveal" aria-labelledby="homeJoinTitle">
-    <div class="home-join-image" aria-hidden="true"></div>
-    <div class="home-join-copy">
-      <span class="home-section-kicker">Join Sangat Works</span>
-      <h2 id="homeJoinTitle">Be part of something bigger.</h2>
-      <p>Whether you're a business owner, professional, student or simply want to support the Sangat, there's a place for you.</p>
-      <div class="home-join-actions">
-        <a href="profile.html" class="btn-primary">Complete Your Profile <span aria-hidden="true">-&gt;</span></a>
-        <a href="directory.html" class="btn-secondary">Explore the Network</a>
-      </div>
-    </div>
-  </section>
-
-  <section id="adminDashboardCard" class="admin-dashboard-card hidden home-reveal">
-    <div>
-      <p class="eyebrow">Admin Overview</p>
-      <h2>Sangat Works Dashboard</h2>
-      <p>Quick platform statistics and moderation overview.</p>
-    </div>
-    <div class="admin-stats-grid">
-      <div><strong id="adminTotalUsers">0</strong><span>Total Users</span></div>
-      <div><strong id="adminPublicProfiles">0</strong><span>Public Profiles</span></div>
-      <div><strong id="adminVerifiedUsers">0</strong><span>Verified Users</span></div>
-      <div><strong id="adminPendingUsers">0</strong><span>Pending Verification</span></div>
-    </div>
-    <a href="admin.html" class="btn-primary">Open Admin Panel</a>
   </section>
 
   <section class="home-membership-note home-reveal">
@@ -189,12 +163,12 @@
   })();
 </script>
 <script type="module" src="js/nav.js"></script>
-<script type="module" src="js/admin-dashboard.js"></script>
 <script type="module" src="js/onboarding.js"></script>
 
 <script type="module">
   import { db } from "./js/firebase.js";
   import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+  import { INDUSTRY_BUCKETS, getIndustryBucket, isListedInDirectory } from "./js/industries.js";
 
   const heroStats = document.getElementById("homeHeroStats");
   const industryGrid = document.getElementById("homeIndustryGrid");
@@ -202,15 +176,41 @@
   function escapeHtml(value = "") {
     return String(value).replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char]));
   }
-  function getProfileName(profile) { return profile.businessName || profile.fullName || profile.displayName || 'Sangat Works Member'; }
-function getIndustry(profile) {
-    const source = `${profile.industry || ""} ${profile.category || ""} ${profile.businessType || ""} ${profile.serviceTitle || ""}`.toLowerCase();
-    if (/tech|software|web|app|digital|data|ai/.test(source)) return "Technology";
-    if (/educat|teach|tutor|training|academy/.test(source)) return "Education";
-    if (/property|estate|mortgage|construction|building|real estate/.test(source)) return "Property";
-    if (/law|legal|account|finance|consult|professional/.test(source)) return "Law & Professional Services";
-    if (/trade|plumb|electric|builder|roof|mechanic|gas/.test(source)) return "Trades";
-    return "Other";
+
+  const svg = (paths) => `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+  const INDUSTRY_ICONS = {
+    "Technology": svg('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>'),
+    "Trades": svg('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4Z"/>'),
+    "Property": svg('<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>'),
+    "Law & Professional Services": svg('<path d="M12 4v16M6 20h12M4 8h16"/><path d="m6 8-3 6a3 3 0 0 0 6 0Zm12 0-3 6a3 3 0 0 0 6 0Z"/>'),
+    "Business & Finance": svg('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
+    "Healthcare": svg('<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10Z"/><path d="M12 10v4M10 12h4"/>'),
+    "Education": svg('<path d="m2 9 10-5 10 5-10 5Z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/>'),
+    "Creative & Media": svg('<circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/><path d="M12 21a2.5 2.5 0 0 1 0-5h2"/>'),
+    "Community": svg('<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 14.5c3 0 6 1.8 6 5"/>')
+  };
+
+  // counts is null when the visitor can't see member numbers (not signed in).
+  function renderIndustries(counts) {
+    if (!industryGrid) return;
+    const buckets = counts
+      ? [...INDUSTRY_BUCKETS].sort((a, b) => (counts.get(b.name) || 0) - (counts.get(a.name) || 0))
+      : INDUSTRY_BUCKETS;
+
+    industryGrid.innerHTML = buckets.map((bucket) => {
+      const count = counts ? counts.get(bucket.name) || 0 : null;
+      const countLabel = count === null ? "Explore" : count ? `${count} member${count === 1 ? "" : "s"}` : "Be the first";
+      return `
+        <a class="industry-tile${count === 0 ? " is-empty" : ""}" href="directory.html?industry=${encodeURIComponent(bucket.name)}">
+          <span class="industry-tile-icon">${INDUSTRY_ICONS[bucket.name] || ""}</span>
+          <span class="industry-tile-text">
+            <strong>${escapeHtml(bucket.name)}</strong>
+            <small>${escapeHtml(bucket.blurb)}</small>
+          </span>
+          <span class="industry-tile-count">${escapeHtml(countLabel)}</span>
+          <span class="industry-tile-arrow" aria-hidden="true">&rarr;</span>
+        </a>`;
+    }).join("");
   }
 
   function renderHeroStats(stats) {
@@ -223,56 +223,38 @@ function getIndustry(profile) {
     ];
     heroStats.innerHTML = items.map(([icon, value, label]) => `<div><span class="stat-icon">${icon}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(label)}</small></div>`).join("");
   }
-const industryDescriptors = {
-    "Technology": "Developers &middot; IT &middot; Digital",
-    "Education": "Teachers &middot; Tutors &middot; Training",
-    "Property": "Property &middot; Architecture &middot; Development",
-    "Law & Professional Services": "Legal &middot; Finance &middot; Consultancy",
-    "Trades": "Construction &middot; Electrical &middot; Skilled Trades",
-    "Other": "Creative &middot; Community &middot; Specialist Services"
-  };
 
-  function renderIndustries(profiles) {
-    if (!industryGrid) return;
-    const counts = profiles.reduce((map, profile) => map.set(getIndustry(profile), (map.get(getIndustry(profile)) || 0) + 1), new Map());
-    const industries = ["Technology", "Education", "Property", "Law & Professional Services", "Other"];
-    const sortedIndustries = [...industries].sort((a, b) => (counts.get(b) || 0) - (counts.get(a) || 0));
-    const orderedIndustries = [...sortedIndustries, "Trades"];
-    industryGrid.innerHTML = orderedIndustries.map((industry, index) => {
-      const className = industry.toLowerCase().replace(/[^a-z]+/g, "-").replace(/-$/, "");
-      const count = counts.get(industry) || 0;
-      const emptyTrades = industry === "Trades" && !count;
-      const countLabel = count ? `${count} professional${count === 1 ? "" : "s"}` : emptyTrades ? "Be the first professional in this industry." : "Be the first";
-      return `<a class="home-industry-card industry-${className}${index === 0 ? " is-featured" : ""}" href="directory.html?category=${encodeURIComponent(industry)}"><span class="industry-card-media"></span><span class="industry-card-kicker">${escapeHtml(industry)}</span><strong>${escapeHtml(countLabel)}</strong><small>${industryDescriptors[industry]}</small><em>Explore ${escapeHtml(industry)} <span aria-hidden="true">-&gt;</span></em></a>`;
-    }).join("");
-  }
-async function getCollectionCount(name) {
+  async function getCollectionCount(name) {
     try { return (await getDocs(collection(db, name))).size; }
     catch (error) { console.warn(`Could not load ${name} count`, error); return null; }
   }
-async function loadHomepageData() {
-    let profiles = [];
+
+  async function loadHomepageData() {
+    renderIndustries(null);
+
+    // Same members the directory lists. Only signed-in members can read these,
+    // so visitors just see the industries without numbers.
+    let profiles = null;
     try {
-      const publicProfilesQuery = query(collection(db, "users"), where("isPublic", "==", true));
-      const snapshot = await getDocs(publicProfilesQuery);
-      profiles = snapshot.docs.map((docSnap) => docSnap.data());
+      const snapshot = await getDocs(query(collection(db, "publicProfiles"), where("isPublic", "==", true)));
+      profiles = snapshot.docs.map((docSnap) => docSnap.data()).filter(isListedInDirectory);
     } catch (error) {
-      console.warn("Could not load public profiles", error);
+      console.info("Member counts are shown to signed-in members only.");
     }
 
-    renderIndustries(profiles);
+    const counts = profiles && profiles.reduce((map, profile) => {
+      const industry = getIndustryBucket(profile);
+      return map.set(industry, (map.get(industry) || 0) + 1);
+    }, new Map());
+    renderIndustries(counts);
 
-    const projectsCount = await getCollectionCount("projects");
-const locationCount = new Set(profiles.map((profile) => profile.town || profile.serviceArea || profile.location).filter(Boolean)).size;
-    const industryCount = new Set(profiles.map(getIndustry)).size;
-    const statPayload = {
-      members: profiles.length,
-      industries: industryCount,
-      locations: locationCount,
-      projects: projectsCount
-    };
-
-    renderHeroStats(statPayload);
+    const list = profiles || [];
+    renderHeroStats({
+      members: list.length,
+      industries: counts ? [...counts.keys()].filter((name) => name !== "Other").length : 0,
+      locations: new Set(list.map((profile) => profile.town || profile.serviceArea).filter(Boolean)).size,
+      projects: await getCollectionCount("projects")
+    });
   }
 
   loadHomepageData();
