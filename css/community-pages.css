@@ -514,3 +514,77 @@
 }
 
 .site-image-adjust:hover { background: #ff7a18; border-color: #ff7a18; }
+
+/* =========================================
+   ADJUSTABLE HOMEPAGE PICTURES
+   Card and hero pictures are real images inside .site-image-frame so the
+   super admin can position/zoom them (js/site-images.js).
+========================================= */
+.home-flagship-page .feature-media.site-image-frame {
+  display: flex;
+  background-image: none;
+}
+
+.home-flagship-page .feature-media.site-image-frame > img {
+  position: absolute;
+  inset: 0;
+}
+
+.home-flagship-page .home-flagship-hero {
+  position: relative;
+  background-image: none;
+}
+
+.home-flagship-page .home-flagship-hero-inner,
+.home-flagship-page .home-hero-stats {
+  position: relative;
+  z-index: 1;
+}
+
+/* No z-index here, so the Adjust button (z-index 3) can sit above the hero text. */
+.home-hero-photo {
+  position: absolute;
+  inset: 0;
+}
+
+.home-hero-photo > img { position: absolute; inset: 0; }
+
+.home-hero-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(3,31,54,0) 62%, rgba(3,31,54,.76) 100%),
+    linear-gradient(90deg, rgba(3,31,54,.96) 0%, rgba(3,31,54,.9) 30%, rgba(3,31,54,.52) 55%, rgba(3,31,54,.1) 100%);
+}
+
+.home-hero-photo .site-image-adjust {
+  top: 14px;
+  right: 14px;
+  left: auto;
+  z-index: 3;
+}
+
+@media (max-width: 760px) {
+  .home-hero-photo::after {
+    background: linear-gradient(180deg, rgba(3,31,54,.92) 0%, rgba(3,31,54,.78) 56%, rgba(3,31,54,.92) 100%);
+  }
+}
+
+/* Our Community & Mission: narrower, taller pictures so they aren't squashed. */
+.home-community-mission .home-feature-grid,
+.home-community-mission .home-feature-grid.community-row-two {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 340px));
+  justify-content: start;
+}
+
+.home-community-mission .feature-media {
+  min-height: 0;
+  aspect-ratio: 4 / 3;
+}
+
+@media (max-width: 760px) {
+  .home-community-mission .home-feature-grid,
+  .home-community-mission .home-feature-grid.community-row-two { grid-template-columns: 1fr; }
+}
