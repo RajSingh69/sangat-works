@@ -472,6 +472,7 @@ describe("Ranking inputs in public profiles", () => {
       fullName: "Alice",
       serviceTitle: "Plumber",
       pinnedToTop: true,
+      cardPhoto: { x: 40, y: 25, zoom: 1.4 },
       createdAt: new Date("2026-06-01T00:00:00Z"),
       activeDays: ["2020-01-01", today],
       lastActiveAt: new Date()
@@ -480,6 +481,7 @@ describe("Ranking inputs in public profiles", () => {
     assert.strictEqual(profile.activeDaysLast30, 1);
     assert.strictEqual(profile.lastActiveOn, today);
     assert.strictEqual(profile.pinnedToTop, true);
+    assert.deepStrictEqual(profile.cardPhoto, { x: 40, y: 25, zoom: 1.4 });
     assert.ok(profile.createdAt);
     assert.strictEqual(profile.activeDays, undefined);
     assert.strictEqual(profile.lastActiveAt, undefined);
@@ -648,6 +650,8 @@ describe("Firestore security rules: ranking fields are admin/server only", () =>
 
     await assertFails(updateDoc(doc(aliceDb, "users/alice"), { pinnedToTop: true }));
     await assertFails(updateDoc(doc(aliceDb, "users/alice"), { activeDays: ["2026-10-01"] }));
+    await assertFails(updateDoc(doc(aliceDb, "users/alice"), { cardPhoto: { x: 50, y: 20, zoom: 1.5 } }));
+    await assertSucceeds(updateDoc(doc(testEnv.authenticatedContext("owner").firestore(), "users/alice"), { cardPhoto: { x: 50, y: 20, zoom: 1.5 } }));
     await assertSucceeds(updateDoc(doc(testEnv.authenticatedContext("owner").firestore(), "users/alice"), { pinnedToTop: true }));
   });
 });

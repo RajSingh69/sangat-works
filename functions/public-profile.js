@@ -64,7 +64,7 @@ const PROFILE_FIELDS = [
   "isEmailVerified", "gurdwaraVerified", "isGurdwaraVerified", "communityVerified",
   "isCommunityVerified", "isVerified", "emailVerifiedBadge", "averageRating", "ratingAverage",
   "reviewAverage", "reviewCount", "reviewsCount", "rating", "totalReviews",
-  "recommendationCount", "profileViews", "websiteClicks", "linkedinClicks",
+  "cardPhoto", "recommendationCount", "profileViews", "websiteClicks", "linkedinClicks",
   "googleReviewClicks"
 ];
 

@@ -2,11 +2,16 @@ import { auth, db } from "./firebase.js";
 import { protectPage } from "./subscription-guard.js";
 import { openConversationWithUser, sendConnectionRequest } from "./member-network.js";
 import { compareByRanking } from "./ranking.js";
+import { getCardIdentity, getCardPhotoFraming, renderCardMedia, renderMemberCard } from "./directory-card.js";
+import { openPhotoFramer } from "./photo-framer.js";
+import { isSuperAdmin } from "./roles.js";
 
 import {
   collection,
+  doc,
   getDocs,
   query,
+  updateDoc,
   where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -39,6 +44,7 @@ const directoryFanPosition = document.getElementById("directoryFanPosition");
 
 let allProfiles = [];
 let currentUser = null;
+let canAdjustPhotos = false;
 let activeIndustry = "All";
 let fanIndex = 0;
 let fanProfiles = [];
@@ -58,29 +64,6 @@ function escapeHtml(value = "") {
     .replace(/'/g, "&#039;");
 }
 
-function safeExternalUrl(value = "") {
-  const trimmed = String(value).trim();
-  if (!trimmed) return "";
-  try {
-    const url = new URL(trimmed, window.location.origin);
-    if (!["http:", "https:"].includes(url.protocol)) return "";
-    return url.href;
-  } catch (error) {
-    return "";
-  }
-}
-
-function discountLabel(value) {
-  const labels = {
-    yes: "Community rates available",
-    sometimes: "May offer community rates",
-    no: "Fair pricing supporter",
-    "not-specified": ""
-  };
-
-  return labels[value] || "";
-}
-
 function cleanValue(value) {
   return (value || "").toString().trim();
 }
@@ -97,10 +80,6 @@ function getRating(profile) {
     0;
 
   return Number(rating) || 0;
-}
-
-function getReviewCount(profile) {
-  return Number(profile.reviewCount || profile.reviewsCount || 0);
 }
 
 function getActiveFilterItems() {
@@ -130,13 +109,6 @@ function setFilterDrawer(open) {
   directoryFilterToggle?.setAttribute("aria-expanded", String(open));
   if (directoryFilterBackdrop) directoryFilterBackdrop.hidden = !open;
 }
-function renderStars(rating) {
-  if (!rating) return "☆☆☆☆☆";
-
-  const rounded = Math.max(0, Math.min(5, Math.round(rating)));
-  return "★★★★★".slice(0, rounded) + "☆☆☆☆☆".slice(0, 5 - rounded);
-}
-
 function timestampToDate(value) {
   if (!value) return null;
 
@@ -195,57 +167,6 @@ function isPaidDirectoryProfile(profile) {
   return !expiryDate || expiryDate > new Date();
 }
 
-function renderDirectoryBadges(profile) {
-  const badges = [];
-
-  if (profile.isFoundingMember === true) {
-    badges.push("★ Founding Member");
-  }
-
-  if (profile.emailVerified === true || profile.isEmailVerified === true) {
-    badges.push("✓ Email Verified");
-  }
-
-  if (profile.businessVerified === true || profile.isBusinessVerified === true) {
-    badges.push("✓ Business Verified");
-  }
-
-  if (profile.gurdwaraVerified === true || profile.isGurdwaraVerified === true) {
-    badges.push("✓ Gurdwara Verified");
-  }
-
-  if (badges.length === 0) {
-    return "";
-  }
-
-  return `
-    <div class="directory-badges-row">
-      ${badges.map(badge => `<span class="trust-badge verified">${badge}</span>`).join("")}
-    </div>
-  `;
-}
-
-function businessNameRow(value) {
-  return value ? `<p><strong>Business</strong><span>${escapeHtml(value)}</span></p>` : "";
-}
-
-function renderExpandableDetails(detailsId, sections) {
-  const visibleSections = sections.filter(section => section.content);
-  if (!visibleSections.length) return "";
-
-  return `
-    <div class="expandable-profile-details" id="${detailsId}" hidden>
-      ${visibleSections.map(section => `
-        <section class="expandable-detail-section">
-          <h4>${escapeHtml(section.title)}</h4>
-          ${section.content}
-        </section>
-      `).join("")}
-    </div>
-  `;
-}
-
-
 const INDUSTRY_BUCKETS = [
   { name: "Technology", keywords: ["software", "developer", "web", "data", "ai", "cyber", "cloud", "it", "digital", "engineer", "technical"] },
   { name: "Trades", keywords: ["electrician", "builder", "plumber", "carpenter", "decorator", "construction", "trade", "heating", "labour", "roof", "joiner"] },
@@ -270,14 +191,6 @@ function getPersonName(profile) {
   return profile.businessName && profile.fullName ? profile.fullName : "";
 }
 
-const DEFAULT_PROFILE_PHOTO = "assets/default-profile-photo.png";
-
-function getProfileImageUrl(profile) {
-  return profile.profilePhotoUrl || profile.businessLogoUrl || profile.logoUrl || DEFAULT_PROFILE_PHOTO;
-}
-function getProfileImagePosition(profile) {
-  return profile.profileImagePosition || profile.profilePhotoPosition || profile.imagePosition || profile.photoPosition || "center 25%";
-}
 
 function getPrimaryTrustBadge(profile) {
   if (isFeaturedActive(profile)) return { label: "Featured", className: "is-featured" };
@@ -416,22 +329,22 @@ function renderFanCarousel() {
   directoryFanStage.innerHTML = offsets.map((offset, renderIndex) => {
     const profile = fanProfiles[(fanIndex + offset + fanProfiles.length) % fanProfiles.length];
     const identity = getIdentity(profile);
-    const imageUrl = getProfileImageUrl(profile);
-    const service = getProfileService(profile) || "Member service";
-    const tag = (Array.isArray(profile.tags) && profile.tags[0]) || getIndustryBucket(profile);
+    const service = getProfileService(profile);
+    const industry = getIndustryBucket(profile);
+    const tag = (Array.isArray(profile.tags) && profile.tags[0]) || (industry !== "Other" ? industry : "");
     const profileUrl = getProfileUrl(profile);
     const trustBadge = getPrimaryTrustBadge(profile);
     return `
       <article class="directory-fan-card ${fanSlotClass(offset)}" style="--fan-offset: ${offset}; --fan-stagger: ${renderIndex};" data-profile-url="${profileUrl}" tabindex="0" aria-label="Open ${escapeHtml(identity)} profile">
         <div class="directory-fan-image">
-          ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(identity)}" style="object-position: ${escapeHtml(getProfileImagePosition(profile))};">` : `<span>${escapeHtml(identity.slice(0, 1))}</span>`}
+          ${renderCardMedia(profile)}
         </div>
         <div class="directory-fan-copy">
-          <small>${escapeHtml(tag)}</small>
+          ${tag ? `<small>${escapeHtml(tag)}</small>` : ""}
           <h3>${escapeHtml(identity)}</h3>
           ${getPersonName(profile) ? `<p>${escapeHtml(getPersonName(profile))}</p>` : ""}
-          <strong>${escapeHtml(service)}</strong>
-          <span>${escapeHtml(profile.town || "UK network")}</span>
+          ${service ? `<strong>${escapeHtml(service)}</strong>` : ""}
+          ${profile.town ? `<span>${escapeHtml(profile.town)}</span>` : ""}
           ${trustBadge ? `<em class="${trustBadge.className}">${escapeHtml(trustBadge.label)}</em>` : ""}
         </div>
       </article>
@@ -482,99 +395,7 @@ function changeIndustry(nextIndustry) {
   window.setTimeout(applyChange, 180);
 }
 function renderDirectoryProfile(profile) {
-  const tags = Array.isArray(profile.tags) ? profile.tags : [];
-  const visibleTags = tags.slice(0, 3);
-  const hiddenTagCount = Math.max(0, tags.length - visibleTags.length);
-  const tagsHtml = [
-    ...visibleTags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`),
-    hiddenTagCount ? `<span class="tag tag-more">+${hiddenTagCount}</span>` : ""
-  ].filter(Boolean).join("");
-
-  const primaryTrustBadge = getPrimaryTrustBadge(profile);
-  const primaryBadge = primaryTrustBadge
-    ? `<span class="trust-badge ${primaryTrustBadge.className}">${escapeHtml(primaryTrustBadge.label)}</span>`
-    : "";
-  const rating = getRating(profile);
-  const reviewCount = getReviewCount(profile);
-  const badgesHtml = renderDirectoryBadges(profile);
-  const rawProfileId = profile.uid || profile.id || "";
-  const profileId = encodeURIComponent(rawProfileId);
-  const profileUrl = `view.html?id=${profileId}`;
-  const identity = profile.businessName || profile.fullName || "Unnamed Profile";
-  const personName = profile.businessName && profile.fullName ? profile.fullName : "";
-  const service = profile.serviceTitle || profile.businessType || "Member service";
-  const websiteUrl = safeExternalUrl(profile.website);
-  const linkedInUrl = safeExternalUrl(profile.linkedin);
-  const reviewsUrl = safeExternalUrl(profile.googleReviews);
-  const detailsId = `directory-profile-details-${profileId}`;
-  const imageUrl = getProfileImageUrl(profile);
-  const fullTagsHtml = tags.length
-    ? `<div class="tags expandable-tags">${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>`
-    : "";
-  const businessRows = [
-    businessNameRow(profile.businessName),
-    profile.serviceArea ? `<p><strong>Service area</strong><span>${escapeHtml(profile.serviceArea)}</span></p>` : "",
-    profile.specialistWork ? `<p><strong>Specialist work</strong><span>${escapeHtml(profile.specialistWork)}</span></p>` : ""
-  ].filter(Boolean).join("");
-  const communityRows = [
-    profile.associatedGurdwara && profile.showGurdwara ? `<p><strong>Gurdwara</strong><span>${escapeHtml(profile.associatedGurdwara)}</span></p>` : "",
-    discountLabel(profile.communityDiscount) ? `<p><strong>Community rates</strong><span>${escapeHtml(discountLabel(profile.communityDiscount))}</span></p>` : ""
-  ].filter(Boolean).join("");
-  const experienceContent = profile.yearsExperience
-    ? `<p>${escapeHtml(profile.yearsExperience)} years experience</p>`
-    : "";
-  const reviewContent = reviewCount > 0
-    ? `<div class="directory-rating-row expanded-rating"><span class="directory-stars">${renderStars(rating)}</span><strong>${rating.toFixed(1)}</strong><span>${reviewCount} review${reviewCount === 1 ? "" : "s"}</span></div>`
-    : "";
-  const contactLinks = [
-    websiteUrl ? `<a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener" class="secondary-link">Website</a>` : "",
-    linkedInUrl ? `<a href="${escapeHtml(linkedInUrl)}" target="_blank" rel="noopener" class="secondary-link">LinkedIn</a>` : "",
-    profile.showGoogleReviews && reviewsUrl ? `<a href="${escapeHtml(reviewsUrl)}" target="_blank" rel="noopener" class="secondary-link">Reviews</a>` : ""
-  ].filter(Boolean).join("");
-  const expandedDetails = renderExpandableDetails(detailsId, [
-    { title: "About", content: profile.description ? `<p>${escapeHtml(profile.description)}</p>` : "" },
-    { title: "Skills / Services", content: fullTagsHtml },
-    { title: "Experience", content: experienceContent },
-    { title: "Business / Organisation", content: businessRows ? `<div class="expandable-detail-list">${businessRows}</div>` : "" },
-    { title: "Gurdwara / Community", content: communityRows ? `<div class="expandable-detail-list">${communityRows}</div>` : "" },
-    { title: "Trust", content: badgesHtml + reviewContent },
-    { title: "Contact / External Links", content: contactLinks ? `<div class="expanded-external-links">${contactLinks}</div>` : "" }
-  ]);
-
-  return `
-    <article class="profile-card directory-profile-card directory-person-card expandable-profile-card theme-${escapeHtml(profile.themeColour || "gold")}" data-profile-url="${profileUrl}" tabindex="0" aria-label="Open ${escapeHtml(identity)} profile">
-      <div class="directory-card-head">
-        <div class="directory-card-visuals">
-          ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" class="directory-profile-photo" alt="Profile photo" style="object-position: ${escapeHtml(getProfileImagePosition(profile))};">` : `<span class="directory-profile-photo placeholder-avatar">${escapeHtml(identity.slice(0, 1))}</span>`}
-          <span class="directory-card-category">${escapeHtml(getIndustryBucket(profile))}</span>
-          ${primaryBadge ? `<span class="directory-image-badge ${primaryTrustBadge.className}">${escapeHtml(primaryTrustBadge.label)}</span>` : ""}
-          ${profile.businessLogoUrl && profile.businessLogoUrl !== imageUrl ? `<img src="${escapeHtml(profile.businessLogoUrl)}" class="directory-business-logo" alt="Business logo">` : ""}
-        </div>
-        <div class="directory-card-identity">
-          <h3>${escapeHtml(identity)}</h3>
-          ${personName ? `<span class="directory-person-name">${escapeHtml(personName)}</span>` : ""}
-          <p class="service">${escapeHtml(service)}</p>
-          <div class="directory-meta-list compact-location">
-            <span>? ${escapeHtml(profile.town || "Location not provided")}</span>
-          </div>
-          ${profile.description ? `<p class="directory-card-summary">${escapeHtml(profile.description).substring(0, 96)}${profile.description.length > 96 ? "..." : ""}</p>` : ""}
-        </div>
-      </div>
-
-      ${tagsHtml ? `<div class="tags compact-tags">${tagsHtml}</div>` : ""}
-      <button type="button" class="expandable-profile-toggle" aria-expanded="false" aria-controls="${detailsId}" data-expand-card>More details</button>
-
-      ${expandedDetails}
-
-      <div class="card-links directory-card-actions">
-        <button type="button" class="btn-small" data-directory-message-id="${profileId}" title="Message">?</button>
-        <button type="button" class="btn-small secondary-action" data-directory-connect-id="${profileId}" title="Connect">?</button>
-        <a class="directory-primary-action" href="${profileUrl}">View profile</a>
-        ${websiteUrl ? `<a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener" class="secondary-link">Website</a>` : ""}
-        ${linkedInUrl ? `<a href="${escapeHtml(linkedInUrl)}" target="_blank" rel="noopener" class="secondary-link">LinkedIn</a>` : ""}
-      </div>
-    </article>
-  `;
+  return renderMemberCard(profile, { industry: getIndustryBucket(profile), canAdjustPhoto: canAdjustPhotos });
 }
 
 function populateFilter(selectElement, values, defaultLabel) {
@@ -793,6 +614,9 @@ if (directoryIndustryTabs) {
   });
 }
 
+directoryGridView?.addEventListener("click", () => setDirectoryViewMode("grid"));
+directoryListView?.addEventListener("click", () => setDirectoryViewMode("list"));
+
 if (directoryFanPrev) directoryFanPrev.addEventListener("click", () => cycleFan(-1));
 if (directoryFanNext) directoryFanNext.addEventListener("click", () => cycleFan(1));
 
@@ -892,17 +716,44 @@ document.addEventListener("keydown", (event) => {
 });
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Enter") return;
-  const card = event.target.closest(".directory-person-card[data-profile-url]");
+  const card = event.target.closest(".member-card[data-profile-url]");
   if (card?.dataset.profileUrl && event.target === card) {
     window.location.href = card.dataset.profileUrl;
   }
 });
+
+// Super admins only (the button is only rendered for them, and Firestore rules
+// reject cardPhoto writes from anyone else).
+function openCardPhotoFramer(profileId) {
+  const profile = allProfiles.find(item => (item.uid || item.id) === profileId);
+  const photoUrl = profile?.profilePhotoUrl || profile?.photoUrl;
+  if (!profile || !photoUrl || !canAdjustPhotos) return;
+
+  openPhotoFramer({
+    imageUrl: photoUrl,
+    title: getCardIdentity(profile),
+    framing: getCardPhotoFraming(profile),
+    onSave: async (framing) => {
+      await updateDoc(doc(db, "users", profileId), { cardPhoto: framing });
+      profile.cardPhoto = framing;
+      filterProfiles();
+      renderFanCarousel();
+    }
+  });
+}
 
 document.addEventListener("click", async (event) => {
   const toggle = event.target.closest("[data-expand-card]");
   if (toggle) {
     event.stopPropagation();
     toggleExpandableCard(toggle);
+    return;
+  }
+
+  const adjustPhoto = event.target.closest("[data-adjust-photo-id]");
+  if (adjustPhoto) {
+    event.stopPropagation();
+    openCardPhotoFramer(adjustPhoto.dataset.adjustPhotoId);
     return;
   }
 
@@ -917,7 +768,9 @@ document.addEventListener("click", async (event) => {
   try {
     if (connect) {
       await sendConnectionRequest(currentUser.uid, connect.dataset.directoryConnectId);
-      connect.textContent = "Requested";
+      const connectLabel = connect.querySelector("span");
+      if (connectLabel) connectLabel.textContent = "Requested";
+      else connect.textContent = "Requested";
       connect.disabled = true;
       return;
     }
@@ -933,14 +786,15 @@ document.addEventListener("click", async (event) => {
 
   if (interactive) return;
 
-  const directoryCard = event.target.closest(".directory-person-card[data-profile-url]");
+  const directoryCard = event.target.closest(".member-card[data-profile-url]");
   if (directoryCard?.dataset.profileUrl) {
     window.location.href = directoryCard.dataset.profileUrl;
   }
 });
 protectPage({
-  onAllowed: (user) => {
+  onAllowed: (user, userData) => {
     currentUser = user;
+    canAdjustPhotos = isSuperAdmin(userData);
     loadDirectory();
   }
 });
