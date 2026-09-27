@@ -54,12 +54,15 @@ async function listAllAuthUsers() {
 }
 
 async function main() {
-  const [authUsers, usersSnap] = await Promise.all([
+  const [authUsers, usersSnap, publicSnap] = await Promise.all([
     listAllAuthUsers(),
-    db.collection("users").get()
+    db.collection("users").get(),
+    db.collection("publicProfiles").get()
   ]);
 
   const docs = new Map(usersSnap.docs.map(d => [d.id, d.data()]));
+  // The directory queries publicProfiles where isPublic == true.
+  const listedPublicly = new Set(publicSnap.docs.filter(d => d.data().isPublic === true).map(d => d.id));
   const rows = { visible: [], noRecord: [], notPublicSetting: [], hiddenByMember: [], hiddenByAdmin: [], membership: [] };
 
   for (const authUser of authUsers) {
@@ -77,7 +80,7 @@ async function main() {
     if (user.adminHidden === true) rows.hiddenByAdmin.push(label);
     else if (user.isPublic === false) rows.hiddenByMember.push(label);
     else if (problem) rows.membership.push(`${label}  -> ${problem}  ${extra}`);
-    else if (user.isPublic !== true) rows.notPublicSetting.push(`${label}  ${extra}`);
+    else if (!listedPublicly.has(authUser.uid)) rows.notPublicSetting.push(`${label}  ${extra}`);
     else rows.visible.push(label);
   }
 
@@ -90,7 +93,7 @@ async function main() {
 
   console.log(`Login accounts: ${authUsers.length}   Member records: ${docs.size}`);
   section("VISIBLE in directory", rows.visible);
-  section("HIDDEN: active member, but 'public' setting never saved", rows.notPublicSetting);
+  section("HIDDEN: active member, but no public directory listing", rows.notPublicSetting);
   section("HIDDEN: login exists but no member record", rows.noRecord);
   section("HIDDEN: membership not active", rows.membership);
   section("HIDDEN: member chose private", rows.hiddenByMember);
