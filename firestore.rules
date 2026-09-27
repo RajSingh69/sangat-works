@@ -298,23 +298,18 @@ service cloud.firestore {
       }
     }
 
+    // Retired skills pools/roles (replaced by the automatic Gurdwara Network,
+    // js/skills-network.js). Kept readable for admins; nothing new can be added.
     match /pools/{poolId} {
-      allow read: if hasActiveMembership();
-      allow create: if hasActiveMembership() && request.resource.data.createdBy == request.auth.uid;
-      allow update, delete: if isAdmin();
+      allow read, delete: if isAdmin();
     }
 
     match /roles/{roleId} {
-      allow read: if hasActiveMembership();
-      allow create: if hasActiveMembership() && request.resource.data.createdBy == request.auth.uid;
-      allow update, delete: if isAdmin();
+      allow read, delete: if isAdmin();
     }
 
     match /roleMembers/{roleMemberId} {
-      allow read: if hasActiveMembership();
-      allow create: if hasActiveMembership() && request.resource.data.userId == request.auth.uid;
-      allow update: if false;
-      allow delete: if hasActiveMembership() && resource.data.userId == request.auth.uid;
+      allow read, delete: if isAdmin();
     }
 
     match /youngProfessionals/{uid} {

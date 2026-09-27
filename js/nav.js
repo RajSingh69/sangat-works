@@ -120,7 +120,7 @@ function renderAppShell(user, userData = {}) {
       ${navItem("directory.html", "D", "Directory")}
       ${isPaid ? navItem("network.html", "N", "My Network & Messages", "id=\"networkMessagesNavLink\"") : ""}
       ${navItem("opportunities.html", "O", "Opportunities")}
-      ${isPaid ? navItem("skills-network.html", "S", "Skills Network") : ""}
+      ${isPaid ? navItem("skills-network.html", "G", "Gurdwara Network") : ""}
       ${isPaid ? navItem("young-professionals.html", "Y", "Young Professionals") : ""}
     </nav>
 

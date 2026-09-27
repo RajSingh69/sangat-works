@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gurdwara Skills Network | Sangat Works</title>
-  <link rel="stylesheet" href="css/style.css?v=4001" />
+  <title>Gurdwara Network | Sangat Works</title>
+  <meta name="description" content="See the skills, businesses and professionals in your local Gurdwara's Sangat." />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
@@ -12,55 +13,66 @@
   <a class="logo" href="index.html">Sangat Works</a>
   <nav>
     <a href="index.html">Home</a>
-    <a href="directory.html">Directory</a>
-    <a href="map.html">Map</a>
-    <a href="profile.html" class="btn-small">My Profile</a>
+    <div id="accountArea"></div>
   </nav>
 </header>
 
-<main class="page-wrap">
-  <section class="form-card wide">
-    <h1>Gurdwara Skills Network</h1>
-    <p>
-      Find and organise trusted skills within your local Gurdwara community.
-    </p>
-
-    <div class="profile-strength-box">
-      <div class="strength-top">
-        <strong>Your Local Gurdwara</strong>
+<main class="home-flagship-page story-page gurdwara-network-page">
+  <section class="story-hero">
+    <div class="story-wrap">
+      <span class="home-section-kicker">Gurdwara Network</span>
+      <h1>Your Gurdwara's Sangat, <span>all in one place.</span></h1>
+      <p>
+        See the businesses, trades and professionals connected to each Gurdwara, grouped by industry.
+        Members appear here automatically from their profile, so there's nothing to set up.
+      </p>
+      <div class="gn-picker">
+        <label for="gnSelect">Choose a Gurdwara</label>
+        <select id="gnSelect" aria-label="Choose a Gurdwara">
+          <option value="">Loading Gurdwaras...</option>
+        </select>
       </div>
-
-      <p id="userGurdwaraName">Loading...</p>
-      <select id="skillsGurdwaraSelect" aria-label="Select your local Gurdwara">
-        <option value="">Select your Gurdwara</option>
-      </select>
+      <p class="gn-my-gurdwara" id="gnMyGurdwara" aria-live="polite"></p>
     </div>
+  </section>
 
-    <div class="profile-strength-box">
-      <div class="strength-top">
-        <strong>Skills Pools</strong>
+  <section class="story-section" id="gnDetail" hidden>
+    <div class="story-wrap">
+      <div class="gn-detail-head">
+        <div>
+          <span class="home-section-kicker">Gurdwara</span>
+          <h2 id="gnName"></h2>
+          <p class="gn-address" id="gnAddress"></p>
+        </div>
+        <button type="button" class="btn-secondary" id="gnSetMine" hidden>Set as my Gurdwara</button>
       </div>
 
-      <div id="skillsPoolsList" class="dashboard-grid"></div>
+      <div class="gn-stats" id="gnStats"></div>
 
-      <div id="emptyPoolsBox" class="profile-strength-box" style="display:none;">
-        <p>No pools exist for this Gurdwara yet.</p>
-        <button id="createStarterPoolsBtn" class="btn-primary" type="button">
-          Create Starter Pools
-        </button>
+      <div class="gn-seva" id="gnSeva" hidden></div>
+
+      <div class="opp-type-tabs" id="gnIndustryTabs" role="tablist" aria-label="Filter by industry"></div>
+      <div class="gn-member-grid" id="gnMembers" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="story-section alt" aria-labelledby="gnAllTitle">
+    <div class="story-wrap">
+      <span class="home-section-kicker">Browse</span>
+      <h2 id="gnAllTitle">All Gurdwaras</h2>
+      <p class="story-lead">Gurdwaras linked by Sangat Works members. Don't see yours? Add it from your profile.</p>
+      <div class="industry-tile-grid gn-tiles" id="gnTiles">
+        <div class="opp-empty">Loading Gurdwaras...</div>
       </div>
     </div>
-
-    <p id="skillsNetworkMessage" class="message"></p>
   </section>
 </main>
 
-<script type="module" src="js/nav.js"></script>
-<script type="module">
-  import { protectPage } from "./js/subscription-guard.js";
-  protectPage();
-</script>
+<footer>
+  <p>Sangat Works — built for community support.</p>
+</footer>
 
+<script type="module" src="js/nav.js"></script>
 <script type="module" src="js/skills-network.js"></script>
 </body>
 </html>

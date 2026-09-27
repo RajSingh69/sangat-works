@@ -39,14 +39,10 @@ const onboardingHTML = `
 
     <div class="onboarding-step">
       <div class="onboarding-icon">🤝</div>
-      <h2>Gurdwara Skills Network</h2>
+      <h2>Gurdwara Network</h2>
       <p>
-        Join skill pools linked to your Gurdwara, such as construction, technology,
-        business, healthcare and other community networks.
-      </p>
-      <p>
-        You can apply for roles inside each pool, discover trusted members and help
-        build useful connections within your local Sangat.
+        Add your local Gurdwara to your profile and you'll automatically appear in its
+        Gurdwara Network, alongside the businesses, trades and professionals in its Sangat.
       </p>
     </div>
 
@@ -78,7 +74,7 @@ const onboardingHTML = `
       <h2>Membership Benefits</h2>
       <p>
         Membership unlocks access to the Directory, Map, Young Professionals,
-        Gurdwara Skills Network, Featured Listings and future community tools.
+        Gurdwara Network, Featured Listings and future community tools.
       </p>
       <p>
         Every member helps strengthen the Sangat by supporting businesses,

@@ -1,0 +1,102 @@
+/* =========================================
+   GURDWARA NETWORK (skills-network.html, js/skills-network.js)
+   Reuses story-page layout, homepage industry tiles, opportunity tabs
+   and the directory member cards.
+========================================= */
+
+/* Buttons and tab rows set their own display, which would override [hidden]. */
+.gurdwara-network-page [hidden] { display: none !important; }
+
+.gn-picker {
+  display: grid;
+  gap: 8px;
+  max-width: 520px;
+  margin-top: 26px;
+}
+
+.gn-picker label {
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.gn-picker select {
+  width: 100%;
+  padding: 13px 14px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--home-ink);
+  background: #fff;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.gn-my-gurdwara {
+  margin: 14px 0 0;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.gn-my-gurdwara strong { color: #fff; }
+.gn-my-gurdwara small { color: rgba(255, 255, 255, 0.7); }
+
+.gn-detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px 24px;
+}
+
+.gn-detail-head h2 { margin: 0; }
+.gn-address { margin: 6px 0 0; color: var(--home-muted); font-weight: 600; }
+.gn-detail-head .btn-secondary { font: inherit; font-weight: 800; cursor: pointer; }
+
+.gn-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 22px 0 18px;
+}
+
+.gn-stats div {
+  display: grid;
+  gap: 2px;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid var(--home-border);
+  border-radius: 14px;
+}
+
+.gn-stats strong { font-size: 1.8rem; line-height: 1.1; color: var(--home-ink); }
+.gn-stats span { font-weight: 700; color: var(--home-muted); }
+
+.gn-seva {
+  margin-bottom: 18px;
+  padding: 16px 18px;
+  background: rgba(183, 134, 15, 0.08);
+  border: 1px solid rgba(183, 134, 15, 0.3);
+  border-radius: 14px;
+}
+
+.gn-seva strong { color: #7a5a06; }
+.gn-seva ul { margin: 8px 0 0; padding-left: 18px; }
+.gn-seva li { margin: 4px 0; }
+.gn-seva a { font-weight: 800; color: var(--home-ink); }
+.gn-seva li span { color: var(--home-muted); }
+
+.gn-member-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 22px;
+  align-items: stretch;
+}
+
+.gn-tiles .industry-tile.is-selected {
+  border-color: var(--home-orange);
+  box-shadow: 0 0 0 2px rgba(255, 122, 24, 0.35), 0 12px 30px rgba(8, 46, 80, 0.07);
+}
+
+@media (max-width: 560px) {
+  .gn-stats { grid-template-columns: 1fr; }
+  .gn-stats div { grid-template-columns: auto 1fr; align-items: baseline; gap: 10px; }
+}
