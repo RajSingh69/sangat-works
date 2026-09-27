@@ -572,21 +572,21 @@
   }
 }
 
-/* Our Community & Mission: narrower, taller pictures so they aren't squashed. */
-.home-community-mission .home-feature-grid,
-.home-community-mission .home-feature-grid.community-row-two {
-  grid-template-columns: repeat(auto-fill, minmax(260px, 340px));
-  justify-content: start;
-}
+/* Our Community & Mission: centred, wide cards with tall pictures. */
+.home-flagship-page .home-community-mission { width: min(calc(100% - 36px), 1240px); }
+
+.home-community-mission .home-feature-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.home-community-mission .home-feature-grid.community-row-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 .home-community-mission .feature-media {
   min-height: 0;
-  aspect-ratio: 4 / 3;
+  height: clamp(220px, 22vw, 300px);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .home-community-mission .home-feature-grid,
   .home-community-mission .home-feature-grid.community-row-two { grid-template-columns: 1fr; }
+  .home-community-mission .feature-media { height: 240px; }
 }
 
 /* =========================================
@@ -617,9 +617,10 @@
 
 .home-hero-logo {
   display: block;
-  width: clamp(220px, 22vw, 330px);
+  width: clamp(230px, 20vw, 320px);
   height: auto;
-  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.45));
+  border-radius: 20px;
+  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.25);
   animation: homeHeroLogoFloat 6s ease-in-out infinite;
 }
 
