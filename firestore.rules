@@ -321,6 +321,37 @@ service cloud.firestore {
     match /freeAccessGrantLogs/{logId} { allow read: if isAdmin(); allow write: if false; }
     match /adminAuditLogs/{logId} { allow read: if isAdmin(); allow write: if false; }
 
+    // Shaheed Parivars thank-you messages. Anyone may submit; nothing is public until
+    // an admin approves it. Email lives in parivarMessageContacts so it's never public.
+    function validParivarMessage(messageId) {
+      let data = request.resource.data;
+      return data.keys().hasOnly(["name", "message", "videoPath", "status", "createdAt"])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 80
+        && data.message is string && data.message.size() > 0 && data.message.size() <= 1000
+        && data.status == "pending"
+        && data.createdAt == request.time
+        && (data.videoPath == "" || data.videoPath.matches("parivarVideos/" + messageId + "/video[.][a-z0-9]{2,5}"));
+    }
+    match /parivarMessages/{messageId} {
+      allow get, list: if resource.data.status == "approved" || isAdmin();
+      allow create: if validParivarMessage(messageId);
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "reviewedAt", "reviewedBy"])
+        && request.resource.data.status in ["pending", "approved", "hidden"];
+      allow delete: if isAdmin();
+    }
+    match /parivarMessageContacts/{messageId} {
+      allow read, delete: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly(["email", "createdAt"])
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 200
+        && request.resource.data.email.matches("[^@ ]+@[^@ ]+[.][^@ ]+")
+        && request.resource.data.createdAt == request.time
+        && existsAfter(/databases/$(database)/documents/parivarMessages/$(messageId))
+        && !exists(/databases/$(database)/documents/parivarMessages/$(messageId));
+      allow update: if false;
+    }
+
     match /{document=**} { allow read, write: if false; }
   }
 }

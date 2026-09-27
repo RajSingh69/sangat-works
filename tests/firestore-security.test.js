@@ -554,6 +554,78 @@ describe("Ranking score and order (js/ranking.js)", () => {
   });
 });
 
+describe("Firestore security rules: Shaheed Parivars messages", () => {
+  let testEnv;
+  const { writeBatch, collection, getDocs, query, where } = require("firebase/firestore");
+
+  before(async () => {
+    testEnv = await initializeTestEnvironment({
+      projectId,
+      firestore: { rules: fs.readFileSync(path.join(__dirname, "..", "firestore.rules"), "utf8") }
+    });
+  });
+
+  after(async () => {
+    await testEnv.cleanup();
+  });
+
+  beforeEach(async () => {
+    await testEnv.clearFirestore();
+    await seed(testEnv, "users/boss", { uid: "boss", role: "admin" });
+    await seed(testEnv, "users/bob", { uid: "bob", role: "member", hasSubscription: true, subscriptionStatus: "active" });
+  });
+
+  function submit(db, id, overrides = {}, email = "visitor@example.com") {
+    const batch = writeBatch(db);
+    batch.set(doc(db, `parivarMessages/${id}`), {
+      name: "Visitor",
+      message: "Thank you for your sacrifice.",
+      videoPath: "",
+      status: "pending",
+      createdAt: serverTimestamp(),
+      ...overrides
+    });
+    batch.set(doc(db, `parivarMessageContacts/${id}`), { email, createdAt: serverTimestamp() });
+    return batch.commit();
+  }
+
+  it("lets anyone (even logged out) submit a pending message with their email kept private", async () => {
+    const visitorDb = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(submit(visitorDb, "m1", { videoPath: "parivarVideos/m1/video.mp4" }));
+
+    await assertFails(getDoc(doc(visitorDb, "parivarMessages/m1")));
+    await assertFails(getDoc(doc(visitorDb, "parivarMessageContacts/m1")));
+    await assertFails(getDoc(doc(testEnv.authenticatedContext("bob").firestore(), "parivarMessageContacts/m1")));
+    await assertSucceeds(getDoc(doc(testEnv.authenticatedContext("boss").firestore(), "parivarMessageContacts/m1")));
+  });
+
+  it("rejects self-approved, oversized, extra-field or wrongly pathed submissions", async () => {
+    const visitorDb = testEnv.unauthenticatedContext().firestore();
+    await assertFails(submit(visitorDb, "a", { status: "approved" }));
+    await assertFails(submit(visitorDb, "b", { message: "x".repeat(1001) }));
+    await assertFails(submit(visitorDb, "c", { featured: true }));
+    await assertFails(submit(visitorDb, "d", { videoPath: "parivarVideos/other/video.mp4" }));
+    await assertFails(submit(visitorDb, "e", {}, "not-an-email"));
+  });
+
+  it("only shows approved messages publicly, and only admins can approve", async () => {
+    const visitorDb = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(submit(visitorDb, "m2"));
+    await assertFails(updateDoc(doc(testEnv.authenticatedContext("bob").firestore(), "parivarMessages/m2"), { status: "approved" }));
+    await assertSucceeds(updateDoc(doc(testEnv.authenticatedContext("boss").firestore(), "parivarMessages/m2"), { status: "approved", reviewedAt: serverTimestamp(), reviewedBy: "boss" }));
+
+    await assertSucceeds(getDoc(doc(visitorDb, "parivarMessages/m2")));
+    await assertSucceeds(getDocs(query(collection(visitorDb, "parivarMessages"), where("status", "==", "approved"))));
+    await assertFails(getDocs(collection(visitorDb, "parivarMessages")));
+  });
+
+  it("doesn't let anyone add or change a contact email after the message exists", async () => {
+    const visitorDb = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(submit(visitorDb, "m3"));
+    await assertFails(setDoc(doc(visitorDb, "parivarMessageContacts/m3"), { email: "other@example.com", createdAt: serverTimestamp() }));
+  });
+});
+
 describe("Firestore security rules: ranking fields are admin/server only", () => {
   let testEnv;
 

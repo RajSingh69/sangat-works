@@ -1,4 +1,10 @@
-﻿import { auth, db } from "./firebase.js";
+﻿import { auth, db, storage } from "./firebase.js";
+
+import {
+  deleteObject,
+  getDownloadURL,
+  ref
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
 import {
   onAuthStateChanged
@@ -12,7 +18,8 @@ import {
   getDocs,
   updateDoc,
   query,
-  orderBy
+  orderBy,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 import {
@@ -712,11 +719,126 @@ function setupReportActions() {
     }
   }, { once: true });
 }
+const PARIVAR_STATUS_LABELS = { pending: "Waiting for review", approved: "Shown on page", hidden: "Hidden" };
+
+function escapeAdminHtml(value = "") {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+async function renderParivarMessage(item) {
+  let email = "";
+  try {
+    const contactSnap = await getDoc(doc(db, "parivarMessageContacts", item.id));
+    email = contactSnap.exists() ? contactSnap.data().email : "";
+  } catch (error) {
+    console.warn("Could not load contact email:", error);
+  }
+
+  let videoHtml = item.videoPath ? "<p><em>Video missing or still uploading.</em></p>" : "";
+  if (item.videoPath) {
+    try {
+      const url = await getDownloadURL(ref(storage, item.videoPath));
+      videoHtml = `<video src="${escapeAdminHtml(url)}" controls preload="metadata" style="width:100%;max-width:420px;border-radius:12px;background:#000;"></video>`;
+    } catch (error) {
+      console.warn("Video unavailable:", error);
+    }
+  }
+
+  const status = item.status || "pending";
+  const sent = item.createdAt?.toDate ? item.createdAt.toDate().toLocaleString("en-GB") : "";
+
+  return `
+    <details class="admin-user-card" ${status === "pending" ? "open" : ""}>
+      <summary>
+        <strong>${escapeAdminHtml(item.name)}</strong>
+        <span>${PARIVAR_STATUS_LABELS[status] || status} &middot; ${escapeAdminHtml(sent)}</span>
+      </summary>
+      <div class="admin-user-expanded">
+        <p><strong>Email (private):</strong> ${email ? `<a href="mailto:${escapeAdminHtml(email)}">${escapeAdminHtml(email)}</a>` : "not found"}</p>
+        <p><strong>Message:</strong> ${escapeAdminHtml(item.message)}</p>
+        ${videoHtml}
+        <div class="card-links">
+          ${status !== "approved" ? `<button type="button" class="btn-small parivar-action" data-id="${item.id}" data-action="approved">Approve &amp; show</button>` : ""}
+          ${status !== "hidden" ? `<button type="button" class="btn-small parivar-action" data-id="${item.id}" data-action="hidden">Hide</button>` : ""}
+          <button type="button" class="btn-small project-withdraw-btn parivar-action" data-id="${item.id}" data-action="delete" data-video="${escapeAdminHtml(item.videoPath || "")}">Delete</button>
+        </div>
+      </div>
+    </details>
+  `;
+}
+
+async function loadParivarMessages() {
+  const container = document.getElementById("adminParivarMessages");
+  if (!container) return;
+
+  try {
+    const snapshot = await getDocs(collection(db, "parivarMessages"));
+    const order = { pending: 0, approved: 1, hidden: 2 };
+    const items = snapshot.docs
+      .map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
+      .sort((a, b) => (order[a.status] ?? 3) - (order[b.status] ?? 3) || (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+    container.innerHTML = items.length
+      ? (await Promise.all(items.map(renderParivarMessage))).join("")
+      : `<div class="empty-state">No messages yet.</div>`;
+  } catch (error) {
+    console.error("Could not load Shaheed Parivars messages:", error);
+    container.innerHTML = `<div class="empty-state">Could not load messages.</div>`;
+  }
+}
+
+function setupParivarActions() {
+  const container = document.getElementById("adminParivarMessages");
+  if (!container) return;
+
+  container.addEventListener("click", async (event) => {
+    const button = event.target.closest(".parivar-action");
+    if (!button) return;
+
+    const { id, action, video } = button.dataset;
+    button.disabled = true;
+
+    try {
+      if (action === "delete") {
+        if (!window.confirm("Delete this message and its video permanently?")) {
+          button.disabled = false;
+          return;
+        }
+        if (video) {
+          await deleteObject(ref(storage, video)).catch(error => console.warn("Video not deleted:", error));
+        }
+        await deleteDoc(doc(db, "parivarMessageContacts", id)).catch(error => console.warn("Contact not deleted:", error));
+        await deleteDoc(doc(db, "parivarMessages", id));
+        adminStatus.textContent = "Message deleted.";
+      } else {
+        await updateDoc(doc(db, "parivarMessages", id), {
+          status: action,
+          reviewedAt: serverTimestamp(),
+          reviewedBy: auth.currentUser?.uid || ""
+        });
+        adminStatus.textContent = action === "approved" ? "Message approved and now shown on the page." : "Message hidden.";
+      }
+      await loadParivarMessages();
+    } catch (error) {
+      console.error("Message action failed:", error);
+      adminStatus.textContent = "That didn't work. Please try again.";
+      button.disabled = false;
+    }
+  });
+}
+
 async function loadAdminDashboard() {
   await loadUsers();
   await loadFaqs();
   await loadReports();
   setupReportActions();
+  await loadParivarMessages();
+  setupParivarActions();
 }
 
 onAuthStateChanged(auth, async (user) => {

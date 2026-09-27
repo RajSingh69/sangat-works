@@ -27,6 +27,28 @@ service firebase.storage {
       allow delete: if isOwner(uid);
     }
 
+    function parivarMessage(messageId) {
+      return firestore.get(/databases/(default)/documents/parivarMessages/$(messageId)).data;
+    }
+
+    function isStorageAdmin() {
+      return signedIn()
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ["admin", "super_admin"];
+    }
+
+    // Short thank-you videos for Shaheed Parivars. Uploadable once, only to the path the
+    // pending message names; viewable publicly only after an admin approves the message.
+    match /parivarVideos/{messageId}/{fileName} {
+      allow read: if parivarMessage(messageId).status == "approved" || isStorageAdmin();
+      allow create: if resource == null
+        && request.resource.size <= 50 * 1024 * 1024
+        && request.resource.contentType.matches('video/.*')
+        && firestore.exists(/databases/(default)/documents/parivarMessages/$(messageId))
+        && parivarMessage(messageId).status == "pending"
+        && parivarMessage(messageId).videoPath == "parivarVideos/" + messageId + "/" + fileName;
+      allow delete: if isStorageAdmin();
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }
