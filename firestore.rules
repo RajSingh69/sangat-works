@@ -151,20 +151,6 @@ service cloud.firestore {
       ];
     }
     function participates(ids) { return signedIn() && request.auth.uid in ids; }
-    function isDirectPair(ids) { return ids is list && ids.size() == 2 && ids[0] != ids[1]; }
-    function noBlockBetween(a, b) {
-      return !exists(/databases/$(database)/documents/blocks/$(a + "__" + b))
-        && !exists(/databases/$(database)/documents/blocks/$(b + "__" + a));
-    }
-    function hasAcceptedConnection(a, b) {
-      return (
-        exists(/databases/$(database)/documents/connections/$(a + "__" + b)) &&
-        get(/databases/$(database)/documents/connections/$(a + "__" + b)).data.status == "accepted"
-      ) || (
-        exists(/databases/$(database)/documents/connections/$(b + "__" + a)) &&
-        get(/databases/$(database)/documents/connections/$(b + "__" + a)).data.status == "accepted"
-      );
-    }
 
     // Full user records hold private data; other members read publicProfiles instead.
     match /publicProfiles/{uid} {
