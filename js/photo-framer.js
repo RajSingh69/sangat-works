@@ -4,7 +4,9 @@
   onSave receives { x, y, zoom } and should persist it; errors are shown in the dialog.
 */
 
-import { DEFAULT_FRAMING, escapeHtml, photoFramingStyle } from "./directory-card.js";
+import { db } from "./firebase.js";
+import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { DEFAULT_FRAMING, escapeHtml, getCardIdentity, getCardPhotoFraming, photoFramingStyle } from "./directory-card.js";
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const round = value => Math.round(value * 10) / 10;
@@ -140,4 +142,23 @@ export function openPhotoFramer({ imageUrl, title = "", framing = DEFAULT_FRAMIN
   document.body.appendChild(backdrop);
   render();
   stage.focus();
+}
+
+// Frames a member's photo and saves it to users/{uid}.cardPhoto (Firestore rules only
+// let super admins write it). The syncPublicProfile trigger publishes it everywhere.
+export function adjustMemberPhoto(profile, onSaved) {
+  const uid = profile?.uid || profile?.id;
+  const photoUrl = profile?.profilePhotoUrl || profile?.photoUrl;
+  if (!uid || !photoUrl) return;
+
+  openPhotoFramer({
+    imageUrl: photoUrl,
+    title: getCardIdentity(profile),
+    framing: getCardPhotoFraming(profile),
+    onSave: async (framing) => {
+      await updateDoc(doc(db, "users", uid), { cardPhoto: framing });
+      profile.cardPhoto = framing;
+      onSaved?.(framing);
+    }
+  });
 }

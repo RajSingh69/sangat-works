@@ -1,4 +1,5 @@
 ﻿import { protectPage } from "./subscription-guard.js";
+import { renderFramedPhoto } from "./directory-card.js";
 import {
   acceptConnection,
   createOrOpenDirectConversation,
@@ -124,7 +125,7 @@ async function renderRows() {
 }
 
 function renderAvatar(profile) {
-  return `<img src="${escapeHtml(profile?.profilePhotoUrl || "assets/default-profile-photo.png")}" class="network-avatar" alt="">`;
+  return renderFramedPhoto(profile, { className: "network-avatar" });
 }
 
 function renderPersonSummary(profile, otherId) {

@@ -1,4 +1,5 @@
 ﻿import { protectPage } from "./subscription-guard.js";
+import { renderFramedPhoto } from "./directory-card.js";
 import {
   acceptMessageRequest,
   blockMember,
@@ -208,7 +209,7 @@ async function renderContextPanel() {
   const connectionState = selectedConversation.status === "requested"
     ? "Message request"
     : "Conversation active";
-  const avatar = `<img src="${escapeHtml(other?.profilePhotoUrl || "assets/default-profile-photo.png")}" class="messages-context-avatar" alt="">`;
+  const avatar = renderFramedPhoto(other, { className: "messages-context-avatar" });
 
   messagesContextPanel.innerHTML = `
     <div class="messages-context-card">

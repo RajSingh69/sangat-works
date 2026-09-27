@@ -2,16 +2,14 @@ import { auth, db } from "./firebase.js";
 import { protectPage } from "./subscription-guard.js";
 import { openConversationWithUser, sendConnectionRequest } from "./member-network.js";
 import { compareByRanking } from "./ranking.js";
-import { getCardIdentity, getCardPhotoFraming, renderCardMedia, renderMemberCard } from "./directory-card.js";
-import { openPhotoFramer } from "./photo-framer.js";
+import { renderCardMedia, renderMemberCard } from "./directory-card.js";
+import { adjustMemberPhoto } from "./photo-framer.js";
 import { isSuperAdmin } from "./roles.js";
 
 import {
   collection,
-  doc,
   getDocs,
   query,
-  updateDoc,
   where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -726,19 +724,12 @@ document.addEventListener("keydown", (event) => {
 // reject cardPhoto writes from anyone else).
 function openCardPhotoFramer(profileId) {
   const profile = allProfiles.find(item => (item.uid || item.id) === profileId);
-  const photoUrl = profile?.profilePhotoUrl || profile?.photoUrl;
-  if (!profile || !photoUrl || !canAdjustPhotos) return;
+  if (!profile || !canAdjustPhotos) return;
 
-  openPhotoFramer({
-    imageUrl: photoUrl,
-    title: getCardIdentity(profile),
-    framing: getCardPhotoFraming(profile),
-    onSave: async (framing) => {
-      await updateDoc(doc(db, "users", profileId), { cardPhoto: framing });
-      profile.cardPhoto = framing;
-      filterProfiles();
-      renderFanCarousel();
-    }
+  adjustMemberPhoto({ ...profile, uid: profileId }, (framing) => {
+    profile.cardPhoto = framing;
+    filterProfiles();
+    renderFanCarousel();
   });
 }
 

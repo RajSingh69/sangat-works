@@ -1,6 +1,7 @@
 import { db } from "./firebase.js";
 import { protectPage } from "./subscription-guard.js";
 import { compareByRanking } from "./ranking.js";
+import { renderFramedPhoto } from "./directory-card.js";
 
 import {
   collection,
@@ -293,17 +294,15 @@ function profileMatchesFilters(profile) {
   return true;
 }
 
-const DEFAULT_PROFILE_PHOTO = "assets/default-profile-photo.png";
-
 function createImageHtml(profile) {
   const businessLogoUrl = profile.businessLogoUrl || profile.logoUrl || "";
-  const profilePhotoUrl = profile.profilePhotoUrl || profile.photoUrl || (businessLogoUrl ? "" : DEFAULT_PROFILE_PHOTO);
+  const hasPhoto = !!(profile.profilePhotoUrl || profile.photoUrl);
 
   return `
     <div class="map-popup-top">
       ${
-        profilePhotoUrl
-          ? `<img src="${escapeHtml(profilePhotoUrl)}" class="map-popup-photo" alt="Profile photo">`
+        hasPhoto || !businessLogoUrl
+          ? renderFramedPhoto(profile, { className: "map-popup-photo", alt: "Profile photo" })
           : ""
       }
       ${

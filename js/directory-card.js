@@ -72,6 +72,17 @@ export function photoFramingStyle(framing) {
   return `object-position:${x}% ${y}%;transform:scale(${zoom});transform-origin:${x}% ${y}%;`;
 }
 
+export const DEFAULT_PROFILE_PHOTO = "assets/default-profile-photo.png";
+
+// A member's photo in any avatar shape (circle, rounded square...), using the same
+// framing as their directory card. className carries the size/shape; the wrapper
+// clips the zoomed image so the avatar never grows.
+export function renderFramedPhoto(profile, { className = "", alt = "" } = {}) {
+  const photoUrl = profile?.profilePhotoUrl || profile?.photoUrl || "";
+  const style = photoUrl ? photoFramingStyle(getCardPhotoFraming(profile)) : "object-position:50% 50%;";
+  return `<span class="${escapeHtml(className)} framed-photo"><img src="${escapeHtml(photoUrl || DEFAULT_PROFILE_PHOTO)}" alt="${escapeHtml(alt)}" loading="lazy" style="${style}"></span>`;
+}
+
 export function getInitials(name = "") {
   const words = String(name).trim().split(/\s+/).filter(Boolean);
   if (!words.length) return "SW";

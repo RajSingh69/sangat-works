@@ -21,7 +21,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
 import {
-  isAdminUser
+  isAdminUser,
+  isSuperAdmin
 } from "./roles.js";
 
 import {
@@ -36,6 +37,8 @@ import {
 } from "./member-network.js";
 
 import { getRankingBreakdown } from "./ranking.js";
+import { renderFramedPhoto } from "./directory-card.js";
+import { adjustMemberPhoto } from "./photo-framer.js";
 
 const FEATURED_LISTING_PRICE_ID = "price_1TlZxODbE6tXsxNUzI1ng4Iy";
 const CHECKOUT_FUNCTION_URL = "https://europe-west1-sangat-works.cloudfunctions.net/createCheckoutSession";
@@ -58,6 +61,7 @@ let existingProfile = {};
 let viewedProfileId = "";
 let viewedPublicProfile = null;
 let currentConnection = null;
+let canAdjustPhotos = false;
 
 function escapeHtml(value = "") {
   return String(value)
@@ -685,7 +689,10 @@ function renderProfile(profile) {
     <article class="public-profile-card professional-profile theme-${escapeHtml(profile.themeColour || "gold")}">
       <header class="professional-profile-header">
         <div class="profile-visual-row">
-          <img src="${escapeHtml(profile.profilePhotoUrl || "assets/default-profile-photo.png")}" class="profile-image" alt="Profile photo">
+          <div class="profile-photo-block">
+            ${renderFramedPhoto(profile, { className: "profile-image", alt: "Profile photo" })}
+            ${canAdjustPhotos && profile.profilePhotoUrl ? `<button type="button" class="photo-adjust-inline" data-adjust-viewed-photo>Adjust photo</button>` : ""}
+          </div>
           ${profile.businessLogoUrl ? `<img src="${escapeHtml(profile.businessLogoUrl)}" class="logo-image" alt="Business logo">` : ""}
         </div>
         <div class="profile-identity-block">
@@ -1074,10 +1081,12 @@ if (publicProfile) {
       const profile = userSnap.data();
       viewedPublicProfile = { ...profile, uid: profileId };
 
-      try {
-        await trackProfileMetric(profileId, "profileViews");
-      } catch (error) {
-        console.error("Failed to track profile view:", error);
+      if (currentUser && currentUser.uid !== profileId) {
+        try {
+          await trackProfileMetric(profileId, "profileViews");
+        } catch (error) {
+          console.error("Failed to track profile view:", error);
+        }
       }
 
       if (profile.isPublic === false) {
@@ -1114,7 +1123,22 @@ if (publicProfile) {
     }
   }
 
-  loadPublicProfile();
+  // Wait for sign-in so Connect/Message show for members and super admins get Adjust photo.
+  onAuthStateChanged(auth, async (user) => {
+    currentUser = user;
+    canAdjustPhotos = false;
+
+    if (user) {
+      try {
+        const viewerSnap = await getDoc(doc(db, "users", user.uid));
+        canAdjustPhotos = viewerSnap.exists() && isSuperAdmin(viewerSnap.data());
+      } catch (error) {
+        console.error("Could not load viewer role:", error);
+      }
+    }
+
+    loadPublicProfile();
+  });
 }
 
 document.addEventListener("click", async (event) => {
@@ -1130,6 +1154,13 @@ document.addEventListener("click", async (event) => {
     const message = event.target.closest("[data-message-user-id]");
     const block = event.target.closest("[data-block-user-id]");
     const report = event.target.closest("[data-report-user-id]");
+    const adjustPhoto = event.target.closest("[data-adjust-viewed-photo]");
+
+    if (adjustPhoto && canAdjustPhotos && viewedPublicProfile) {
+      adjustMemberPhoto(viewedPublicProfile, () => {
+        publicProfile.innerHTML = renderProfile(viewedPublicProfile);
+      });
+    }
 
     if (connect) {
       await sendConnectionRequest(currentUser.uid, connect.dataset.connectUserId);
