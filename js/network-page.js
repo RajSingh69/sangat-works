@@ -124,10 +124,7 @@ async function renderRows() {
 }
 
 function renderAvatar(profile) {
-  const name = getDisplayName(profile);
-  return profile?.profilePhotoUrl
-    ? `<img src="${escapeHtml(profile.profilePhotoUrl)}" class="network-avatar" alt="">`
-    : `<span class="network-avatar placeholder-avatar">${escapeHtml(name.slice(0, 1))}</span>`;
+  return `<img src="${escapeHtml(profile?.profilePhotoUrl || "assets/default-profile-photo.png")}" class="network-avatar" alt="">`;
 }
 
 function renderPersonSummary(profile, otherId) {

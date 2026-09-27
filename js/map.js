@@ -292,13 +292,11 @@ function profileMatchesFilters(profile) {
   return true;
 }
 
-function createImageHtml(profile) {
-  const profilePhotoUrl = profile.profilePhotoUrl || profile.photoUrl || "";
-  const businessLogoUrl = profile.businessLogoUrl || profile.logoUrl || "";
+const DEFAULT_PROFILE_PHOTO = "assets/default-profile-photo.png";
 
-  if (!profilePhotoUrl && !businessLogoUrl) {
-    return "";
-  }
+function createImageHtml(profile) {
+  const businessLogoUrl = profile.businessLogoUrl || profile.logoUrl || "";
+  const profilePhotoUrl = profile.profilePhotoUrl || profile.photoUrl || (businessLogoUrl ? "" : DEFAULT_PROFILE_PHOTO);
 
   return `
     <div class="map-popup-top">

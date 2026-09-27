@@ -208,9 +208,7 @@ async function renderContextPanel() {
   const connectionState = selectedConversation.status === "requested"
     ? "Message request"
     : "Conversation active";
-  const avatar = other?.profilePhotoUrl
-    ? `<img src="${escapeHtml(other.profilePhotoUrl)}" class="messages-context-avatar" alt="">`
-    : `<span class="messages-context-avatar">${escapeHtml(name.slice(0, 1))}</span>`;
+  const avatar = `<img src="${escapeHtml(other?.profilePhotoUrl || "assets/default-profile-photo.png")}" class="messages-context-avatar" alt="">`;
 
   messagesContextPanel.innerHTML = `
     <div class="messages-context-card">

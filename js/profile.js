@@ -648,7 +648,7 @@ function renderProfile(profile) {
     <article class="public-profile-card professional-profile theme-${escapeHtml(profile.themeColour || "gold")}">
       <header class="professional-profile-header">
         <div class="profile-visual-row">
-          ${profile.profilePhotoUrl ? `<img src="${escapeHtml(profile.profilePhotoUrl)}" class="profile-image" alt="Profile photo">` : `<span class="profile-image placeholder-avatar">${escapeHtml(displayName.slice(0, 1))}</span>`}
+          <img src="${escapeHtml(profile.profilePhotoUrl || "assets/default-profile-photo.png")}" class="profile-image" alt="Profile photo">
           ${profile.businessLogoUrl ? `<img src="${escapeHtml(profile.businessLogoUrl)}" class="logo-image" alt="Business logo">` : ""}
         </div>
         <div class="profile-identity-block">
@@ -1108,8 +1108,10 @@ document.addEventListener("click", async (event) => {
     }
 
     if (remove) {
-      await declineConnection(currentUser.uid, currentConnection?.id || "");
+      await removeConnection(currentUser.uid, viewedProfileId);
       setActionMessage("Connection removed.");
+      currentConnection = await getConnection(currentUser.uid, viewedProfileId);
+      publicProfile.innerHTML = renderProfile({ ...viewedPublicProfile, uid: viewedProfileId });
     }
 
     if (message) {

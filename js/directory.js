@@ -269,8 +269,10 @@ function getPersonName(profile) {
   return profile.businessName && profile.fullName ? profile.fullName : "";
 }
 
+const DEFAULT_PROFILE_PHOTO = "assets/default-profile-photo.png";
+
 function getProfileImageUrl(profile) {
-  return profile.profilePhotoUrl || profile.businessLogoUrl || profile.logoUrl || "";
+  return profile.profilePhotoUrl || profile.businessLogoUrl || profile.logoUrl || DEFAULT_PROFILE_PHOTO;
 }
 function getProfileImagePosition(profile) {
   return profile.profileImagePosition || profile.profilePhotoPosition || profile.imagePosition || profile.photoPosition || "center 25%";
@@ -504,7 +506,7 @@ function renderDirectoryProfile(profile) {
   const linkedInUrl = safeExternalUrl(profile.linkedin);
   const reviewsUrl = safeExternalUrl(profile.googleReviews);
   const detailsId = `directory-profile-details-${profileId}`;
-  const imageUrl = profile.profilePhotoUrl || profile.businessLogoUrl || profile.logoUrl || "";
+  const imageUrl = getProfileImageUrl(profile);
   const fullTagsHtml = tags.length
     ? `<div class="tags expandable-tags">${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>`
     : "";
