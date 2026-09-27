@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Opportunities | Sangat Works</title>
+  <meta name="description" content="Jobs, freelance work, collaborations, mentoring and seva from Sangat Works members across every industry." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">Sangat Works</a>
+  <nav>
+    <a href="index.html">Home</a>
+    <div id="accountArea"></div>
+  </nav>
+</header>
+
+<main class="home-flagship-page story-page opportunities-page">
+  <section class="story-hero">
+    <div class="story-wrap">
+      <span class="home-section-kicker">Opportunities</span>
+      <h1>Work, collaborate and grow <span>with the Sangat.</span></h1>
+      <p>
+        Jobs, freelance work, collaborations, mentoring and seva, posted by Sangat Works
+        members across every industry. Found something? Message the person who posted it.
+      </p>
+      <div class="story-actions">
+        <button type="button" class="btn-primary" data-open-opportunity-form>Post an Opportunity</button>
+        <a href="projects.html" class="btn-secondary">Post a Home or Trade Project</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="story-section opp-board-section" aria-labelledby="oppBoardTitle">
+    <div class="story-wrap">
+      <div class="opp-board-head">
+        <div>
+          <span class="home-section-kicker">Browse</span>
+          <h2 id="oppBoardTitle">Open opportunities</h2>
+        </div>
+        <p class="opp-count" id="oppCount" aria-live="polite">Loading...</p>
+      </div>
+
+      <div class="opp-filters">
+        <input type="search" id="oppSearch" placeholder="Search titles, descriptions, locations or people..." aria-label="Search opportunities" />
+        <select id="oppIndustry" aria-label="Industry">
+          <option value="">All industries</option>
+        </select>
+        <select id="oppSort" aria-label="Sort">
+          <option value="ranked">Top ranked</option>
+          <option value="newest">Newest</option>
+        </select>
+        <label class="opp-check"><input type="checkbox" id="oppRemote" /> Remote only</label>
+        <label class="opp-check"><input type="checkbox" id="oppMine" /> My posts</label>
+      </div>
+
+      <div class="opp-type-tabs" id="oppTypeTabs" role="tablist" aria-label="Opportunity type"></div>
+
+      <div class="opp-grid" id="oppResults" aria-live="polite">
+        <div class="opp-empty">Loading opportunities...</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="story-section alt">
+    <div class="story-wrap opp-trades-callout">
+      <div>
+        <span class="home-section-kicker">Home &amp; Trade Projects</span>
+        <h2>Renovating or building?</h2>
+        <p class="story-lead">
+          Post your project for free, get applications from Sangat tradespeople and build your team.
+          Unlock a shared project workspace for tasks, notes and progress.
+        </p>
+      </div>
+      <a href="projects.html" class="btn-primary">Go to Home &amp; Trade Projects</a>
+    </div>
+  </section>
+</main>
+
+<div class="opp-modal-backdrop" id="oppFormModal" hidden>
+  <div class="opp-modal" role="dialog" aria-modal="true" aria-labelledby="oppFormTitle">
+    <button type="button" class="opp-modal-close" data-close-opportunity-form aria-label="Close">&times;</button>
+    <h2 id="oppFormTitle">Post an opportunity</h2>
+    <p class="opp-modal-lead">Members across Sangat Works will see this and can message you about it.</p>
+
+    <form id="oppForm" class="opp-form" novalidate>
+      <label>What kind of opportunity?
+        <select id="oppFormType" required></select>
+      </label>
+      <label>Title
+        <input type="text" id="oppFormTitleInput" maxlength="120" placeholder="e.g. Part-time bookkeeper, Logo designer needed, Looking for a co-founder" required />
+      </label>
+      <label>Industry
+        <select id="oppFormIndustry" required></select>
+      </label>
+      <label>Description
+        <textarea id="oppFormDescription" rows="6" maxlength="3000" placeholder="What's involved, who you're looking for, how long for..." required></textarea>
+      </label>
+      <div class="opp-form-row">
+        <label>Location
+          <input type="text" id="oppFormLocation" maxlength="80" placeholder="e.g. Leicester" />
+        </label>
+        <label class="opp-check opp-form-remote"><input type="checkbox" id="oppFormRemote" /> Can be done remotely</label>
+      </div>
+      <div class="opp-form-row">
+        <label><span>Pay or rate <small>(optional)</small></span>
+          <input type="text" id="oppFormPay" maxlength="80" placeholder="e.g. £25k-£30k, £200/day, Unpaid" />
+        </label>
+        <label><span>Closing date <small>(optional)</small></span>
+          <input type="date" id="oppFormClosing" />
+        </label>
+      </div>
+      <label><span>Link to apply <small>(optional, otherwise people message you)</small></span>
+        <input type="url" id="oppFormLink" maxlength="300" placeholder="https://..." />
+      </label>
+      <p class="opp-form-message" id="oppFormMessage" role="status"></p>
+      <div class="opp-form-actions">
+        <button type="button" class="btn-secondary" data-close-opportunity-form>Cancel</button>
+        <button type="submit" class="btn-primary" id="oppFormSubmit">Post opportunity</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer>
+  <p>Sangat Works — built for community support.</p>
+</footer>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/opportunities.js"></script>
+</body>
+</html>

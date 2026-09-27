@@ -582,7 +582,7 @@ function updateProjectsRoleUI() {
   if (projectRoleSummaryText) {
     projectRoleSummaryText.textContent = currentProjectUserType === "homeowner"
       ? "Create projects for free, review applicants and unlock workspaces after payment."
-      : "Browse open jobs, buy Job Access if needed, apply to projects and manage accepted teams.";
+      : "Browse open projects, apply for the trade roles you cover and manage the teams you join.";
   }
 
   updateProjectsAccountSummary();
@@ -680,7 +680,7 @@ async function loadOpenProjects() {
     }
 
     if (!canAccessProjectJobs() && currentProjectUserType !== "homeowner") {
-      openProjectsList.innerHTML = `<div class="empty-state">Buy job access or use active membership to view and apply to open project jobs.</div>`;
+      openProjectsList.innerHTML = `<div class="empty-state">Open projects are available to active Sangat Works members.</div>`;
       return;
     }
 

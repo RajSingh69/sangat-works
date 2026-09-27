@@ -655,6 +655,41 @@ describe("Firestore security rules: ranking fields are admin/server only", () =>
     await assertSucceeds(updateDoc(doc(testEnv.authenticatedContext("owner").firestore(), "users/alice"), { pinnedToTop: true }));
   });
 
+  it("lets members post opportunities, and only the poster or an admin change them", async () => {
+    await testEnv.clearFirestore();
+    const member = uid => ({ uid, role: "member", hasSubscription: true, subscriptionStatus: "active" });
+    await seed(testEnv, "users/alice", member("alice"));
+    await seed(testEnv, "users/bob", member("bob"));
+    await seed(testEnv, "users/lapsed", { uid: "lapsed", role: "member", hasSubscription: false });
+    await seed(testEnv, "users/mod", { uid: "mod", role: "admin" });
+    const post = (ownerId, extra = {}) => ({
+      ownerId, type: "job", title: "Junior developer", industry: "Technology",
+      description: "Two days a week helping on our booking app.", location: "Birmingham", remote: false,
+      pay: "", closingDate: "", applyLink: "", status: "open",
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp(), ...extra
+    });
+    const aliceDb = testEnv.authenticatedContext("alice").firestore();
+    const bobDb = testEnv.authenticatedContext("bob").firestore();
+
+    await assertSucceeds(setDoc(doc(aliceDb, "opportunities/o1"), post("alice")));
+    await assertFails(setDoc(doc(aliceDb, "opportunities/o2"), post("bob")));
+    await assertFails(setDoc(doc(aliceDb, "opportunities/o3"), post("alice", { type: "spam" })));
+    await assertFails(setDoc(doc(aliceDb, "opportunities/o4"), post("alice", { applyLink: "javascript:alert(1)" })));
+    await assertFails(setDoc(doc(aliceDb, "opportunities/o5"), post("alice", { status: "closed" })));
+    await assertFails(setDoc(doc(testEnv.authenticatedContext("lapsed").firestore(), "opportunities/o6"), post("lapsed")));
+    await assertFails(getDoc(doc(testEnv.unauthenticatedContext().firestore(), "opportunities/o1")));
+    await assertSucceeds(getDoc(doc(bobDb, "opportunities/o1")));
+
+    await assertFails(updateDoc(doc(bobDb, "opportunities/o1"), { status: "closed", updatedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(doc(aliceDb, "opportunities/o1"), { title: "Junior web developer", updatedAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(aliceDb, "opportunities/o1"), { ownerId: "bob", updatedAt: serverTimestamp() }));
+    const modDb = testEnv.authenticatedContext("mod").firestore();
+    await assertFails(updateDoc(doc(modDb, "opportunities/o1"), { title: "Changed by admin", updatedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(doc(modDb, "opportunities/o1"), { status: "closed", updatedAt: serverTimestamp() }));
+    await assertFails(deleteDoc(doc(bobDb, "opportunities/o1")));
+    await assertSucceeds(deleteDoc(doc(aliceDb, "opportunities/o1")));
+  });
+
   it("lets only the super admin frame the site's own pictures", async () => {
     await testEnv.clearFirestore();
     await seed(testEnv, "users/alice", { uid: "alice", role: "admin" });

@@ -191,6 +191,47 @@ service cloud.firestore {
       }
     }
 
+    // Opportunities board (js/opportunities.js): jobs, freelance work, collaborations,
+    // mentoring and volunteering from any industry. Members read and post; the poster
+    // edits, closes or deletes their own; admins can close or delete any post.
+    function validOpportunity(data) {
+      return data.keys().hasOnly(["ownerId", "type", "title", "industry", "description", "location", "remote",
+          "pay", "closingDate", "applyLink", "status", "createdAt", "updatedAt"])
+        && data.keys().hasAll(["ownerId", "type", "title", "industry", "description", "location", "remote",
+          "pay", "closingDate", "applyLink", "status", "createdAt", "updatedAt"])
+        && data.type in ["job", "freelance", "collaboration", "mentoring", "volunteering"]
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 120
+        && data.industry is string && data.industry.size() <= 60
+        && data.description is string && data.description.size() >= 10 && data.description.size() <= 3000
+        && data.location is string && data.location.size() <= 80
+        && data.remote is bool
+        && data.pay is string && data.pay.size() <= 80
+        && data.closingDate is string && (data.closingDate == "" || data.closingDate.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}"))
+        && data.applyLink is string && data.applyLink.size() <= 300 && (data.applyLink == "" || data.applyLink.matches("https?://.+"))
+        && data.status in ["open", "closed"];
+    }
+
+    match /opportunities/{opportunityId} {
+      allow read: if hasActiveMembership();
+      allow create: if hasActiveMembership()
+        && validOpportunity(request.resource.data)
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.status == "open"
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if hasActiveMembership() && (
+        (resource.data.ownerId == request.auth.uid
+          && validOpportunity(request.resource.data)
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time)
+        || (isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "updatedAt"])
+          && request.resource.data.status in ["open", "closed"])
+      );
+      allow delete: if signedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+
     match /projects/{projectId} {
       allow read: if hasActiveMembership();
       allow create: if hasActiveMembership()
