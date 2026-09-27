@@ -159,6 +159,12 @@ function getMembershipStatusLabel(user) {
   return "Not Paid";
 }
 
+function getVisibilityLabel(user) {
+  if (user?.adminHidden === true) return "Hidden by admin";
+  if (user?.isPublic === false) return "Hidden by member";
+  return "Visible";
+}
+
 function renderUserRow(user) {
   const name = user.businessName || user.fullName || user.email || "Unnamed user";
   const role = getUserRole(user);
@@ -202,11 +208,19 @@ function renderUserRow(user) {
       </button>
     `;
 
+  const visibilityControls = currentUserIsSuperAdmin
+    ? `
+      <div class="admin-badge-controls">
+        ${badgeCheckbox(user, "adminHidden", "Hide profile from site (directory, map and profile page)")}
+      </div>
+    `
+    : "";
+
   return `
     <details class="admin-user-card">
       <summary>
         <strong>${name}</strong>
-        <span>${daysAgo(user.createdAt)}</span>
+        <span>${user.adminHidden === true ? "Hidden · " : ""}${daysAgo(user.createdAt)}</span>
       </summary>
 
       <div class="admin-user-expanded">
@@ -223,6 +237,7 @@ function renderUserRow(user) {
         ${isFreeCharityYear(user) ? `<p><strong>Free access until:</strong> ${getDateFromTimestamp(user.freeAccessExpiresAt)?.toLocaleDateString("en-GB") || "not set"}</p>` : ""}
         ${user.charityName ? `<p><strong>Charity:</strong> ${user.charityName}</p>` : ""}
         <p><strong>Member Number:</strong> ${user.memberNumber || "not assigned"}</p>
+        <p><strong>Visibility:</strong> ${getVisibilityLabel(user)}</p>
 
         <div class="admin-member-controls">
           ${roleControls}
@@ -236,6 +251,8 @@ function renderUserRow(user) {
           ${badgeCheckbox(user, "gurdwaraVerified", "Gurdwara Verified")}
           ${badgeCheckbox(user, "featuredListing", "Featured Listing")}
         </div>
+
+        ${visibilityControls}
 
         <div class="card-links">
           <a href="view.html?id=${user.uid}" target="_blank">View Profile</a>
@@ -414,11 +431,20 @@ function setupUserAdminActions() {
       const field = e.target.dataset.field;
       const value = e.target.checked;
 
-      await updateDoc(doc(db, "users", uid), {
-        [field]: value
-      });
+      try {
+        await updateDoc(doc(db, "users", uid), {
+          [field]: value
+        });
+      } catch (error) {
+        console.error(`Failed to update ${field}:`, error);
+        e.target.checked = !value;
+        adminStatus.textContent = `Could not update ${field}. Only Super Admins can change this.`;
+        return;
+      }
 
-      adminStatus.textContent = `Updated ${field}.`;
+      adminStatus.textContent = field === "adminHidden"
+        ? `Profile ${value ? "hidden from" : "shown on"} the site. Refresh to see updated status.`
+        : `Updated ${field}.`;
     });
   });
 }

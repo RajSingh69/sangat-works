@@ -29,7 +29,7 @@ const PROFILE_FIELDS = [
   "logoUrl", "photoUrl", "imagePosition", "photoPosition", "profileImagePosition",
   "profilePhotoPosition", "businessVerified", "isBusinessVerified", "emailVerified",
   "isEmailVerified", "gurdwaraVerified", "isGurdwaraVerified", "communityVerified",
-  "isCommunityVerified", "isVerified", "averageRating", "ratingAverage",
+  "isCommunityVerified", "isVerified", "emailVerifiedBadge", "averageRating", "ratingAverage",
   "reviewAverage", "reviewCount", "reviewsCount", "rating", "totalReviews",
   "recommendationCount", "profileViews", "websiteClicks", "linkedinClicks",
   "googleReviewClicks"
@@ -52,6 +52,12 @@ function buildPublicProfile(uid, userData) {
 
   copyFields(profile, userData, MEMBERSHIP_FIELDS);
   profile.uid = uid;
+
+  // Hidden by an admin: publish as private without touching the member's own isPublic choice.
+  if (userData.adminHidden === true) {
+    profile.isPublic = false;
+    return profile;
+  }
 
   // Matches profile.js, which treats a missing isPublic as public.
   if (userData.isPublic === false) {

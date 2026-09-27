@@ -362,6 +362,16 @@ describe("Firestore security rules: private user records vs public profiles", ()
     await assertFails(getDoc(doc(testEnv.unauthenticatedContext().firestore(), "users/alice")));
   });
 
+  it("only lets super admins hide profiles, and members can't un-hide themselves", async () => {
+    await seed(testEnv, "users/owner", { uid: "owner", role: "super_admin" });
+    await seed(testEnv, "users/carol", { uid: "carol", role: "member", hasSubscription: true, subscriptionStatus: "active", adminHidden: true });
+
+    await assertSucceeds(updateDoc(doc(testEnv.authenticatedContext("owner").firestore(), "users/alice"), { adminHidden: true }));
+    await assertFails(updateDoc(doc(testEnv.authenticatedContext("boss").firestore(), "users/bob"), { adminHidden: true }));
+    await assertFails(updateDoc(doc(testEnv.authenticatedContext("bob").firestore(), "users/alice"), { adminHidden: false }));
+    await assertFails(updateDoc(doc(testEnv.authenticatedContext("carol").firestore(), "users/carol"), { adminHidden: false }));
+  });
+
   it("only lets admins list full user records", async () => {
     const { collection, getDocs } = require("firebase/firestore");
     await assertSucceeds(getDocs(collection(testEnv.authenticatedContext("boss").firestore(), "users")));
@@ -421,6 +431,18 @@ describe("buildPublicProfile", () => {
     ["stripeCustomerId", "stripeSubscriptionId", "adminNotes", "canImpersonateUsers", "banned"].forEach(field => {
       assert.strictEqual(profile[field], undefined, `${field} leaked`);
     });
+  });
+
+  it("publishes admin-hidden profiles as private, and restores them when un-hidden", () => {
+    const hidden = buildPublicProfile("alice", { ...fullRecord, adminHidden: true });
+    assert.strictEqual(hidden.isPublic, false);
+    assert.strictEqual(hidden.fullName, undefined);
+    assert.strictEqual(hidden.email, undefined);
+    assert.strictEqual(hidden.subscriptionStatus, "active");
+
+    const shown = buildPublicProfile("alice", { ...fullRecord, adminHidden: false });
+    assert.strictEqual(shown.isPublic, true);
+    assert.strictEqual(shown.fullName, "Alice");
   });
 
   it("only exposes membership status for private profiles", () => {

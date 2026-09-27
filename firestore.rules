@@ -73,7 +73,7 @@ service cloud.firestore {
         "featuredStripeCustomerId", "featuredUpdatedAt", "tradesJobAccess", "tradesJobAccessStatus",
         "tradesJobAccessPaidAt", "tradesJobAccessExpiresAt", "tradesJobAccessAmount", "tradesJobAccessStripePriceId",
         "tradesJobAccessStripeSessionId", "tradesJobAccessStripeCustomerId", "tradesJobAccessUpdatedAt",
-        "messagingRestricted", "messagingRestrictedAt", "messagingRestrictedBy", "banned", "suspended"
+        "messagingRestricted", "messagingRestrictedAt", "messagingRestrictedBy", "banned", "suspended", "adminHidden"
       ];
     }
     function validSelfProfileUpdate() {
