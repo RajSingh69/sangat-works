@@ -6,13 +6,26 @@ const DEFAULT_MARKERS = [
   { label: "Glasgow", lat: 55.8642, lng: -4.2518, weight: 2 },
   { label: "Bristol", lat: 51.4545, lng: -2.5879, weight: 1 }
 ];
+const CONTINENT_OUTLINES = [
+  [[72,-168],[66,-138],[58,-124],[49,-124],[33,-117],[17,-96],[8,-80],[-6,-78],[-18,-64],[-38,-58],[-54,-70],[-35,-76],[-8,-82],[8,-91],[20,-104],[38,-112],[52,-132],[62,-154]],
+  [[72,-52],[60,-42],[46,-18],[37,-8],[51,10],[64,24],[70,42],[56,58],[44,42],[36,24],[28,12],[18,4],[8,-8],[-18,-16],[-34,-8],[-34,20],[-16,34],[4,38],[22,32],[32,18],[42,6],[54,-4],[64,-20]],
+  [[34,34],[24,45],[8,38],[-6,22],[-24,16],[-34,22],[-35,34],[-22,42],[-8,46],[10,44],[22,38]],
+  [[56,44],[50,72],[38,90],[24,104],[8,112],[-4,122],[-10,104],[0,82],[18,70],[34,58],[44,48]],
+  [[28,68],[20,78],[8,78],[6,68],[16,62]],
+  [[-12,112],[-22,128],[-35,144],[-31,154],[-18,146],[-10,130]],
+  [[-12,46],[-22,66],[-32,92],[-25,112],[-12,104],[-4,82],[8,64],[4,48]],
+  [[-10,132],[-22,146],[-38,150],[-44,136],[-28,124]],
+  [[-62,-66],[-68,-44],[-70,20],[-66,92],[-62,148],[-70,170],[-76,96],[-78,12],[-74,-58]]
+];
 
 function normaliseOptions(options = {}) {
   return {
     dotColor: options.dotColor || "rgba(192, 213, 232, 0.58)",
     arcColor: options.arcColor || "rgba(235, 111, 24, 0.42)",
     markerColor: options.markerColor || "#e9974d",
-    glowColor: options.glowColor || "rgba(235, 111, 24, 0.11)",
+    glowColor: options.glowColor || "rgba(244, 119, 33, 0.13)",
+    landColor: options.landColor || "rgba(236, 237, 235, 0.20)",
+    landStrokeColor: options.landStrokeColor || "rgba(252, 251, 248, 0.22)",
     typeStyles: {
       decorative: { color: "rgba(169, 197, 222, 0.28)", particle: "rgba(225, 237, 247, 0.75)", width: 0.7, speed: 0.18 },
       connection: { color: "rgba(74, 180, 216, 0.58)", particle: "rgba(199, 240, 255, 0.95)", width: 1.15, speed: 0.34 },
@@ -116,6 +129,34 @@ export function initSangatNetworkGlobe(canvasOrContainer, options = {}) {
     buildDots();
   }
 
+  function drawLandMasses(centerX, centerY) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.clip();
+    CONTINENT_OUTLINES.forEach((outline) => {
+      const projectedOutline = outline.map(([lat, lng]) => {
+        const point = latLngToVector(lat, lng, radius);
+        const rotated = rotatePoint(point, rotationX, rotationY);
+        return { rotated, projected: project(rotated, centerX, centerY, radius) };
+      }).filter(({ projected }) => projected.visible);
+
+      if (projectedOutline.length < 3) return;
+      ctx.beginPath();
+      projectedOutline.forEach(({ projected }, index) => {
+        if (index === 0) ctx.moveTo(projected.x, projected.y);
+        else ctx.lineTo(projected.x, projected.y);
+      });
+      ctx.closePath();
+      ctx.fillStyle = settings.landColor;
+      ctx.fill();
+      ctx.strokeStyle = settings.landStrokeColor;
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
   function drawArc(projectedA, projectedB, progress, type = "decorative") {
     const style = settings.typeStyles[type] || settings.typeStyles.decorative;
     const midX = (projectedA.x + projectedB.x) / 2;
@@ -162,6 +203,8 @@ export function initSangatNetworkGlobe(canvasOrContainer, options = {}) {
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
     ctx.stroke();
+
+    drawLandMasses(centerX, centerY);
 
     dots.forEach((dot) => {
       const rotated = rotatePoint(dot, rotationX, rotationY);

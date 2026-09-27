@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Edit Profile | Sangat Works</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" />
   <link rel="stylesheet" href="css/style.css?v=4001" />
 </head>
 <body>
@@ -66,7 +67,7 @@
       <p><strong>Days Remaining:</strong> <span id="featuredDays">0</span></p>
 
       <button type="button" id="becomeFeaturedBtn" class="btn-primary">
-        Become Featured (£5 / 30 Days)
+        Become Featured (Â£5 / 30 Days)
       </button>
 
       <p id="featuredMessage" class="message"></p>
@@ -300,6 +301,70 @@
   </section>
 </main>
 
+
+<div id="profilePhotoCropModal" class="photo-crop-modal hidden" role="dialog" aria-modal="true" aria-labelledby="photoCropTitle">
+  <div class="photo-crop-backdrop" data-close-photo-crop></div>
+  <section class="photo-crop-dialog" tabindex="-1">
+    <header class="photo-crop-header">
+      <h2 id="photoCropTitle">Edit profile photo</h2>
+      <button type="button" class="photo-crop-close" aria-label="Close photo editor" data-close-photo-crop>&times;</button>
+    </header>
+
+    <div class="photo-crop-body">
+      <div class="photo-crop-main">
+        <div class="photo-crop-stage">
+          <img id="photoCropImage" alt="Selected profile photo for cropping" />
+        </div>
+
+        <label class="photo-zoom-control" for="photoCropZoom">
+          <span>Zoom</span>
+          <input type="range" id="photoCropZoom" min="0.5" max="3" step="0.01" value="1" />
+        </label>
+      </div>
+
+      <aside class="photo-preview-panel" aria-label="Preview on Sangat Works">
+        <h3>Preview on Sangat Works</h3>
+
+        <div class="photo-preview-card directory-preview-card">
+          <img class="photo-preview-image directory-preview-image" alt="Directory preview" />
+          <div>
+            <strong data-preview-name>Member name</strong>
+            <span data-preview-service>Service</span>
+            <small data-preview-location>Location</small>
+          </div>
+        </div>
+
+        <div class="photo-preview-card network-preview-card">
+          <img class="photo-preview-image network-preview-image" alt="My Network preview" />
+          <div>
+            <strong data-preview-name>Member name</strong>
+            <span data-preview-service>Service</span>
+          </div>
+        </div>
+
+        <div class="photo-preview-card public-profile-preview-card">
+          <img class="photo-preview-image public-profile-preview-image" alt="Public profile preview" />
+          <div>
+            <strong data-preview-name>Member name</strong>
+            <span data-preview-service>Service</span>
+            <small data-preview-location>Location</small>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <p id="photoCropMessage" class="message photo-crop-message"></p>
+
+    <footer class="photo-crop-footer">
+      <button type="button" id="photoCropReset" class="btn-secondary">Reset</button>
+      <div class="photo-crop-actions">
+        <button type="button" id="photoCropCancel" class="btn-secondary">Cancel</button>
+        <button type="button" id="photoCropSave" class="btn-primary">Save photo</button>
+      </div>
+    </footer>
+  </section>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/profile.js?v=5001"></script>
 <script type="module" src="js/onboarding.js"></script>

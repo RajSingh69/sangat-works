@@ -1,59 +1,28 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Messages | Sangat Works</title>
   <link rel="stylesheet" href="css/style.css" />
+  <script>
+    const target = new URL('network.html', window.location.href);
+    const current = new URL(window.location.href);
+    target.searchParams.set('tab', 'messages');
+    ['conversation', 'user'].forEach((key) => {
+      const value = current.searchParams.get(key);
+      if (value) target.searchParams.set(key, value);
+    });
+    window.location.replace(target.href);
+  </script>
 </head>
 <body>
-
-<header class="site-header">
-  <a class="logo" href="index.html">Sangat Works</a>
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="network.html">My Network</a>
-    <div id="accountArea"></div>
-  </nav>
-</header>
-
-<main class="messages-page">
-  <section class="messages-shell">
-    <aside class="conversation-list-panel">
-      <div class="messages-panel-header">
-        <div>
-          <p class="eyebrow">Private Messages</p>
-          <h1>Messages</h1>
-        </div>
-      </div>
-      <input type="search" id="conversationSearch" placeholder="Search conversations" />
-      <div id="conversationList" class="conversation-list">
-        <div class="empty-state">Loading conversations...</div>
-      </div>
-    </aside>
-
-    <section class="chat-panel">
-      <div id="chatHeader" class="chat-header">
-        <div class="empty-state">Select a conversation.</div>
-      </div>
-      <div id="messageRequestActions" class="message-request-actions hidden"></div>
-      <div id="messagesList" class="messages-list">
-        <div class="empty-state">No conversation selected.</div>
-      </div>
-      <form id="messageComposer" class="message-composer hidden">
-        <textarea id="messageText" rows="2" maxlength="2000" placeholder="Write a message"></textarea>
-        <button type="submit" class="btn-primary">Send</button>
-      </form>
-      <p id="messagesStatus" class="message"></p>
+  <main class="page-wrap">
+    <section class="form-card">
+      <h1>Messages have moved</h1>
+      <p>Redirecting to My Network &amp; Messages...</p>
+      <a class="btn-primary" href="network.html?tab=messages">Open Messages</a>
     </section>
-
-    <aside id="messagesContextPanel" class="messages-context-panel">
-      <div class="empty-state">Select a conversation to view member details.</div>
-    </aside>
-  </section>
-</main>
-
-<script type="module" src="js/nav.js"></script>
-<script type="module" src="js/messages-page.js"></script>
+  </main>
 </body>
 </html>

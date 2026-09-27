@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase.js";
+﻿import { auth, db } from "./firebase.js";
 
 import {
   onAuthStateChanged,
@@ -27,6 +27,8 @@ import {
 
 const accountArea = document.getElementById("accountArea");
 let unsubscribeMessageBadge = null;
+let unsubscribeRequestBadge = null;
+let combinedNetworkActivity = { messages: 0, requests: 0 };
 
 function escapeHtml(value = "") {
   return String(value)
@@ -76,7 +78,8 @@ function getInitial(email = "") {
 function navItem(href, icon, label, extra = "") {
   const currentPage = window.location.pathname.split("/").pop() || "index.html";
   const targetPage = href.split("?")[0];
-  const active = currentPage === targetPage ? "active" : "";
+  const networkActive = targetPage === "network.html" && (currentPage === "network.html" || currentPage === "messages.html");
+  const active = currentPage === targetPage || networkActive ? "active" : "";
   return `
     <a href="${href}" class="app-nav-item ${active}" ${extra}>
       <span class="app-nav-icon" aria-hidden="true">${icon}</span>
@@ -111,8 +114,7 @@ function renderAppShell(user, userData = {}) {
     <nav class="member-sidebar-nav" aria-label="Member navigation">
       ${navItem("index.html", "H", "Home")}
       ${navItem("directory.html", "D", "Directory")}
-      ${isPaid ? navItem("network.html", "N", "My Network") : ""}
-      ${navItem("messages.html", "M", "Messages", "id=\"messagesNavLink\"")}
+      ${isPaid ? navItem("network.html", "N", "My Network & Messages", "id=\"networkMessagesNavLink\"") : ""}
       ${navItem("projects.html", "P", "Projects")}
       ${isPaid ? navItem("skills-network.html", "S", "Skills Network") : ""}
       ${isPaid ? navItem("young-professionals.html", "Y", "Young Professionals") : ""}
@@ -142,7 +144,7 @@ function renderAppShell(user, userData = {}) {
           <div class="account-badge-row">${membershipBadge}${roleBadge}</div>
         </div>
         <a href="profile.html">Profile settings</a>
-        <a href="messages.html">Messages</a>
+        <a href="network.html?tab=messages">Messages</a>
         ${canAdmin ? `<a href="admin.html">Admin</a>` : ""}
         <button type="button" id="logoutBtn">Logout</button>
       </div>
@@ -187,6 +189,11 @@ if (accountArea) {
         unsubscribeMessageBadge();
         unsubscribeMessageBadge = null;
       }
+      if (unsubscribeRequestBadge) {
+        unsubscribeRequestBadge();
+        unsubscribeRequestBadge = null;
+      }
+      combinedNetworkActivity = { messages: 0, requests: 0 };
 
       document.body.classList.remove("member-shell-enabled", "sidebar-open", "sidebar-collapsed");
       document.getElementById("memberAppShellNav")?.remove();
@@ -213,27 +220,47 @@ if (accountArea) {
       unsubscribeMessageBadge();
       unsubscribeMessageBadge = null;
     }
+    if (unsubscribeRequestBadge) {
+      unsubscribeRequestBadge();
+      unsubscribeRequestBadge = null;
+    }
 
-    const messagesNavLink = document.getElementById("messagesNavLink");
-    if (messagesNavLink) {
+    function renderNetworkActivityBadge() {
+      const networkLink = document.getElementById("networkMessagesNavLink");
+      if (!networkLink) return;
+      const total = Number(combinedNetworkActivity.messages || 0) + Number(combinedNetworkActivity.requests || 0);
+      const badge = total ? `<span class="nav-unread-badge">${total}</span>` : "";
+      networkLink.innerHTML = `
+        <span class="app-nav-icon" aria-hidden="true">N</span>
+        <span class="app-nav-label">My Network & Messages</span>
+        ${badge}
+      `;
+    }
+
+    const networkLink = document.getElementById("networkMessagesNavLink");
+    if (networkLink) {
       const conversationsQuery = query(
         collection(db, "conversations"),
         where("participantIds", "array-contains", user.uid)
       );
-
       unsubscribeMessageBadge = onSnapshot(conversationsQuery, (snapshot) => {
-        const unreadTotal = snapshot.docs.reduce((total, docSnap) => {
+        combinedNetworkActivity.messages = snapshot.docs.reduce((total, docSnap) => {
           const data = docSnap.data();
           return total + Number(data.unreadCounts?.[user.uid] || 0);
         }, 0);
+        renderNetworkActivityBadge();
+      });
 
-        const badge = unreadTotal ? `<span class="nav-unread-badge">${unreadTotal}</span>` : "";
-        messagesNavLink.innerHTML = `
-          <span class="app-nav-icon" aria-hidden="true">M</span>
-          <span class="app-nav-label">Messages</span>
-          ${badge}
-        `;
+      const requestsQuery = query(
+        collection(db, "connections"),
+        where("recipientId", "==", user.uid),
+        where("status", "==", "pending")
+      );
+      unsubscribeRequestBadge = onSnapshot(requestsQuery, (snapshot) => {
+        combinedNetworkActivity.requests = snapshot.size;
+        renderNetworkActivityBadge();
       });
     }
   });
 }
+

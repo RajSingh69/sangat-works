@@ -1,4 +1,4 @@
-import { protectPage } from "./subscription-guard.js";
+﻿import { protectPage } from "./subscription-guard.js";
 import {
   acceptMessageRequest,
   blockMember,
@@ -26,7 +26,9 @@ const composer = document.getElementById("messageComposer");
 const messageText = document.getElementById("messageText");
 const messagesStatus = document.getElementById("messagesStatus");
 const messageRequestActions = document.getElementById("messageRequestActions");
-const messagesShell = document.querySelector(".messages-shell");`r`nconst messagesContextPanel = document.getElementById("messagesContextPanel");
+const messagesShell = document.querySelector(".messages-shell");
+const messagesContextPanel = document.getElementById("messagesContextPanel");
+const messagesTabCount = document.getElementById("messagesTabCount");
 
 let currentUser = null;
 let conversations = [];
@@ -78,6 +80,7 @@ function upsertConversation(conversation) {
 
 function syncUrl(conversationId) {
   const url = new URL(window.location.href);
+  url.searchParams.set("tab", "messages");
   if (conversationId) url.searchParams.set("conversation", conversationId);
   else url.searchParams.delete("conversation");
   window.history.replaceState({}, "", `${url.pathname}${url.search}`);
@@ -95,7 +98,9 @@ async function renderConversationList() {
     visible.push(renderConversationRow(conversation, other));
   }
 
-  conversationList.innerHTML = visible.join("") || `<div class="empty-state">No conversations yet. Connect with members or message someone from their profile to get started.</div>`;
+  const unreadTotal = conversations.reduce((total, conversation) => total + Number(conversation.unreadCounts?.[currentUser.uid] || 0), 0);
+  if (messagesTabCount) messagesTabCount.textContent = unreadTotal ? String(unreadTotal) : "";
+  conversationList.innerHTML = visible.join("") || `<div class="network-empty-state"><strong>Start a conversation.</strong><span>Connect with someone in the directory or message one of your existing connections.</span><a href="directory.html">Explore Directory <span aria-hidden="true">-&gt;</span></a></div>`;
 }
 
 function renderConversationRow(conversation, profile) {
@@ -134,6 +139,7 @@ async function openConversation(conversation, options = {}) {
   }
 
   await renderChatHeader();
+  await renderContextPanel();
   renderRequestActions();
   renderComposer();
   messagesList.innerHTML = `<div class="empty-state">Loading messages...</div>`;
@@ -392,6 +398,7 @@ protectPage({
         if (updated) {
           selectedConversation = updated;
           await renderChatHeader();
+          await renderContextPanel();
           renderRequestActions();
           renderComposer();
           await renderConversationList();
@@ -403,6 +410,9 @@ protectPage({
     });
   }
 });
+
+
+
 
 
 

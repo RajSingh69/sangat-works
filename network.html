@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Network | Sangat Works</title>
+  <title>My Network & Messages | Sangat Works</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -17,27 +17,82 @@
   </nav>
 </header>
 
-<main class="page-wrap network-page">
-  <section class="form-card wide">
-    <p class="eyebrow">Connections</p>
-    <h1>My Network</h1>
-    <p>Manage your Sangat Works connections and requests.</p>
-
-    <div class="network-tabs" role="tablist">
-      <button type="button" class="btn-small network-tab active" data-network-tab="connections">Connections</button>
-      <button type="button" class="btn-small network-tab" data-network-tab="requests">Requests</button>
-      <button type="button" class="btn-small network-tab" data-network-tab="sent">Sent</button>
+<main class="network-workspace page-wrap">
+  <section class="network-workspace-header">
+    <div>
+      <p class="eyebrow">My Network &amp; Messages</p>
+      <h1>My Network</h1>
+      <p>Manage your connections, requests and conversations.</p>
     </div>
+  </section>
 
-    <p id="networkMessage" class="message"></p>
+  <nav class="workspace-tabs" aria-label="Network workspace sections">
+    <button type="button" class="workspace-tab active" data-workspace-tab="connections">Connections <span id="connectionsTabCount"></span></button>
+    <button type="button" class="workspace-tab" data-workspace-tab="requests">Requests <span id="requestsTabCount"></span></button>
+    <button type="button" class="workspace-tab" data-workspace-tab="messages">Messages <span id="messagesTabCount"></span></button>
+  </nav>
 
-    <div id="networkConnections" class="network-list"></div>
-    <div id="networkRequests" class="network-list hidden"></div>
-    <div id="networkSent" class="network-list hidden"></div>
+  <p id="networkMessage" class="message"></p>
+
+  <section id="connectionsPanel" class="network-workspace-panel" data-workspace-panel="connections">
+    <div class="network-panel-toolbar">
+      <input type="search" id="connectionSearch" placeholder="Search connections..." />
+      <div class="network-filter-row" aria-label="Connection filters">
+        <button type="button" class="network-filter active" data-connection-filter="all">All</button>
+        <button type="button" class="network-filter" data-connection-filter="recent">Recently connected</button>
+      </div>
+    </div>
+    <div id="networkConnections" class="network-list network-people-list"></div>
+  </section>
+
+  <section id="requestsPanel" class="network-workspace-panel hidden" data-workspace-panel="requests">
+    <div class="request-subtabs" role="tablist" aria-label="Connection requests">
+      <button type="button" class="request-subtab active" data-request-tab="received">Received</button>
+      <button type="button" class="request-subtab" data-request-tab="sent">Sent</button>
+    </div>
+    <div id="networkRequests" class="network-list network-people-list"></div>
+    <div id="networkSent" class="network-list network-people-list hidden"></div>
+  </section>
+
+  <section id="messagesPanel" class="network-workspace-panel hidden" data-workspace-panel="messages">
+    <section class="messages-shell unified-messages-shell">
+      <aside class="conversation-list-panel">
+        <div class="messages-panel-header">
+          <div>
+            <p class="eyebrow">Messages</p>
+            <h2>Conversations</h2>
+          </div>
+        </div>
+        <input type="search" id="conversationSearch" placeholder="Search conversations..." />
+        <div id="conversationList" class="conversation-list">
+          <div class="empty-state">Loading conversations...</div>
+        </div>
+      </aside>
+
+      <section class="chat-panel">
+        <div id="chatHeader" class="chat-header">
+          <div class="empty-state"><strong>Select a conversation</strong><span>Choose someone from your messages to continue the conversation.</span></div>
+        </div>
+        <div id="messageRequestActions" class="message-request-actions hidden"></div>
+        <div id="messagesList" class="messages-list">
+          <div class="empty-state">No conversation selected.</div>
+        </div>
+        <form id="messageComposer" class="message-composer hidden">
+          <textarea id="messageText" rows="2" maxlength="2000" placeholder="Write a message"></textarea>
+          <button type="submit" class="btn-primary">Send</button>
+        </form>
+        <p id="messagesStatus" class="message"></p>
+      </section>
+
+      <aside id="messagesContextPanel" class="messages-context-panel">
+        <div class="empty-state">Select a conversation to view member details.</div>
+      </aside>
+    </section>
   </section>
 </main>
 
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/network-page.js"></script>
+<script type="module" src="js/messages-page.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ï»¿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -15,125 +15,90 @@
   </nav>
 </header>
 
-<main class="logged-homepage">
-
-  <section class="home-cinematic-hero" data-globe-anchor data-globe-x="0" data-globe-y="0" data-globe-scale="1" data-globe-opacity="1">
-    <svg class="home-background-paths" viewBox="0 0 1200 720" aria-hidden="true" focusable="false" fill="none">
-      <path fill="none" d="M-80 500 C 180 360, 260 120, 560 190 S 890 440, 1280 220" />
-      <path fill="none" d="M-120 260 C 160 160, 330 520, 600 430 S 940 120, 1260 390" />
-      <path fill="none" d="M120 740 C 240 520, 520 560, 680 330 S 930 40, 1180 130" />
-      <path fill="none" d="M-60 110 C 220 240, 420 40, 700 130 S 920 340, 1250 270" />
-      <path fill="none" d="M170 640 C 420 470, 560 690, 810 520 S 1000 260, 1250 480" />
-    </svg>
-
-    <div class="home-hero-copy">
-      <p class="eyebrow">Sangat • Business • Community</p>
-      <h1>Support Sikh businesses, trades and professionals.</h1>
-      <p class="hero-text">
-        Find trusted people, build useful connections and keep opportunity moving through the Sangat.
-      </p>
-      <div class="hero-actions home-hero-actions" id="homepageHeroActions">
-        <a href="pricing.html" class="btn-primary home-hero-primary" id="homepageSignupCta">Join Sangat Works</a>
-        <a href="directory.html" class="sw-hover-button home-hero-secondary"><span class="sw-hover-button__fill"></span><span class="sw-hover-button__label">Browse Directory</span><span class="sw-hover-button__hover-content">Explore Members <span class="sw-hover-button__arrow">-&gt;</span></span></a>
-        <a href="profile.html" class="btn-primary home-hero-primary hidden" id="homepageProfileCta">Go to My Profile</a>
+<main class="logged-homepage home-flagship-page">
+  <section class="home-flagship-hero home-reveal" aria-labelledby="homeHeroTitle">
+    <div class="home-flagship-hero-inner">
+      <div class="home-hero-copy">
+        <div class="home-brand-lockup" aria-label="Sangat Works">
+          <img src="assets/sangat-works-logo.png" alt="" />
+          <span><strong>Sangat Works</strong><small>THE SIKH BUSINESS &amp; PROFESSIONAL NETWORK</small></span>
+        </div>
+        <h1 id="homeHeroTitle">One platform.<br>Endless <span>connections.</span></h1>
+        <p class="hero-text">Bringing together Sikh businesses, professionals, entrepreneurs and communities across the UK to create opportunities, support each other and build a stronger Sangat.</p>
+        <div class="hero-actions home-hero-actions" id="homepageHeroActions">
+          <a href="directory.html" class="btn-primary home-hero-primary">Explore Directory <span aria-hidden="true">-&gt;</span></a>
+          <a href="pricing.html" class="btn-secondary home-hero-secondary" id="homepageSignupCta">Join the Network</a>
+          <a href="profile.html" class="btn-secondary home-hero-secondary hidden" id="homepageProfileCta">My Profile</a>
+        </div>
+        <p class="auth-switch-note" id="homepageLoginPrompt">Already have an account? <a href="login.html">Log in</a></p>
       </div>
-      <p class="auth-switch-note" id="homepageLoginPrompt">Already have an account? <a href="login.html">Log in</a></p>
+      <aside class="home-hero-statement" aria-label="Sangat Works purpose">
+        <p>People.<br>Opportunities.<br>A stronger<br>Sangat.</p>
+      </aside>
     </div>
-
-    <div class="homepage-globe-visual" id="homepageGlobeVisual" aria-label="Interactive network globe showing coarse UK member regions">
-      <canvas id="sangatNetworkGlobe" width="620" height="620"></canvas>
-    </div>
-  </section>
-
-  <section class="home-network-band" data-globe-anchor data-globe-x="-8" data-globe-y="10" data-globe-scale="0.9" data-globe-opacity="0.9">
-    <div class="home-network-copy">
-      <span class="network-status-badge">Growing across the UK</span>
-      <h2 id="networkGlobeTitle">Your Sangat. Your Network.</h2>
-      <p>Discover Sikh professionals, businesses, projects and opportunities across the Sangat Works network.</p>
-      <a href="directory.html" class="btn-secondary">Browse Directory</a>
-    </div>
-    <div class="home-member-preview-grid" id="homeMemberPreviewGrid" aria-live="polite"></div>
-    <div class="network-globe-stats" id="networkGlobeStats" aria-live="polite"></div>
-  </section>
-
-  <section class="home-discovery" aria-labelledby="homeExploreTitle" data-globe-anchor data-globe-x="8" data-globe-y="18" data-globe-scale="0.78" data-globe-opacity="0.75">
-    <div class="home-section-kicker">Explore Sangat Works</div>
-    <div class="home-discovery-head">
-      <h2 id="homeExploreTitle">Move through the network by what you need next.</h2>
-    </div>
-    <div class="home-discovery-grid">
-      <a class="home-discovery-tile tile-large" href="directory.html">
-        <span>Directory & Map</span>
-        <strong>Find trusted services near you.</strong>
-      </a>
-      <a class="home-discovery-tile" href="projects.html">
-        <span>Projects</span>
-        <strong>Post work and build teams.</strong>
-      </a>
-      <a class="home-discovery-tile" href="skills-network.html">
-        <span>Skills Network</span>
-        <strong>Join community skill pools.</strong>
-      </a>
-      <a class="home-discovery-tile" href="young-professionals.html">
-        <span>Young Professionals</span>
-        <strong>Meet mentors and peers.</strong>
-      </a>
-      <a class="home-discovery-tile" href="faq.html">
-        <span>Community Hub</span>
-        <strong>FAQs, ideas and future features.</strong>
-      </a>
-      <button id="restartWalkthroughBtn" class="home-discovery-tile tile-button" type="button">
-        <span>Getting Started</span>
-        <strong>Restart the walkthrough.</strong>
-      </button>
+    <div class="home-hero-stats" id="homeHeroStats" aria-live="polite">
+      <div><span class="stat-icon">P</span><strong>Growing</strong><small>Members</small></div>
+      <div><span class="stat-icon">I</span><strong>Active</strong><small>Industries</small></div>
+      <div><span class="stat-icon">L</span><strong>UK-wide</strong><small>Network</small></div>
+      <div><span class="stat-icon">O</span><strong>Open</strong><small>Opportunities</small></div>
     </div>
   </section>
 
-  <section class="home-skills-story" data-globe-anchor data-globe-x="-16" data-globe-y="24" data-globe-scale="0.62" data-globe-opacity="0.45">
-    <div class="home-section-copy">
-      <span class="home-section-kicker">Skills Network</span>
-      <h2>Turn community knowledge into practical introductions.</h2>
-      <p>Browse construction, technology, business, healthcare and other local skill pools connected to the Sangat.</p>
-      <a href="skills-network.html" class="btn-primary">Open Skills Network</a>
-    </div>
-    <div class="skills-orbit" aria-hidden="true">
-      <div class="skills-feature-visual">
-        <span>Trades</span>
-        <strong>Community skills map</strong>
+  <section class="home-platform-intro home-reveal" aria-labelledby="homeExploreTitle">
+    <div class="home-section-heading-row">
+      <div>
+        <span class="home-section-kicker">Explore Sangat Works</span>
+        <h2 id="homeExploreTitle">Everything you need<br>in <span>one connected community.</span></h2>
+        <p>Find people, post opportunities, build projects, share skills and be part of a growing Sikh network making a real impact.</p>
       </div>
-      <span>Construction</span>
-      <span>Technology</span>
-      <span>Business</span>
-      <span>Healthcare</span>
-      <span>Education</span>
+      <button id="restartWalkthroughBtn" class="home-small-action" type="button">How it works</button>
+    </div>
+
+    <div class="home-feature-grid">
+      <a class="home-feature-card feature-directory" href="directory.html">
+        <div class="feature-media"><span>D</span></div><div class="feature-body"><h3>Directory &amp; Map</h3><p>Find trusted Sikh businesses and professionals near you.</p><small>Explore members <span>-&gt;</span></small></div>
+      </a>
+      <a class="home-feature-card feature-projects" href="projects.html">
+        <div class="feature-media"><span>P</span></div><div class="feature-body"><h3>Projects &amp; Opportunities</h3><p>Post work, find collaborators and build teams.</p><small>Open projects <span>-&gt;</span></small></div>
+      </a>
+      <a class="home-feature-card feature-skills" href="skills-network.html">
+        <div class="feature-media"><span>S</span></div><div class="feature-body"><h3>Skills Network</h3><p>Connect through skills and practical knowledge.</p><small>Browse skills <span>-&gt;</span></small></div>
+      </a>
+      <a class="home-feature-card feature-young" href="young-professionals.html">
+        <div class="feature-media"><span>Y</span></div><div class="feature-body"><h3>Young Professionals</h3><p>Careers, mentorship and opportunities for the next generation.</p><small>Find support <span>-&gt;</span></small></div>
+      </a>
+      <a class="home-feature-card feature-property" href="directory.html">
+        <div class="feature-media"><span>H</span></div><div class="feature-body"><h3>Property Network</h3><p>Connect with property professionals, investors and opportunities.</p><small>View directory <span>-&gt;</span></small></div>
+      </a>
+      <a class="home-feature-card feature-community" href="faq.html">
+        <div class="feature-media"><span>C</span></div><div class="feature-body"><h3>Community Hub</h3><p>FAQs, ideas, discussions and future platform features.</p><small>Learn more <span>-&gt;</span></small></div>
+      </a>
+    </div>
+  </section>
+  <section class="home-industries-section home-reveal" aria-labelledby="homeIndustriesTitle">
+    <div class="home-section-heading-row compact">
+      <div>
+        <span class="home-section-kicker">Featured Industries</span>
+        <h2 id="homeIndustriesTitle">Find people in your industry.</h2>
+      </div>
+      <a href="directory.html" class="home-text-link">View all industries <span aria-hidden="true">-&gt;</span></a>
+    </div>
+    <div class="home-industry-grid" id="homeIndustryGrid" aria-live="polite"></div>
+  </section>
+  <section class="home-join-network home-reveal" aria-labelledby="homeJoinTitle">
+    <div class="home-join-image" aria-hidden="true"></div>
+    <div class="home-join-copy">
+      <span class="home-section-kicker">Join Sangat Works</span>
+      <h2 id="homeJoinTitle">Be part of something bigger.</h2>
+      <p>Whether you're a business owner, professional, student or simply want to support the Sangat, there's a place for you.</p>
+      <div class="home-join-actions">
+        <a href="profile.html" class="btn-primary">Complete Your Profile <span aria-hidden="true">-&gt;</span></a>
+        <a href="directory.html" class="btn-secondary">Explore the Network</a>
+      </div>
     </div>
   </section>
 
-  <section class="home-young-pros" data-globe-anchor data-globe-x="-28" data-globe-y="6" data-globe-scale="0.58" data-globe-opacity="0.38">
-    <div class="yp-visual-stack" id="homeYoungProsVisual" aria-hidden="true">
-      <span>Mentorship</span>
-      <span>Introductions</span>
-      <span>Careers</span>
-    </div>
-    <div class="home-section-copy">
-      <span class="home-section-kicker">Young Professionals</span>
-      <h2>Networking, mentoring and opportunity for the next generation.</h2>
-      <p>Connect with Sikh students, graduates and working professionals across industries and locations.</p>
-      <a href="young-professionals.html" class="btn-primary">Open Young Professionals</a>
-    </div>
-  </section>
-
-  <section class="home-projects-strip projects-preview-section" data-globe-anchor data-globe-x="24" data-globe-y="42" data-globe-scale="0.45" data-globe-opacity="0.16">
-    <div>
-      <span class="home-section-kicker">Projects</span>
-      <h2>Build trusted project teams.</h2>
-      <p>Homeowners can post work, review applicants and unlock a dedicated workspace when they are ready to manage the job properly.</p>
-    </div>
-    <div class="home-project-preview-grid" id="homeProjectPreviewGrid" aria-live="polite"></div>
-    <a href="projects.html" class="btn-secondary">Open Projects</a>
-  </section>
-
-  <section id="adminDashboardCard" class="admin-dashboard-card hidden">
+  <section id="adminDashboardCard" class="admin-dashboard-card hidden home-reveal">
     <div>
       <p class="eyebrow">Admin Overview</p>
       <h2>Sangat Works Dashboard</h2>
@@ -148,42 +113,42 @@
     <a href="admin.html" class="btn-primary">Open Admin Panel</a>
   </section>
 
-  <section class="home-membership-note">
+  <section class="home-membership-note home-reveal">
     <div>
       <span class="home-section-kicker">Membership</span>
-      <h2>The free founding member spaces are now full.</h2>
-      <p>New members can choose a paid membership plan from GBP 25 per year or GBP 3.99 per month.</p>
+      <h2>Grow your network with Sangat Works.</h2>
+      <p>Founding memberships are now full. Paid membership is available from GBP 25 per year or GBP 3.99 per month.</p>
     </div>
-    <a href="pricing.html" class="btn-primary">View Pricing</a>
+    <a href="pricing.html" class="btn-primary">View Pricing <span aria-hidden="true">-&gt;</span></a>
   </section>
 
+  <section class="home-updates-strip home-reveal" aria-labelledby="homeUpdatesTitle">
+    <div>
+      <span class="home-section-kicker">Stay Updated</span>
+      <h2 id="homeUpdatesTitle">Get the latest opportunities and community updates.</h2>
+      <p>Visit the community guidance and support pages for current platform information.</p>
+    </div>
+    <a href="faq.html" class="btn-secondary">Community Guidelines</a>
+  </section>
 </main>
 
-<footer>
-  <p>Sangat Works â€” built for community support.</p>
+<footer class="home-footer">
+  <div class="home-footer-inner">
+    <div class="home-footer-brand"><img src="assets/sangat-works-logo.png" alt="" /><strong>Sangat Works</strong><p>The Sikh business &amp; professional network. People. Opportunities. Community.</p></div>
+    <div><h2>Quick Links</h2><a href="directory.html">Directory</a><a href="projects.html">Projects</a><a href="skills-network.html">Skills Network</a><a href="young-professionals.html">Young Professionals</a></div>
+    <div><h2>Support</h2><a href="faq.html">FAQ</a><a href="contact.html">Contact</a><a href="faq.html">Community Guidelines</a><a href="contact.html">Report a Member</a></div>
+  </div>
+  <div class="home-footer-bottom"><span>&copy; 2026 Sangat Works. All rights reserved.</span><span>Together, we work. Together, we build the future.</span></div>
 </footer>
 
 <script>
   (() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const revealItems = [
-      ".home-cinematic-hero",
-      ".home-network-band",
-      ".home-discovery",
-      ".home-skills-story",
-      ".home-young-pros",
-      ".home-projects-strip",
-      ".admin-dashboard-card",
-      ".home-membership-note"
-    ];
-    const sections = revealItems.flatMap(selector => [...document.querySelectorAll(selector)]);
-    sections.forEach(section => section.classList.add("home-reveal"));
-
+    const sections = [...document.querySelectorAll(".home-reveal")];
     if (reduceMotion || !("IntersectionObserver" in window)) {
       sections.forEach(section => section.classList.add("is-visible"));
       return;
     }
-
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (!entry.isIntersecting) return;
@@ -191,7 +156,6 @@
         observer.unobserve(entry.target);
       });
     }, { threshold: 0.16, rootMargin: "0px 0px -8% 0px" });
-
     sections.forEach(section => observer.observe(section));
   })();
 </script>
@@ -201,195 +165,88 @@
 
 <script type="module">
   import { db } from "./js/firebase.js";
-  import { collection, getDocs, limit, orderBy, query, where } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-  import { attachScrollResponsiveGlobe, fallbackUkMarkers, initSangatNetworkGlobe, markersFromPublicProfiles } from "./js/network-globe.js";
+  import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-  const globeCanvas = document.getElementById("sangatNetworkGlobe");
-  const globeVisual = document.getElementById("homepageGlobeVisual");
-  const globeStats = document.getElementById("networkGlobeStats");
-  const memberPreviewGrid = document.getElementById("homeMemberPreviewGrid");
-  const projectPreviewGrid = document.getElementById("homeProjectPreviewGrid");
-  const youngProsVisual = document.getElementById("homeYoungProsVisual");
-
-  function renderNetworkStats(stats) {
-    if (!globeStats) return;
-    const items = Object.entries(stats).filter(([, value]) => Number.isFinite(value));
-    globeStats.innerHTML = items.map(([label, value]) => `
-      <div>
-        <strong>${value}</strong>
-        <span>${label}</span>
-      </div>
-    `).join("");
-  }
-
-
+  const heroStats = document.getElementById("homeHeroStats");
+  const industryGrid = document.getElementById("homeIndustryGrid");
 
   function escapeHtml(value = "") {
-    return String(value).replace(/[&<>"]/g, (char) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      "\"": "&quot;"
-    }[char]));
+    return String(value).replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char]));
+  }
+  function getProfileName(profile) { return profile.businessName || profile.fullName || profile.displayName || 'Sangat Works Member'; }
+function getIndustry(profile) {
+    const source = `${profile.industry || ""} ${profile.category || ""} ${profile.businessType || ""} ${profile.serviceTitle || ""}`.toLowerCase();
+    if (/tech|software|web|app|digital|data|ai/.test(source)) return "Technology";
+    if (/educat|teach|tutor|training|academy/.test(source)) return "Education";
+    if (/property|estate|mortgage|construction|building|real estate/.test(source)) return "Property";
+    if (/law|legal|account|finance|consult|professional/.test(source)) return "Law & Professional Services";
+    if (/trade|plumb|electric|builder|roof|mechanic|gas/.test(source)) return "Trades";
+    return "Other";
   }
 
-  function getProfileImage(profile) {
-    return profile.profilePhotoUrl || profile.businessLogoUrl || profile.logoUrl || "";
+  function renderHeroStats(stats) {
+    if (!heroStats) return;
+    const items = [
+      ["M", stats.members ? `${stats.members}` : "Growing", "Members"],
+      ["I", stats.industries ? `${stats.industries}` : "Active", "Industries"],
+      ["L", stats.locations ? `${stats.locations}` : "UK-wide", "Locations"],
+      ["O", Number.isFinite(stats.projects) ? `${stats.projects}` : "Open", "Opportunities"]
+    ];
+    heroStats.innerHTML = items.map(([icon, value, label]) => `<div><span class="stat-icon">${icon}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(label)}</small></div>`).join("");
   }
+const industryDescriptors = {
+    "Technology": "Developers &middot; IT &middot; Digital",
+    "Education": "Teachers &middot; Tutors &middot; Training",
+    "Property": "Property &middot; Architecture &middot; Development",
+    "Law & Professional Services": "Legal &middot; Finance &middot; Consultancy",
+    "Trades": "Construction &middot; Electrical &middot; Skilled Trades",
+    "Other": "Creative &middot; Community &middot; Specialist Services"
+  };
 
-  function getProfileName(profile) {
-    return profile.businessName || profile.fullName || profile.displayName || "Sangat Works Member";
-  }
-
-  function getProfileRole(profile) {
-    return profile.serviceTitle || profile.businessType || profile.category || "Community member";
-  }
-
-  function getProjectImage(project) {
-    if (project.imageUrl) return project.imageUrl;
-    if (Array.isArray(project.images) && project.images[0]) return project.images[0];
-    if (Array.isArray(project.projectImages) && project.projectImages[0]) return project.projectImages[0];
-    return "";
-  }
-
-  function renderMemberPreviews(profiles) {
-    if (!memberPreviewGrid) return;
-    const visibleProfiles = profiles.filter((profile) => getProfileName(profile) || getProfileRole(profile)).slice(0, 5);
-    if (!visibleProfiles.length) {
-      memberPreviewGrid.innerHTML = `<div class="home-empty-preview">Public member previews will appear here as the directory grows.</div>`;
-      return;
-    }
-    memberPreviewGrid.innerHTML = visibleProfiles.map((profile) => {
-      const name = getProfileName(profile);
-      const role = getProfileRole(profile);
-      const image = getProfileImage(profile);
-      const location = profile.town || profile.serviceArea || "UK network";
-      return `
-        <article class="home-member-preview">
-          ${image ? `<img src="${escapeHtml(image)}" alt="">` : `<span class="home-preview-avatar">${escapeHtml(name.slice(0, 1))}</span>`}
-          <div>
-            <strong>${escapeHtml(name)}</strong>
-            <span>${escapeHtml(role)}</span>
-            <small>${escapeHtml(location)}</small>
-          </div>
-          <em>${escapeHtml(role.split(" ").slice(0, 2).join(" "))}</em>
-        </article>
-      `;
+  function renderIndustries(profiles) {
+    if (!industryGrid) return;
+    const counts = profiles.reduce((map, profile) => map.set(getIndustry(profile), (map.get(getIndustry(profile)) || 0) + 1), new Map());
+    const industries = ["Technology", "Education", "Property", "Law & Professional Services", "Other"];
+    const sortedIndustries = [...industries].sort((a, b) => (counts.get(b) || 0) - (counts.get(a) || 0));
+    const orderedIndustries = [...sortedIndustries, "Trades"];
+    industryGrid.innerHTML = orderedIndustries.map((industry, index) => {
+      const className = industry.toLowerCase().replace(/[^a-z]+/g, "-").replace(/-$/, "");
+      const count = counts.get(industry) || 0;
+      const emptyTrades = industry === "Trades" && !count;
+      const countLabel = count ? `${count} professional${count === 1 ? "" : "s"}` : emptyTrades ? "Be the first professional in this industry." : "Be the first";
+      return `<a class="home-industry-card industry-${className}${index === 0 ? " is-featured" : ""}" href="directory.html?category=${encodeURIComponent(industry)}"><span class="industry-card-media"></span><span class="industry-card-kicker">${escapeHtml(industry)}</span><strong>${escapeHtml(countLabel)}</strong><small>${industryDescriptors[industry]}</small><em>Explore ${escapeHtml(industry)} <span aria-hidden="true">-&gt;</span></em></a>`;
     }).join("");
   }
-
-  function renderYoungProsVisual(profiles) {
-    if (!youngProsVisual) return;
-    const people = profiles.filter((profile) => profile.profilePhotoUrl || profile.fullName || profile.displayName).slice(0, 4);
-    if (!people.length) return;
-    youngProsVisual.innerHTML = `
-      <div class="yp-avatar-cluster">
-        ${people.map((profile) => {
-          const name = profile.fullName || profile.displayName || getProfileName(profile);
-          return profile.profilePhotoUrl
-            ? `<img src="${escapeHtml(profile.profilePhotoUrl)}" alt="">`
-            : `<span>${escapeHtml(name.slice(0, 1))}</span>`;
-        }).join("")}
-      </div>
-      <span>Mentorship</span>
-      <span>Introductions</span>
-      <span>Careers</span>
-    `;
+async function getCollectionCount(name) {
+    try { return (await getDocs(collection(db, name))).size; }
+    catch (error) { console.warn(`Could not load ${name} count`, error); return null; }
   }
-
-  function renderProjectPreviews(projects) {
-    if (!projectPreviewGrid) return;
-    if (!projects.length) {
-      projectPreviewGrid.innerHTML = `<div class="home-empty-preview project-empty">Open project previews will appear here when members post work.</div>`;
-      return;
-    }
-    projectPreviewGrid.innerHTML = projects.slice(0, 3).map((project) => {
-      const title = project.title || project.projectTitle || "Community project";
-      const type = project.projectType || project.category || "Project";
-      const image = getProjectImage(project);
-      const owner = project.ownerName || project.createdByName || "Member project";
-      return `
-        <article class="home-project-preview">
-          ${image ? `<img src="${escapeHtml(image)}" alt="">` : `<div class="home-project-preview-fallback">${escapeHtml(type.slice(0, 1))}</div>`}
-          <div>
-            <span>${escapeHtml(project.status || "open")}</span>
-            <strong>${escapeHtml(title)}</strong>
-            <p>${escapeHtml(project.description || project.summary || "Project details available in the projects area.")}</p>
-            <small>${escapeHtml(type)}${project.location ? ` - ${escapeHtml(project.location)}` : ""} - ${escapeHtml(owner)}</small>
-          </div>
-        </article>
-      `;
-    }).join("");
-  }
-
-  async function loadProjectPreviews() {
-    try {
-      const projectsQuery = query(collection(db, "projects"), where("status", "==", "open"), orderBy("createdAt", "desc"), limit(3));
-      const snapshot = await getDocs(projectsQuery);
-      renderProjectPreviews(snapshot.docs.map((docSnap) => docSnap.data()));
-    } catch (error) {
-      console.warn("Could not load homepage project previews", error);
-      renderProjectPreviews([]);
-    }
-  }
-  function buildBusinessLocationArcs(markers) {
-    if (!markers.length) return [];
-    return markers.slice(0, 9).map((marker, index) => ({
-      from: index,
-      to: (index + 2) % markers.length,
-      type: "business"
-    })).filter((connection) => connection.from !== connection.to);
-  }
-  async function getCollectionCount(name) {
-    try {
-      const snapshot = await getDocs(collection(db, name));
-      return snapshot.size;
-    } catch (error) {
-      console.warn(`Could not load ${name} count`, error);
-      return null;
-    }
-  }
-
-  async function loadNetworkGlobe() {
-    if (!globeCanvas) return;
+async function loadHomepageData() {
     let profiles = [];
     try {
       const publicProfilesQuery = query(collection(db, "users"), where("isPublic", "==", true));
       const snapshot = await getDocs(publicProfilesQuery);
       profiles = snapshot.docs.map((docSnap) => docSnap.data());
     } catch (error) {
-      console.warn("Could not load public profile locations", error);
+      console.warn("Could not load public profiles", error);
     }
 
-    const markers = markersFromPublicProfiles(profiles);
-    const globe = initSangatNetworkGlobe(globeCanvas, {
-      markers: markers.length ? markers : fallbackUkMarkers(),
-      connections: buildBusinessLocationArcs(markers),
-      autoRotateSpeed: 0.002,
-      dotColor: "rgba(205, 219, 232, 0.42)",
-      arcColor: "rgba(235, 111, 24, 0.36)",
-      markerColor: "#e9974d"
-    });
-    attachScrollResponsiveGlobe(globeVisual, [...document.querySelectorAll("[data-globe-anchor]")]);
-
-    const stats = {};
-    if (profiles.length) {
-      stats.Members = profiles.length;
-      const businessCount = profiles.filter((profile) => profile.businessName || profile.businessType || profile.serviceTitle).length;
-      if (businessCount) stats.Businesses = businessCount;
-    }
+    renderIndustries(profiles);
 
     const projectsCount = await getCollectionCount("projects");
-    if (projectsCount !== null) stats.Projects = projectsCount;
-    const connectionsCount = await getCollectionCount("connections");
-    if (connectionsCount !== null) stats.Connections = connectionsCount;
-    renderNetworkStats(stats);
-    renderMemberPreviews(profiles);
-    renderYoungProsVisual(profiles);
-    loadProjectPreviews();
+const locationCount = new Set(profiles.map((profile) => profile.town || profile.serviceArea || profile.location).filter(Boolean)).size;
+    const industryCount = new Set(profiles.map(getIndustry)).size;
+    const statPayload = {
+      members: profiles.length,
+      industries: industryCount,
+      locations: locationCount,
+      projects: projectsCount
+    };
+
+    renderHeroStats(statPayload);
   }
 
-  loadNetworkGlobe();
+  loadHomepageData();
 </script>
 <script type="module">
   import { auth, db } from "./js/firebase.js";
@@ -403,37 +260,27 @@
 
   onAuthStateChanged(auth, (user) => {
     const isLoggedIn = Boolean(user);
-
-    if (homepageSignupCta) {
-      homepageSignupCta.classList.toggle("hidden", isLoggedIn);
-    }
-
-    if (homepageProfileCta) {
-      homepageProfileCta.classList.toggle("hidden", !isLoggedIn);
-    }
-
-    if (homepageLoginPrompt) {
-      homepageLoginPrompt.classList.toggle("hidden", isLoggedIn);
-    }
+    homepageSignupCta?.classList.toggle("hidden", isLoggedIn);
+    homepageProfileCta?.classList.toggle("hidden", !isLoggedIn);
+    homepageLoginPrompt?.classList.toggle("hidden", isLoggedIn);
   });
 
-  if (restartWalkthroughBtn) {
-    restartWalkthroughBtn.addEventListener("click", async () => {
-      const user = auth.currentUser;
-
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
-
-      await updateDoc(doc(db, "users", user.uid), {
-        hasSeenIntro: false
-      });
-
-      window.location.reload();
-    });
-  }
+  restartWalkthroughBtn?.addEventListener("click", async () => {
+    const user = auth.currentUser;
+    if (!user) { window.location.href = "login.html"; return; }
+    await updateDoc(doc(db, "users", user.uid), { hasSeenIntro: false });
+    window.location.reload();
+  });
 </script>
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+

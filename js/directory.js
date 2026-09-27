@@ -20,6 +20,16 @@ const serviceFilter = document.getElementById("serviceFilter");
 const featuredFilter = document.getElementById("featuredFilter");
 const clearFiltersBtn = document.getElementById("clearFiltersBtn");
 const sortBy = document.getElementById("sortBy");
+const directoryFilterToggle = document.getElementById("directoryFilterToggle");
+const directoryFilterClose = document.getElementById("directoryFilterClose");
+const directoryFiltersPanel = document.getElementById("directoryFiltersPanel");
+const directoryFilterBackdrop = document.getElementById("directoryFilterBackdrop");
+const directoryFilterCount = document.getElementById("directoryFilterCount");
+const directoryActiveFilters = document.getElementById("directoryActiveFilters");
+const directoryHeroStats = document.getElementById("directoryHeroStats");
+const directoryMembersTitle = document.getElementById("directoryMembersTitle");
+const directoryGridView = document.getElementById("directoryGridView");
+const directoryListView = document.getElementById("directoryListView");
 const directoryIndustryTabs = document.getElementById("directoryIndustryTabs");
 const directoryFanStage = document.getElementById("directoryFanStage");
 const directoryFanPrev = document.getElementById("directoryFanPrev");
@@ -35,6 +45,7 @@ let touchStartX = 0;
 let directoryDataLoaded = false;
 let fanRenderMode = "initial";
 let hasRenderedFanMembers = false;
+let directoryViewMode = "grid";
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function escapeHtml(value = "") {
@@ -91,6 +102,33 @@ function getReviewCount(profile) {
   return Number(profile.reviewCount || profile.reviewsCount || 0);
 }
 
+function getActiveFilterItems() {
+  const items = [];
+  if (cleanValue(locationFilter?.value)) items.push({ label: "Location", value: locationFilter.value });
+  if (cleanValue(gurdwaraFilter?.value)) items.push({ label: "Gurdwara", value: gurdwaraFilter.value });
+  if (cleanValue(serviceFilter?.value)) items.push({ label: "Service", value: serviceFilter.value });
+  if (featuredFilter?.checked === true) items.push({ label: "Featured", value: "Only" });
+  return items;
+}
+
+function renderActiveFilterState() {
+  const items = getActiveFilterItems();
+  if (directoryFilterCount) {
+    directoryFilterCount.textContent = String(items.length);
+    directoryFilterCount.hidden = items.length === 0;
+  }
+  if (directoryActiveFilters) {
+    directoryActiveFilters.innerHTML = items.length
+      ? items.map(item => `<span>${escapeHtml(item.label)}: ${escapeHtml(item.value)}</span>`).join("")
+      : "";
+  }
+}
+
+function setFilterDrawer(open) {
+  document.body.classList.toggle("directory-filters-open", open);
+  directoryFilterToggle?.setAttribute("aria-expanded", String(open));
+  if (directoryFilterBackdrop) directoryFilterBackdrop.hidden = !open;
+}
 function renderStars(rating) {
   if (!rating) return "☆☆☆☆☆";
 
@@ -228,6 +266,38 @@ function getPersonName(profile) {
 function getProfileImageUrl(profile) {
   return profile.profilePhotoUrl || profile.businessLogoUrl || profile.logoUrl || "";
 }
+function getProfileImagePosition(profile) {
+  return profile.profileImagePosition || profile.profilePhotoPosition || profile.imagePosition || profile.photoPosition || "center 25%";
+}
+
+function getPrimaryTrustBadge(profile) {
+  if (isFeaturedActive(profile)) return { label: "Featured", className: "is-featured" };
+  if (profile.isFoundingMember === true) return { label: "Founding Member", className: "is-founding" };
+  if (profile.businessVerified === true || profile.isBusinessVerified === true) return { label: "Business Verified", className: "is-verified" };
+  if (profile.gurdwaraVerified === true || profile.isGurdwaraVerified === true) return { label: "Gurdwara Verified", className: "is-verified" };
+  return null;
+}
+
+function renderDirectoryStats(groups = getIndustryGroups(allProfiles)) {
+  if (!directoryHeroStats) return;
+  const industryCount = [...groups.values()].filter((profiles) => profiles.length > 0).length;
+  const locationCount = new Set(allProfiles.map((profile) => cleanValue(profile.town)).filter(Boolean)).size;
+  directoryHeroStats.innerHTML = `
+    <div><span aria-hidden="true">M</span><strong>${allProfiles.length}</strong><small>Members</small></div>
+    <div><span aria-hidden="true">I</span><strong>${industryCount}</strong><small>Industries</small></div>
+    <div><span aria-hidden="true">UK</span><strong>${locationCount}</strong><small>UK Locations</small></div>
+    <div><span aria-hidden="true">+</span><strong>Growing</strong><small>Every week</small></div>
+  `;
+}
+
+function setDirectoryViewMode(mode) {
+  directoryViewMode = mode === "list" ? "list" : "grid";
+  directoryResults?.classList.toggle("is-list-view", directoryViewMode === "list");
+  directoryGridView?.classList.toggle("is-active", directoryViewMode === "grid");
+  directoryListView?.classList.toggle("is-active", directoryViewMode === "list");
+  directoryGridView?.setAttribute("aria-pressed", String(directoryViewMode === "grid"));
+  directoryListView?.setAttribute("aria-pressed", String(directoryViewMode === "list"));
+}
 
 function getCategorySource(profile) {
   return [
@@ -341,13 +411,11 @@ function renderFanCarousel() {
     const service = getProfileService(profile) || "Member service";
     const tag = (Array.isArray(profile.tags) && profile.tags[0]) || getIndustryBucket(profile);
     const profileUrl = getProfileUrl(profile);
-    const trust = isFeaturedActive(profile)
-      ? "Featured"
-      : (profile.businessVerified || profile.isBusinessVerified ? "Verified" : "");
+    const trustBadge = getPrimaryTrustBadge(profile);
     return `
       <article class="directory-fan-card ${fanSlotClass(offset)}" style="--fan-offset: ${offset}; --fan-stagger: ${renderIndex};" data-profile-url="${profileUrl}" tabindex="0" aria-label="Open ${escapeHtml(identity)} profile">
         <div class="directory-fan-image">
-          ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(identity)}">` : `<span>${escapeHtml(identity.slice(0, 1))}</span>`}
+          ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(identity)}" style="object-position: ${escapeHtml(getProfileImagePosition(profile))};">` : `<span>${escapeHtml(identity.slice(0, 1))}</span>`}
         </div>
         <div class="directory-fan-copy">
           <small>${escapeHtml(tag)}</small>
@@ -355,7 +423,7 @@ function renderFanCarousel() {
           ${getPersonName(profile) ? `<p>${escapeHtml(getPersonName(profile))}</p>` : ""}
           <strong>${escapeHtml(service)}</strong>
           <span>${escapeHtml(profile.town || "UK network")}</span>
-          ${trust ? `<em>${escapeHtml(trust)}</em>` : ""}
+          ${trustBadge ? `<em class="${trustBadge.className}">${escapeHtml(trustBadge.label)}</em>` : ""}
         </div>
       </article>
     `;
@@ -374,6 +442,7 @@ function renderDirectoryDiscovery() {
   const groups = getIndustryGroups(allProfiles);
   if (activeIndustry !== "All" && !groups.has(activeIndustry)) activeIndustry = "All";
   renderIndustryTabs(groups);
+  renderDirectoryStats(groups);
   renderFanCarousel();
 }
 
@@ -392,6 +461,7 @@ function changeIndustry(nextIndustry) {
     fanRenderMode = "category";
     hasRenderedFanMembers = false;
     renderDirectoryDiscovery();
+    if (directoryDataLoaded) filterProfiles();
   };
 
   if (reducedMotion || !directoryFanStage || !fanProfiles.length) {
@@ -404,20 +474,17 @@ function changeIndustry(nextIndustry) {
 }
 function renderDirectoryProfile(profile) {
   const tags = Array.isArray(profile.tags) ? profile.tags : [];
-  const visibleTags = tags.slice(0, 2);
-  const tagsHtml = visibleTags
-    .map(tag => `<span class="tag">${escapeHtml(tag)}</span>`)
-    .join("");
+  const visibleTags = tags.slice(0, 3);
+  const hiddenTagCount = Math.max(0, tags.length - visibleTags.length);
+  const tagsHtml = [
+    ...visibleTags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`),
+    hiddenTagCount ? `<span class="tag tag-more">+${hiddenTagCount}</span>` : ""
+  ].filter(Boolean).join("");
 
-  const featuredBadge = isFeaturedActive(profile)
-    ? `<span class="trust-badge featured-badge">Featured</span>`
+  const primaryTrustBadge = getPrimaryTrustBadge(profile);
+  const primaryBadge = primaryTrustBadge
+    ? `<span class="trust-badge ${primaryTrustBadge.className}">${escapeHtml(primaryTrustBadge.label)}</span>`
     : "";
-
-  const verifiedBadge = !featuredBadge && (profile.businessVerified === true || profile.isBusinessVerified === true)
-    ? `<span class="trust-badge verified">Business Verified</span>`
-    : "";
-
-  const primaryBadge = featuredBadge || verifiedBadge;
   const rating = getRating(profile);
   const reviewCount = getReviewCount(profile);
   const badgesHtml = renderDirectoryBadges(profile);
@@ -466,10 +533,12 @@ function renderDirectoryProfile(profile) {
   ]);
 
   return `
-    <article class="profile-card directory-profile-card directory-person-card expandable-profile-card theme-${escapeHtml(profile.themeColour || "gold")}" data-profile-url="${profileUrl}">
+    <article class="profile-card directory-profile-card directory-person-card expandable-profile-card theme-${escapeHtml(profile.themeColour || "gold")}" data-profile-url="${profileUrl}" tabindex="0" aria-label="Open ${escapeHtml(identity)} profile">
       <div class="directory-card-head">
         <div class="directory-card-visuals">
-          ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" class="directory-profile-photo" alt="Profile photo">` : `<span class="directory-profile-photo placeholder-avatar">${escapeHtml(identity.slice(0, 1))}</span>`}
+          ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" class="directory-profile-photo" alt="Profile photo" style="object-position: ${escapeHtml(getProfileImagePosition(profile))};">` : `<span class="directory-profile-photo placeholder-avatar">${escapeHtml(identity.slice(0, 1))}</span>`}
+          <span class="directory-card-category">${escapeHtml(getIndustryBucket(profile))}</span>
+          ${primaryBadge ? `<span class="directory-image-badge ${primaryTrustBadge.className}">${escapeHtml(primaryTrustBadge.label)}</span>` : ""}
           ${profile.businessLogoUrl && profile.businessLogoUrl !== imageUrl ? `<img src="${escapeHtml(profile.businessLogoUrl)}" class="directory-business-logo" alt="Business logo">` : ""}
         </div>
         <div class="directory-card-identity">
@@ -477,22 +546,21 @@ function renderDirectoryProfile(profile) {
           ${personName ? `<span class="directory-person-name">${escapeHtml(personName)}</span>` : ""}
           <p class="service">${escapeHtml(service)}</p>
           <div class="directory-meta-list compact-location">
-            <span>${escapeHtml(profile.town || "Location not provided")}</span>
+            <span>? ${escapeHtml(profile.town || "Location not provided")}</span>
           </div>
+          ${profile.description ? `<p class="directory-card-summary">${escapeHtml(profile.description).substring(0, 96)}${profile.description.length > 96 ? "..." : ""}</p>` : ""}
         </div>
       </div>
 
       ${tagsHtml ? `<div class="tags compact-tags">${tagsHtml}</div>` : ""}
-      ${primaryBadge ? `<div class="directory-badges-row compact-badges">${primaryBadge}</div>` : ""}
-
       <button type="button" class="expandable-profile-toggle" aria-expanded="false" aria-controls="${detailsId}" data-expand-card>More details</button>
 
       ${expandedDetails}
 
       <div class="card-links directory-card-actions">
-        <a class="directory-primary-action" href="${profileUrl}">View Profile</a>
-        <button type="button" class="btn-small" data-directory-message-id="${profileId}">Message</button>
-        <button type="button" class="btn-small secondary-action" data-directory-connect-id="${profileId}">Connect</button>
+        <button type="button" class="btn-small" data-directory-message-id="${profileId}" title="Message">?</button>
+        <button type="button" class="btn-small secondary-action" data-directory-connect-id="${profileId}" title="Connect">?</button>
+        <a class="directory-primary-action" href="${profileUrl}">View profile</a>
         ${websiteUrl ? `<a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener" class="secondary-link">Website</a>` : ""}
         ${linkedInUrl ? `<a href="${escapeHtml(linkedInUrl)}" target="_blank" rel="noopener" class="secondary-link">LinkedIn</a>` : ""}
       </div>
@@ -570,13 +638,15 @@ function filterProfiles() {
     const matchesGurdwara = !selectedGurdwara || profileGurdwara === selectedGurdwara;
     const matchesService = !selectedService || profileService === selectedService;
     const matchesFeatured = !featuredOnly || isFeaturedActive(profile);
+    const matchesIndustry = activeIndustry === "All" || getIndustryBucket(profile) === activeIndustry;
 
     return (
       matchesSearch &&
       matchesLocation &&
       matchesGurdwara &&
       matchesService &&
-      matchesFeatured
+      matchesFeatured &&
+      matchesIndustry
     );
   });
 
@@ -604,8 +674,14 @@ function filterProfiles() {
     return Number(bFeatured) - Number(aFeatured);
   });
 
+  renderActiveFilterState();
+
+  if (directoryMembersTitle) {
+    directoryMembersTitle.textContent = `${filteredProfiles.length} Member${filteredProfiles.length === 1 ? "" : "s"}`;
+  }
+
   if (directoryCount) {
-    directoryCount.textContent = `Showing ${filteredProfiles.length} Sangat member${filteredProfiles.length === 1 ? "" : "s"}`;
+    directoryCount.textContent = "Sikh businesses, tradespeople and professionals.";
   }
 
   if (filteredProfiles.length === 0) {
@@ -802,8 +878,17 @@ function toggleExpandableCard(button) {
 
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
+  setFilterDrawer(false);
   document.querySelectorAll(".expandable-profile-card.is-expanded").forEach(collapseExpandableCard);
 });
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  const card = event.target.closest(".directory-person-card[data-profile-url]");
+  if (card?.dataset.profileUrl && event.target === card) {
+    window.location.href = card.dataset.profileUrl;
+  }
+});
+
 document.addEventListener("click", async (event) => {
   const toggle = event.target.closest("[data-expand-card]");
   if (toggle) {
@@ -839,9 +924,9 @@ document.addEventListener("click", async (event) => {
 
   if (interactive) return;
 
-  const expandedCard = event.target.closest(".directory-person-card.is-expanded[data-profile-url]");
-  if (expandedCard?.dataset.profileUrl) {
-    window.location.href = expandedCard.dataset.profileUrl;
+  const directoryCard = event.target.closest(".directory-person-card[data-profile-url]");
+  if (directoryCard?.dataset.profileUrl) {
+    window.location.href = directoryCard.dataset.profileUrl;
   }
 });
 protectPage({

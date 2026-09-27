@@ -1,9 +1,7 @@
-import { auth } from "./firebase.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { protectPage } from "./subscription-guard.js";
+﻿import { protectPage } from "./subscription-guard.js";
 import {
   acceptConnection,
-  openConversationWithUser,
+  createOrOpenDirectConversation,
   declineConnection,
   escapeHtml,
   getDisplayName,
@@ -13,136 +11,162 @@ import {
   removeConnection
 } from "./member-network.js";
 
-const tabs = document.querySelectorAll(".network-tab");
+const workspaceTabs = document.querySelectorAll("[data-workspace-tab]");
+const workspacePanels = document.querySelectorAll("[data-workspace-panel]");
+const requestTabs = document.querySelectorAll("[data-request-tab]");
+const connectionSearch = document.getElementById("connectionSearch");
+const connectionFilters = document.querySelectorAll("[data-connection-filter]");
 const lists = {
   connections: document.getElementById("networkConnections"),
   requests: document.getElementById("networkRequests"),
   sent: document.getElementById("networkSent")
 };
 const networkMessage = document.getElementById("networkMessage");
+const counts = {
+  connections: document.getElementById("connectionsTabCount"),
+  requests: document.getElementById("requestsTabCount"),
+  messages: document.getElementById("messagesTabCount")
+};
 
 let currentUser = null;
 let rows = [];
+let profileCache = new Map();
+let currentConnectionFilter = "all";
 
 function setMessage(message) {
-  if (networkMessage) networkMessage.textContent = message;
+  if (networkMessage) networkMessage.textContent = message || "";
 }
 
-function setTab(tabName) {
-  tabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.networkTab === tabName));
-  Object.entries(lists).forEach(([name, element]) => {
-    element?.classList.toggle("hidden", name !== tabName);
-  });
+function setWorkspaceTab(tabName, options = {}) {
+  const normalized = ["connections", "requests", "messages"].includes(tabName) ? tabName : "connections";
+  workspaceTabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.workspaceTab === normalized));
+  workspacePanels.forEach((panel) => panel.classList.toggle("hidden", panel.dataset.workspacePanel !== normalized));
   const url = new URL(window.location.href);
-  url.searchParams.set("tab", tabName);
-  window.history.replaceState({}, "", url);
+  url.searchParams.set("tab", normalized);
+  if (normalized !== "messages" && !options.keepConversation) url.searchParams.delete("conversation");
+  window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+  document.querySelector(".messages-shell")?.classList.toggle("workspace-messages-visible", normalized === "messages");
+}
+
+function setRequestTab(tabName) {
+  const normalized = tabName === "sent" ? "sent" : "received";
+  requestTabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.requestTab === normalized));
+  lists.requests?.classList.toggle("hidden", normalized !== "received");
+  lists.sent?.classList.toggle("hidden", normalized !== "sent");
 }
 
 function getOtherId(connection) {
   return (connection.userIds || []).find((id) => id !== currentUser.uid);
 }
 
-async function renderRows() {
-  const profileCache = new Map();
-  async function profileFor(uid) {
-    if (!profileCache.has(uid)) profileCache.set(uid, await getUserProfile(uid));
-    return profileCache.get(uid);
-  }
+async function profileFor(uid) {
+  if (!uid) return null;
+  if (!profileCache.has(uid)) profileCache.set(uid, await getUserProfile(uid));
+  return profileCache.get(uid);
+}
 
+function getLocation(profile) {
+  return profile?.town || profile?.serviceArea || profile?.location || "UK network";
+}
+
+function updateCounts(accepted, incoming) {
+  if (counts.connections) counts.connections.textContent = accepted ? String(accepted) : "";
+  if (counts.requests) counts.requests.textContent = incoming ? String(incoming) : "";
+}
+
+function matchesConnectionSearch(profile) {
+  const query = (connectionSearch?.value || "").trim().toLowerCase();
+  if (!query) return true;
+  return [getDisplayName(profile), getMemberLine(profile), getLocation(profile), profile?.businessName]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .includes(query);
+}
+
+function sortConnections(connections) {
+  if (currentConnectionFilter !== "recent") return connections;
+  return [...connections].sort((a, b) => {
+    const aTime = a.acceptedAt?.toMillis?.() || a.updatedAt?.toMillis?.() || 0;
+    const bTime = b.acceptedAt?.toMillis?.() || b.updatedAt?.toMillis?.() || 0;
+    return bTime - aTime;
+  });
+}
+
+async function renderRows() {
   const accepted = [];
-  const requests = [];
+  const incoming = [];
   const sent = [];
 
   for (const connection of rows) {
     const otherId = getOtherId(connection);
     const other = await profileFor(otherId);
-    const card = renderNetworkCard(connection, other);
-    if (connection.status === "accepted") accepted.push(card);
-    if (connection.status === "pending" && connection.recipientId === currentUser.uid) requests.push(card);
-    if (connection.status === "pending" && connection.requesterId === currentUser.uid) sent.push(card);
+    if (connection.status === "accepted") accepted.push({ connection, profile: other });
+    if (connection.status === "pending" && connection.recipientId === currentUser.uid) incoming.push({ connection, profile: other });
+    if (connection.status === "pending" && connection.requesterId === currentUser.uid) sent.push({ connection, profile: other });
   }
 
-  lists.connections.innerHTML = accepted.join("") || `<div class="empty-state">You haven't made any connections yet. Explore the directory to meet members across the Sangat Works network.</div>`;
-  lists.requests.innerHTML = requests.join("") || `<div class="empty-state">No pending connection requests.</div>`;
-  lists.sent.innerHTML = sent.join("") || `<div class="empty-state">No sent connection requests.</div>`;
+  const visibleAccepted = sortConnections(accepted).filter(({ profile }) => matchesConnectionSearch(profile));
+  updateCounts(accepted.length, incoming.length);
+
+  lists.connections.innerHTML = visibleAccepted.map(({ connection, profile }) => renderConnectionRow(connection, profile)).join("") || `
+    <div class="network-empty-state">
+      <strong>Your network starts here.</strong>
+      <span>Find professionals, businesses and people across the Sangat.</span>
+      <a href="directory.html">Explore Directory <span aria-hidden="true">-&gt;</span></a>
+    </div>`;
+
+  lists.requests.innerHTML = incoming.map(({ connection, profile }) => renderRequestRow(connection, profile, "incoming")).join("") || `
+    <div class="network-empty-state"><strong>You're all caught up.</strong><span>No connection requests waiting for you.</span></div>`;
+
+  lists.sent.innerHTML = sent.map(({ connection, profile }) => renderRequestRow(connection, profile, "sent")).join("") || `
+    <div class="network-empty-state"><strong>No sent requests.</strong><span>Connection requests you send will appear here.</span></div>`;
 }
 
-function renderExpandableDetails(detailsId, sections) {
-  const visibleSections = sections.filter(section => section.content);
-  if (!visibleSections.length) return "";
-
-  return `
-    <div class="expandable-profile-details" id="${detailsId}" hidden>
-      ${visibleSections.map(section => `
-        <section class="expandable-detail-section">
-          <h4>${escapeHtml(section.title)}</h4>
-          ${section.content}
-        </section>
-      `).join("")}
-    </div>
-  `;
-}
-
-function renderNetworkCard(connection, profile) {
-  const otherId = profile?.uid || profile?.id || getOtherId(connection);
-  const isIncoming = connection.status === "pending" && connection.recipientId === currentUser.uid;
-  const isOutgoing = connection.status === "pending" && connection.requesterId === currentUser.uid;
-  const relationshipLabel = connection.status === "accepted"
-    ? "Connected"
-    : isIncoming
-      ? "Request received"
-      : "Request sent";
-  const image = profile?.profilePhotoUrl
+function renderAvatar(profile) {
+  const name = getDisplayName(profile);
+  return profile?.profilePhotoUrl
     ? `<img src="${escapeHtml(profile.profilePhotoUrl)}" class="network-avatar" alt="">`
-    : `<div class="network-avatar placeholder-avatar">${escapeHtml(getDisplayName(profile).slice(0, 1))}</div>`;
-  const organisation = profile?.businessName || profile?.organisation || profile?.company || "";
-  const location = profile?.town || profile?.serviceArea || "";
-  const detailsId = `network-profile-details-${encodeURIComponent(otherId)}`;
-  const tags = profile?.tags || [];
-  const tagsHtml = tags.length
-    ? `<div class="tags">${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>`
-    : "";
-  const detailRows = [
-    organisation ? `<p><strong>Organisation</strong><span>${escapeHtml(organisation)}</span></p>` : "",
-    location ? `<p><strong>Location</strong><span>${escapeHtml(location)}</span></p>` : "",
-    profile?.serviceArea ? `<p><strong>Service area</strong><span>${escapeHtml(profile.serviceArea)}</span></p>` : "",
-    profile?.yearsExperience ? `<p><strong>Experience</strong><span>${escapeHtml(profile.yearsExperience)} years</span></p>` : "",
-    profile?.specialistWork ? `<p><strong>Specialist work</strong><span>${escapeHtml(profile.specialistWork)}</span></p>` : ""
-  ].filter(Boolean).join("");
-  const expandedDetails = renderExpandableDetails(detailsId, [
-    { title: "About", content: profile?.description ? `<p>${escapeHtml(profile.description)}</p>` : "" },
-    { title: "Skills", content: tagsHtml },
-    { title: "Profile details", content: detailRows ? `<div class="expandable-detail-list">${detailRows}</div>` : "" }
-  ]);
+    : `<span class="network-avatar placeholder-avatar">${escapeHtml(name.slice(0, 1))}</span>`;
+}
 
+function renderPersonSummary(profile, otherId) {
+  const name = getDisplayName(profile);
   return `
-    <article class="network-card professional-person-card expandable-profile-card">
-      ${image}
-      <div class="network-card-main">
-        <div class="person-card-heading">
-          <div>
-            <h3>${escapeHtml(getDisplayName(profile))}</h3>
-            <p>${escapeHtml(getMemberLine(profile) || "Member profile")}</p>
-          </div>
-          <span class="project-status-pill ${connection.status === "accepted" ? "status-accepted" : "status-pending"}">${relationshipLabel}</span>
-        </div>
-        <div class="person-card-meta">
-          ${organisation ? `<span>${escapeHtml(organisation)}</span>` : ""}
-          ${location ? `<span>${escapeHtml(location)}</span>` : ""}
-        </div>
-        <button type="button" class="expandable-profile-toggle" aria-expanded="false" aria-controls="${detailsId}" data-expand-card>More details</button>
-        ${expandedDetails}
-        <div class="card-links person-card-actions">
-          ${connection.status === "accepted" ? `<button type="button" class="btn-small" data-message-user-id="${otherId}">Message</button>` : ""}
-          <a href="view.html?id=${encodeURIComponent(otherId)}">View Profile</a>
-          ${isIncoming ? `<button type="button" class="btn-small project-accept-btn" data-accept-connection-id="${connection.id}">Accept</button>` : ""}
-          ${isIncoming ? `<button type="button" class="btn-small subtle-danger-action" data-decline-connection-id="${connection.id}">Decline</button>` : ""}
-          ${isOutgoing ? `<button type="button" class="btn-small subtle-danger-action" data-decline-connection-id="${connection.id}">Cancel Request</button>` : ""}
-          ${connection.status === "accepted" ? `<button type="button" class="btn-small subtle-danger-action" data-remove-user-id="${otherId}">Remove</button>` : ""}
-        </div>
+    ${renderAvatar(profile)}
+    <a class="network-person-copy" href="view.html?id=${encodeURIComponent(otherId)}">
+      <strong>${escapeHtml(name)}</strong>
+      <span>${escapeHtml(getMemberLine(profile) || "Sangat Works Member")}</span>
+      <small>${escapeHtml(getLocation(profile))}</small>
+    </a>`;
+}
+
+function renderConnectionRow(connection, profile) {
+  const otherId = profile?.uid || profile?.id || getOtherId(connection);
+  return `
+    <article class="network-person-row">
+      ${renderPersonSummary(profile, otherId)}
+      <div class="network-row-actions">
+        <button type="button" class="btn-small" data-message-user-id="${escapeHtml(otherId)}">Message</button>
+        <details class="network-row-menu">
+          <summary aria-label="More actions">...</summary>
+          <a href="view.html?id=${encodeURIComponent(otherId)}">View profile</a>
+          <button type="button" data-remove-user-id="${escapeHtml(otherId)}">Remove connection</button>
+        </details>
       </div>
-    </article>
-  `;
+    </article>`;
+}
+
+function renderRequestRow(connection, profile, type) {
+  const otherId = profile?.uid || profile?.id || getOtherId(connection);
+  return `
+    <article class="network-person-row request-row">
+      ${renderPersonSummary(profile, otherId)}
+      <div class="network-row-actions">
+        ${type === "incoming" ? `<button type="button" class="btn-small project-accept-btn" data-accept-connection-id="${escapeHtml(connection.id)}">Accept</button>` : `<span class="request-status">Pending</span>`}
+        ${type === "incoming" ? `<button type="button" class="btn-small subtle-danger-action" data-decline-connection-id="${escapeHtml(connection.id)}">Decline</button>` : `<button type="button" class="btn-small subtle-danger-action" data-decline-connection-id="${escapeHtml(connection.id)}">Cancel</button>`}
+      </div>
+    </article>`;
 }
 
 async function refreshNetwork() {
@@ -152,47 +176,25 @@ async function refreshNetwork() {
   setMessage("");
 }
 
-function collapseExpandableCard(card) {
-  const button = card.querySelector("[data-expand-card]");
-  const details = button ? document.getElementById(button.getAttribute("aria-controls")) : null;
-  card.classList.remove("is-expanded");
-  button?.setAttribute("aria-expanded", "false");
-  if (button) button.textContent = "More details";
-  if (details) details.hidden = true;
-}
+workspaceTabs.forEach((tab) => {
+  tab.addEventListener("click", () => setWorkspaceTab(tab.dataset.workspaceTab, { keepConversation: true }));
+});
 
-function toggleExpandableCard(button) {
-  const card = button.closest(".expandable-profile-card");
-  const list = button.closest(".network-list");
-  const details = document.getElementById(button.getAttribute("aria-controls"));
-  if (!card || !details) return;
+requestTabs.forEach((tab) => {
+  tab.addEventListener("click", () => setRequestTab(tab.dataset.requestTab));
+});
 
-  const shouldExpand = button.getAttribute("aria-expanded") !== "true";
-  list?.querySelectorAll(".expandable-profile-card.is-expanded").forEach((openCard) => {
-    if (openCard !== card) collapseExpandableCard(openCard);
+connectionSearch?.addEventListener("input", renderRows);
+
+connectionFilters.forEach((filter) => {
+  filter.addEventListener("click", () => {
+    currentConnectionFilter = filter.dataset.connectionFilter || "all";
+    connectionFilters.forEach((item) => item.classList.toggle("active", item === filter));
+    renderRows();
   });
-
-  card.classList.toggle("is-expanded", shouldExpand);
-  button.setAttribute("aria-expanded", String(shouldExpand));
-  details.hidden = !shouldExpand;
-  button.textContent = shouldExpand ? "Hide details" : "More details";
-}
-
-document.addEventListener("keydown", (event) => {
-  if (event.key !== "Escape") return;
-  document.querySelectorAll(".expandable-profile-card.is-expanded").forEach(collapseExpandableCard);
 });
 
 document.addEventListener("click", async (event) => {
-  const toggle = event.target.closest("[data-expand-card]");
-  if (toggle) {
-    toggleExpandableCard(toggle);
-    return;
-  }
-
-  const tab = event.target.closest("[data-network-tab]");
-  if (tab) setTab(tab.dataset.networkTab);
-
   const accept = event.target.closest("[data-accept-connection-id]");
   const decline = event.target.closest("[data-decline-connection-id]");
   const remove = event.target.closest("[data-remove-user-id]");
@@ -212,7 +214,12 @@ document.addEventListener("click", async (event) => {
       await refreshNetwork();
     }
     if (message) {
-      await openConversationWithUser(currentUser.uid, message.dataset.messageUserId);
+      setMessage("Opening conversation...");
+      const conversationId = await createOrOpenDirectConversation(currentUser.uid, message.dataset.messageUserId);
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", "messages");
+      url.searchParams.set("conversation", conversationId);
+      window.location.href = `${url.pathname}${url.search}`;
     }
   } catch (error) {
     setMessage(error.message);
@@ -220,11 +227,12 @@ document.addEventListener("click", async (event) => {
 });
 
 protectPage({
-  onAllowed: (user) => {
+  onAllowed: async (user) => {
     currentUser = user;
-    setTab(new URLSearchParams(window.location.search).get("tab") || "connections");
-    refreshNetwork();
+    const params = new URLSearchParams(window.location.search);
+    const initialTab = params.get("conversation") ? "messages" : (params.get("tab") || "connections");
+    setWorkspaceTab(initialTab, { keepConversation: true });
+    setRequestTab(params.get("requestTab") || "received");
+    await refreshNetwork();
   }
 });
-
-

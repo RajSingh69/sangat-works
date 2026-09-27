@@ -187,16 +187,6 @@
                                    ]
                     },
                     {
-                        "collectionGroup":  "messages",
-                        "queryScope":  "COLLECTION",
-                        "fields":  [
-                                       {
-                                           "fieldPath":  "createdAt",
-                                           "order":  "DESCENDING"
-                                       }
-                                   ]
-                    },
-                    {
                         "collectionGroup":  "workspaceTasks",
                         "queryScope":  "COLLECTION",
                         "fields":  [

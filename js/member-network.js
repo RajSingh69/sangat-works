@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase.js";
+﻿import { auth, db } from "./firebase.js";
 
 import {
   collection,
@@ -128,7 +128,7 @@ export async function createOrOpenDirectConversation(currentUserId, otherUserId)
 
 export async function openConversationWithUser(currentUserId, otherUserId) {
   const conversationId = await createOrOpenDirectConversation(currentUserId, otherUserId);
-  window.location.href = `messages.html?conversation=${encodeURIComponent(conversationId)}`;
+  window.location.href = `network.html?tab=messages&conversation=${encodeURIComponent(conversationId)}`;
   return conversationId;
 }
 
@@ -206,3 +206,4 @@ export async function getNetworkConnections(currentUserId) {
   ));
   return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
 }
+

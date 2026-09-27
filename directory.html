@@ -19,43 +19,53 @@
 <main class="directory-page">
 
   <section class="directory-hero">
-    <p class="eyebrow">Search the Sangat</p>
-    <h1>Find Sikh businesses, trades and professionals.</h1>
-    <p>
-      Search by skill, trade, location, business type, Gurdwara association or keyword.
-    </p>
+    <div class="directory-hero-content">
+      <p class="eyebrow">Directory</p>
+      <h1>Find the right people<br>in the <span>Sangat.</span></h1>
+      <p>
+        Discover Sikh businesses, tradespeople and professionals by skill, industry and location.
+      </p>
 
-    <div class="directory-search-bar">
-      <input
-        type="text"
-        id="searchInput"
-        placeholder="Search electrician, plumber, accountant, developer..."
-      />
-      <button id="searchBtn" type="button">Search</button>
+      <div class="directory-search-bar">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search businesses, people, skills, services or locations..."
+        />
+        <button id="searchBtn" type="button">Search <span aria-hidden="true">-&gt;</span></button>
+      </div>
+
+      <div class="directory-industry-tabs" id="directoryIndustryTabs" role="tablist" aria-label="Member categories"></div>
     </div>
-  </section>
 
+    <blockquote class="directory-hero-statement">
+      Stronger<br>businesses.<br>A stronger<br>Sangat.
+    </blockquote>
+
+    <div class="directory-hero-stats" id="directoryHeroStats" aria-live="polite"></div>
+  </section>
 
   <section class="directory-discovery" aria-labelledby="directoryDiscoveryTitle">
     <div class="directory-discovery-head">
       <div>
-        <p class="home-section-kicker">Member Discovery</p>
-        <h2 id="directoryDiscoveryTitle">Explore the Sangat</h2>
-        <p>Browse real members by broad service area before narrowing with filters.</p>
+        <p class="home-section-kicker">Explore the Sangat</p>
+        <h2 id="directoryDiscoveryTitle">Featured members from across<br>the network.</h2>
       </div>
       <div class="directory-fan-controls">
         <button type="button" class="directory-fan-btn" id="directoryFanPrev" aria-label="Show previous member" hidden disabled>&lt;</button>
-        <span id="directoryFanPosition" class="directory-fan-position" aria-live="polite" hidden></span>
         <button type="button" class="directory-fan-btn" id="directoryFanNext" aria-label="Show next member" hidden disabled>&gt;</button>
       </div>
     </div>
-    <div class="directory-industry-tabs" id="directoryIndustryTabs" role="tablist" aria-label="Member categories"></div>
     <div class="directory-fan-stage" id="directoryFanStage" tabindex="0" aria-label="Featured directory members"><div class="directory-fan-empty is-loading">Loading members...</div></div>
+    <span id="directoryFanPosition" class="directory-fan-position" aria-live="polite" hidden></span>
   </section>
   <section class="directory-layout">
 
-    <aside class="directory-filters">
-      <h2>Filters</h2>
+    <aside class="directory-filters" id="directoryFiltersPanel" aria-label="Directory filters">
+      <div class="directory-filter-head">
+        <h2>Filters</h2>
+        <button type="button" class="directory-filter-close" id="directoryFilterClose" aria-label="Close filters">&times;</button>
+      </div>
 
       <div class="filter-block">
         <label for="locationFilter">Location</label>
@@ -92,18 +102,31 @@
       <div class="directory-results-top">
 
         <div>
-          <h2>Directory Results</h2>
+          <p class="directory-toolbar-label">Directory</p>
+          <h2 id="directoryMembersTitle">Members</h2>
           <p id="directoryCount">Loading profiles...</p>
         </div>
 
-        <select id="sortBy">
+        <div class="directory-toolbar-actions">
+          <button type="button" class="directory-filter-toggle" id="directoryFilterToggle" aria-expanded="false" aria-controls="directoryFiltersPanel">
+            Filters <span id="directoryFilterCount" hidden>0</span>
+          </button>
+
+        <select id="sortBy" aria-label="Sort directory members">
           <option value="featured">Featured First</option>
           <option value="rating">Highest Rated</option>
           <option value="experience">Most Experienced</option>
           <option value="newest">Newest Members</option>
         </select>
 
+          <div class="directory-view-toggle" aria-label="Directory view">
+            <button type="button" class="directory-view-btn is-active" id="directoryGridView" aria-label="Grid view" aria-pressed="true">Grid</button>
+            <button type="button" class="directory-view-btn" id="directoryListView" aria-label="List view" aria-pressed="false">List</button>
+          </div>
       </div>
+
+      </div>
+      <div class="directory-active-filters" id="directoryActiveFilters" aria-live="polite"></div>
 
       <div id="directoryResults" class="directory-results-grid">
         <div class="empty-state">
@@ -113,6 +136,8 @@
     </section>
 
   </section>
+
+  <div class="directory-filter-backdrop" id="directoryFilterBackdrop" hidden></div>
 
 </main>
 
