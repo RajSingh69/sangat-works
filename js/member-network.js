@@ -86,6 +86,41 @@ export async function getUserProfile(uid) {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
+// Counts today as an active day for ranking. The server ignores repeat calls on the same
+// day; the localStorage note just avoids calling it on every page view.
+export async function recordDailyActivity(uid) {
+  const today = new Date().toISOString().slice(0, 10);
+  const key = `sw-activity-${uid}`;
+
+  try {
+    if (localStorage.getItem(key) === today) return;
+  } catch (error) {
+    // Storage unavailable: fall through, the server de-duplicates.
+  }
+
+  await callMemberFunction("recordDailyActivity");
+
+  try {
+    localStorage.setItem(key, today);
+  } catch (error) {
+    // Ignore storage failures.
+  }
+}
+
+const publicProfileCache = new Map();
+
+// Map of uid -> public profile (or null), fetched once per page load. Used for ranking lists.
+export async function getPublicProfiles(uids) {
+  const unique = [...new Set(uids.filter(Boolean))];
+  await Promise.all(unique.map(async uid => {
+    if (!publicProfileCache.has(uid)) {
+      publicProfileCache.set(uid, getUserProfile(uid).catch(() => null));
+    }
+  }));
+  const entries = await Promise.all(unique.map(async uid => [uid, await publicProfileCache.get(uid)]));
+  return new Map(entries);
+}
+
 export async function getConversationById(conversationId) {
   const snap = await getDoc(doc(db, "conversations", conversationId));
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;

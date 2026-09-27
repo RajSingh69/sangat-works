@@ -13,8 +13,41 @@ const MEMBERSHIP_FIELDS = [
   "subscriptionExpiresAt", "subscriptionPlan", "subscriptionBillingType",
   "membershipPlan", "membershipStatus", "accessType", "freeAccessExpiresAt",
   "isFoundingMember", "memberNumber", "featuredListing", "featuredListingStatus",
-  "featuredExpiresAt"
+  "featuredExpiresAt", "pinnedToTop", "createdAt"
 ];
+
+// Same 12 checks as calculateProfileStrength in js/profile.js; keep them in step.
+// Computed from the full record so private fields (e.g. hidden Gurdwara) still count.
+function calculateProfileCompletion(user) {
+  const checks = [
+    Boolean(user.profilePhotoUrl),
+    Boolean(user.businessLogoUrl),
+    Boolean(user.businessName || user.fullName),
+    Boolean(user.serviceTitle),
+    Boolean(user.description),
+    (user.tags || []).length > 0,
+    Boolean(user.town),
+    Boolean(user.yearsExperience),
+    Boolean(user.specialistWork),
+    Boolean(user.associatedGurdwara),
+    Boolean(user.website || user.linkedin),
+    Boolean(user.funFactOne && user.funFactTwo)
+  ];
+
+  return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+}
+
+// activeDays is the private list of "YYYY-MM-DD" sign-in days kept by recordDailyActivity.
+// Only the count and the most recent day are published.
+function summariseActivity(activeDays, now = new Date()) {
+  const days = Array.isArray(activeDays) ? [...activeDays].sort() : [];
+  const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  return {
+    activeDaysLast30: days.filter(day => day >= cutoff).length,
+    lastActiveOn: days.length ? days[days.length - 1] : null
+  };
+}
 
 // Profile content, only copied when the profile is public.
 const PROFILE_FIELDS = [
@@ -76,7 +109,11 @@ function buildPublicProfile(uid, userData) {
     profile.googleReviews = userData.googleReviews;
   }
 
+  // Ranking inputs (see js/ranking.js).
+  profile.profileCompletion = calculateProfileCompletion(userData);
+  Object.assign(profile, summariseActivity(userData.activeDays));
+
   return profile;
 }
 
-module.exports = { buildPublicProfile };
+module.exports = { buildPublicProfile, calculateProfileCompletion, summariseActivity };

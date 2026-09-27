@@ -687,7 +687,8 @@ textarea {
 }
 
 #profileStrengthFill,
-#foundingCounterFill {
+#foundingCounterFill,
+#rankingScoreFill {
   height: 100%;
   width: 0%;
   background: linear-gradient(90deg, var(--orange), var(--gold));
@@ -695,7 +696,8 @@ textarea {
   transition: width 0.3s ease;
 }
 
-#profileStrengthChecklist {
+#profileStrengthChecklist,
+#rankingScoreTips {
   list-style: none;
   display: grid;
   gap: 7px;
@@ -703,7 +705,8 @@ textarea {
   margin: 0;
 }
 
-#profileStrengthChecklist li {
+#profileStrengthChecklist li,
+#rankingScoreTips li {
   font-weight: 800;
   color: var(--muted);
 }

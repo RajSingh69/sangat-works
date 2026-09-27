@@ -19,6 +19,10 @@ import {
 } from "./subscription-guard.js";
 
 import {
+  recordDailyActivity
+} from "./member-network.js";
+
+import {
   canAccessDeveloperFeatures,
   getUserRole,
   isAdminUser,
@@ -215,6 +219,10 @@ if (accountArea) {
     }
 
     renderAppShell(user, userData);
+
+    if (Object.keys(userData).length > 0) {
+      recordDailyActivity(user.uid).catch(error => console.warn("Daily activity not recorded:", error.message));
+    }
 
     if (unsubscribeMessageBadge) {
       unsubscribeMessageBadge();

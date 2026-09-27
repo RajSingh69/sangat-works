@@ -6,6 +6,7 @@ const {
   isSuperAdmin,
   onRequest
 } = require("./shared");
+const { FieldValue } = require("firebase-admin/firestore");
 
 // =========================================
 // Member Networking / Messaging Trusted API
@@ -198,6 +199,27 @@ exports.updateUserRole = networkingEndpoint(async (req, res, authUser, body) => 
   await writeAdminAuditLog("update_user_role", authUser.uid, targetUserId, { role });
   return res.status(200).json({ updated: true, role });
 });
+// Records at most one sign-in day per member per day (UK date), keeping the last 30 days.
+// Feeds the activity part of the directory ranking via publicProfiles.
+exports.recordDailyActivity = networkingEndpoint(async (req, res, authUser) => {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
+  const existingDays = Array.isArray(authUser.data.activeDays) ? authUser.data.activeDays : [];
+
+  if (existingDays.includes(today)) {
+    return res.status(200).json({ recorded: false, today });
+  }
+
+  const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const activeDays = [...existingDays.filter(day => day >= cutoff), today].sort();
+
+  await admin.firestore().collection("users").doc(authUser.uid).update({
+    activeDays,
+    lastActiveAt: FieldValue.serverTimestamp()
+  });
+
+  return res.status(200).json({ recorded: true, today, activeDaysLast30: activeDays.length });
+});
+
 exports.trackProfileMetric = networkingEndpoint(async (req, res, authUser, body) => {
   const targetUserId = String(body.targetUserId || "").trim();
   const metric = String(body.metric || "").trim();

@@ -49,6 +49,8 @@ const RESOLVE_REPORT_URL =
   "https://europe-west1-sangat-works.cloudfunctions.net/resolveReport";
 const RESTRICT_MESSAGING_URL =
   "https://europe-west1-sangat-works.cloudfunctions.net/restrictMessaging";
+const UPDATE_USER_ROLE_URL =
+  "https://europe-west1-sangat-works.cloudfunctions.net/updateUserRole";
 
 let currentAdminData = null;
 
@@ -212,6 +214,7 @@ function renderUserRow(user) {
     ? `
       <div class="admin-badge-controls">
         ${badgeCheckbox(user, "adminHidden", "Hide profile from site (directory, map and profile page)")}
+        ${badgeCheckbox(user, "pinnedToTop", "Pin to top of every list (above the ranking)")}
       </div>
     `
     : "";
@@ -220,7 +223,7 @@ function renderUserRow(user) {
     <details class="admin-user-card">
       <summary>
         <strong>${name}</strong>
-        <span>${user.adminHidden === true ? "Hidden · " : ""}${daysAgo(user.createdAt)}</span>
+        <span>${user.pinnedToTop === true ? "Pinned · " : ""}${user.adminHidden === true ? "Hidden · " : ""}${daysAgo(user.createdAt)}</span>
       </summary>
 
       <div class="admin-user-expanded">
@@ -444,6 +447,8 @@ function setupUserAdminActions() {
 
       adminStatus.textContent = field === "adminHidden"
         ? `Profile ${value ? "hidden from" : "shown on"} the site. Refresh to see updated status.`
+        : field === "pinnedToTop"
+        ? `Profile ${value ? "pinned to the top of" : "unpinned from"} every list.`
         : `Updated ${field}.`;
     });
   });

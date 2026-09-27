@@ -1,5 +1,6 @@
 import { db } from "./firebase.js";
 import { protectPage } from "./subscription-guard.js";
+import { compareByRanking } from "./ranking.js";
 
 import {
   collection,
@@ -454,7 +455,7 @@ function renderMarkers() {
 
   const filteredProfiles = allProfiles
     .filter(profileMatchesFilters)
-    .sort((a, b) => Number(isFeatured(b)) - Number(isFeatured(a)));
+    .sort((a, b) => compareByRanking(a, b));
 
   const bounds = [];
 

@@ -463,6 +463,123 @@ describe("buildPublicProfile", () => {
   });
 });
 
+describe("Ranking inputs in public profiles", () => {
+  const { buildPublicProfile, calculateProfileCompletion, summariseActivity } = require("../functions/public-profile");
+
+  it("publishes completion, activity summary, pin and join date but not the raw sign-in days", () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const profile = buildPublicProfile("alice", {
+      fullName: "Alice",
+      serviceTitle: "Plumber",
+      pinnedToTop: true,
+      createdAt: new Date("2026-06-01T00:00:00Z"),
+      activeDays: ["2020-01-01", today],
+      lastActiveAt: new Date()
+    });
+    assert.strictEqual(profile.profileCompletion, 17);
+    assert.strictEqual(profile.activeDaysLast30, 1);
+    assert.strictEqual(profile.lastActiveOn, today);
+    assert.strictEqual(profile.pinnedToTop, true);
+    assert.ok(profile.createdAt);
+    assert.strictEqual(profile.activeDays, undefined);
+    assert.strictEqual(profile.lastActiveAt, undefined);
+  });
+
+  it("scores a fully completed profile at 100%", () => {
+    assert.strictEqual(calculateProfileCompletion({
+      profilePhotoUrl: "x", businessLogoUrl: "x", businessName: "x", serviceTitle: "x", description: "x",
+      tags: ["x"], town: "x", yearsExperience: "2", specialistWork: "x", associatedGurdwara: "x",
+      website: "x", funFactOne: "x", funFactTwo: "x"
+    }), 100);
+    assert.deepStrictEqual(summariseActivity(undefined), { activeDaysLast30: 0, lastActiveOn: null });
+  });
+});
+
+describe("Ranking score and order (js/ranking.js)", () => {
+  let ranking;
+  const now = new Date("2026-10-01T12:00:00Z");
+  const future = new Date("2027-06-01T00:00:00Z");
+  const member = (overrides = {}) => ({
+    isPublic: true, hasSubscription: true, subscriptionStatus: "active", subscriptionExpiresAt: future,
+    subscriptionBillingType: "founding-free-year", profileCompletion: 0, ...overrides
+  });
+
+  before(async () => {
+    const os = require("os");
+    const { pathToFileURL } = require("url");
+    const tmp = path.join(os.tmpdir(), `ranking-${process.pid}.mjs`);
+    fs.copyFileSync(path.join(__dirname, "..", "js", "ranking.js"), tmp);
+    ranking = await import(pathToFileURL(tmp).href);
+  });
+
+  it("gives paid members more than free members, and featured paid members the most", () => {
+    const free = ranking.getRankingScore(member(), now);
+    const paid = ranking.getRankingScore(member({ subscriptionBillingType: "subscription" }), now);
+    const featured = ranking.getRankingScore(member({
+      subscriptionBillingType: "subscription", featuredListing: true, featuredListingStatus: "active", featuredExpiresAt: future
+    }), now);
+    assert.strictEqual(free, 5);
+    assert.strictEqual(paid, 20);
+    assert.strictEqual(featured, 45);
+  });
+
+  it("adds profile, activity and verification points up to 100", () => {
+    const perfect = member({
+      subscriptionBillingType: "oneoff", featuredListing: true, featuredListingStatus: "active", featuredExpiresAt: future,
+      profileCompletion: 100, activeDaysLast30: 25, lastActiveOn: "2026-10-01",
+      emailVerifiedBadge: true, businessVerified: true, communityVerified: true, gurdwaraVerified: true
+    });
+    const breakdown = ranking.getRankingBreakdown(perfect, now);
+    assert.strictEqual(breakdown.total, 100);
+    assert.deepStrictEqual(breakdown.tips, []);
+  });
+
+  it("stops counting activity once a member has been away over 30 days", () => {
+    const away = member({ activeDaysLast30: 20, lastActiveOn: "2026-08-01" });
+    assert.strictEqual(ranking.getRankingBreakdown(away, now).parts.activity, 0);
+  });
+
+  it("orders pinned first, then by score, then newest", () => {
+    const low = { ...member(), id: "low" };
+    const high = { ...member({ subscriptionBillingType: "subscription", profileCompletion: 100 }), id: "high" };
+    const pinned = { ...member(), id: "pinned", pinnedToTop: true };
+    const sorted = [low, high, pinned].sort((a, b) => ranking.compareByRanking(a, b, now)).map(p => p.id);
+    assert.deepStrictEqual(sorted, ["pinned", "high", "low"]);
+  });
+
+  it("suggests the biggest improvements first", () => {
+    const tips = ranking.getRankingBreakdown(member(), now).tips;
+    assert.strictEqual(tips[0].text, "Become a Featured Listing");
+    assert.ok(tips.some(tip => tip.text.startsWith("Complete your profile")));
+  });
+});
+
+describe("Firestore security rules: ranking fields are admin/server only", () => {
+  let testEnv;
+
+  before(async () => {
+    testEnv = await initializeTestEnvironment({
+      projectId,
+      firestore: { rules: fs.readFileSync(path.join(__dirname, "..", "firestore.rules"), "utf8") }
+    });
+  });
+
+  after(async () => {
+    await testEnv.cleanup();
+  });
+
+  it("stops members pinning themselves or faking sign-in days", async () => {
+    await testEnv.clearFirestore();
+    await seed(testEnv, "users/alice", { uid: "alice", role: "member", hasSubscription: true, subscriptionStatus: "active" });
+    await seed(testEnv, "users/owner", { uid: "owner", role: "super_admin" });
+    const aliceDb = testEnv.authenticatedContext("alice").firestore();
+
+    await assertFails(updateDoc(doc(aliceDb, "users/alice"), { pinnedToTop: true }));
+    await assertFails(updateDoc(doc(aliceDb, "users/alice"), { activeDays: ["2026-10-01"] }));
+    await assertSucceeds(updateDoc(doc(testEnv.authenticatedContext("owner").firestore(), "users/alice"), { pinnedToTop: true }));
+  });
+});
+
 assert.ok(projectId);
 
 

@@ -26,8 +26,13 @@ import {
 } from "./subscription-guard.js";
 
 import {
+  getPublicProfiles,
   openConversationWithUser
 } from "./member-network.js";
+
+import {
+  sortByMemberRanking
+} from "./ranking.js";
 
 import {
   canAccessAnyWorkspace,
@@ -679,13 +684,14 @@ async function loadOpenProjects() {
       return;
     }
 
+    const openProjects = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+    const ownerProfiles = await getPublicProfiles(openProjects.map(project => project.ownerId));
+    const rankedProjects = sortByMemberRanking(openProjects, project => ownerProfiles.get(project.ownerId));
+
     openProjectsList.innerHTML = "";
 
-    snapshot.forEach((docSnap) => {
-      openProjectsList.innerHTML += renderProjectCard({
-        id: docSnap.id,
-        ...docSnap.data()
-      }, currentProjectUserType === "homeowner" ? "browse" : "trade");
+    rankedProjects.forEach((project) => {
+      openProjectsList.innerHTML += renderProjectCard(project, currentProjectUserType === "homeowner" ? "browse" : "trade");
     });
   } catch (error) {
     console.error(error);
@@ -755,6 +761,14 @@ async function loadProjectApplicationsForOwnedProjects() {
       const existing = projectApplicationsMap.get(application.projectId) || [];
       existing.push(application);
       projectApplicationsMap.set(application.projectId, existing);
+    });
+
+    const applicantProfiles = await getPublicProfiles(snapshot.docs.map(docSnap => docSnap.data().applicantId));
+    projectApplicationsMap.forEach((applications, projectId) => {
+      projectApplicationsMap.set(
+        projectId,
+        sortByMemberRanking(applications, application => applicantProfiles.get(application.applicantId))
+      );
     });
   } catch (error) {
     console.error(error);

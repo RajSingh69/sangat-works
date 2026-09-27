@@ -1,6 +1,7 @@
 import { auth, db } from "./firebase.js";
 import { protectPage } from "./subscription-guard.js";
 import { openConversationWithUser, sendConnectionRequest } from "./member-network.js";
+import { compareByRanking } from "./ranking.js";
 
 import {
   collection,
@@ -660,10 +661,9 @@ function filterProfiles() {
 
   const sortValue = sortBy?.value || "featured";
 
-  filteredProfiles.sort((a, b) => {
-    const aFeatured = isFeaturedActive(a);
-    const bFeatured = isFeaturedActive(b);
+  const now = new Date();
 
+  filteredProfiles.sort((a, b) => {
     if (sortValue === "rating") {
       return getRating(b) - getRating(a);
     }
@@ -679,7 +679,8 @@ function filterProfiles() {
       return bTime - aTime;
     }
 
-    return Number(bFeatured) - Number(aFeatured);
+    // Default "featured" option: pinned, then ranking score (featured listings score highest).
+    return compareByRanking(a, b, now);
   });
 
   renderActiveFilterState();

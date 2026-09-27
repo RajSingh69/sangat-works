@@ -1,5 +1,6 @@
 import { auth, db } from "./firebase.js";
 import { protectPage } from "./subscription-guard.js";
+import { compareByRanking } from "./ranking.js";
 
 import {
   onAuthStateChanged
@@ -41,6 +42,7 @@ const ypCount = document.getElementById("ypCount");
 let currentUser = null;
 let userMainProfile = {};
 let youngProfiles = [];
+let memberProfilesById = new Map();
 
 function cleanValue(value) {
   return String(value || "").trim();
@@ -268,6 +270,9 @@ function renderProfiles() {
   const filteredProfiles = youngProfiles
     .filter(profileMatchesFilters)
     .sort((a, b) => {
+      const rankingDiff = compareByRanking(memberProfilesById.get(a.id) || {}, memberProfilesById.get(b.id) || {});
+      if (rankingDiff) return rankingDiff;
+
       if (a.lookingForWork === true && b.lookingForWork !== true) return -1;
       if (b.lookingForWork === true && a.lookingForWork !== true) return 1;
 
@@ -340,9 +345,11 @@ async function loadYoungProfessionals() {
   ]);
 
   const activeUserIds = new Set();
+  memberProfilesById = new Map();
 
   usersSnapshot.forEach(docSnap => {
     const user = docSnap.data();
+    memberProfilesById.set(docSnap.id, user);
     const expiryDate = user.subscriptionExpiresAt?.toDate
       ? user.subscriptionExpiresAt.toDate()
       : user.subscriptionExpiresAt

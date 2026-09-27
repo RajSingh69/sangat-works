@@ -1,5 +1,7 @@
 import { auth, db } from "./firebase.js";
 import { hasActiveSubscription } from "./subscription-guard.js";
+import { getPublicProfiles } from "./member-network.js";
+import { sortByMemberRanking } from "./ranking.js";
 
 import {
   onAuthStateChanged
@@ -153,7 +155,10 @@ async function loadRoleMembers(roleId) {
 
   roleMembersList.innerHTML = "";
 
-  snapshot.docs.forEach((docSnap) => {
+  const memberProfiles = await getPublicProfiles(snapshot.docs.map(docSnap => docSnap.data().userId));
+  const rankedDocs = sortByMemberRanking(snapshot.docs, docSnap => memberProfiles.get(docSnap.data().userId));
+
+  rankedDocs.forEach((docSnap) => {
     const member = docSnap.data();
 
     const memberCard = document.createElement("a");

@@ -29,10 +29,13 @@ import {
   blockMember,
   openConversationWithUser,
   getConnection,
+  getUserProfile,
   removeConnection,
   reportMember,
   sendConnectionRequest
 } from "./member-network.js";
+
+import { getRankingBreakdown } from "./ranking.js";
 
 const FEATURED_LISTING_PRICE_ID = "price_1TlZxODbE6tXsxNUzI1ng4Iy";
 const CHECKOUT_FUNCTION_URL = "https://europe-west1-sangat-works.cloudfunctions.net/createCheckoutSession";
@@ -138,6 +141,40 @@ function calculateProfileStrength(profile) {
       `)
       .join("");
   }
+}
+
+// Uses the public profile because that's exactly what the directory ranks.
+async function renderRankingScore(uid) {
+  const valueEl = document.getElementById("rankingScoreValue");
+  const fillEl = document.getElementById("rankingScoreFill");
+  const summaryEl = document.getElementById("rankingScoreSummary");
+  const tipsEl = document.getElementById("rankingScoreTips");
+  if (!valueEl || !fillEl || !summaryEl || !tipsEl) return;
+
+  let publicProfile = null;
+  try {
+    publicProfile = await getUserProfile(uid);
+  } catch (error) {
+    console.error("Could not load ranking:", error);
+  }
+
+  if (!publicProfile || publicProfile.isPublic !== true) {
+    valueEl.textContent = "-";
+    fillEl.style.width = "0%";
+    summaryEl.textContent = "Your profile isn't public, so it isn't shown or ranked in the directory.";
+    tipsEl.innerHTML = "";
+    return;
+  }
+
+  const ranking = getRankingBreakdown(publicProfile);
+  valueEl.textContent = `${ranking.total}/100`;
+  fillEl.style.width = `${ranking.total}%`;
+  summaryEl.textContent = ranking.pinned
+    ? "Pinned to the top by Sangat Works. Your score still counts if the pin is removed."
+    : `Paid ${ranking.parts.paid}/45 - Profile ${ranking.parts.profile}/20 - Activity ${ranking.parts.activity}/20 - Verified ${ranking.parts.verified}/15. Higher scores appear first.`;
+  tipsEl.innerHTML = ranking.tips.length
+    ? ranking.tips.map(tip => `<li>+${tip.points}: ${escapeHtml(tip.text)}</li>`).join("")
+    : `<li class="complete">Top marks. Keep signing in to stay there.</li>`;
 }
 
 function timestampToDate(value) {
@@ -842,6 +879,7 @@ if (profileForm) {
       renderPendingPaymentWarning(existingProfile);
       renderFeaturedListingStatus(existingProfile);
       renderMemberDashboard(existingProfile);
+      renderRankingScore(user.uid);
     } else {
       existingProfile = {
         fullName: user.displayName || "",
