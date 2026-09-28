@@ -645,21 +645,6 @@ textarea {
   box-shadow: var(--shadow-soft);
 }
 
-#membershipBox {
-  background: linear-gradient(135deg, var(--blue), var(--blue-2));
-  color: white;
-}
-
-#membershipBox p,
-#membershipBox span,
-#membershipBox strong {
-  color: white;
-}
-
-#memberDashboardBox {
-  background: linear-gradient(135deg, #fff8e8, #e8f4ff);
-}
-
 .strength-top {
   display: flex;
   justify-content: space-between;
@@ -669,9 +654,6 @@ textarea {
   color: var(--blue);
 }
 
-#membershipBox .strength-top {
-  color: white;
-}
 
 #profileStrengthPercent {
   color: var(--orange-dark);

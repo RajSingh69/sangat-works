@@ -4,8 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Edit Profile | Sangat Works</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" />
-  <link rel="stylesheet" href="css/style.css?v=4001" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
@@ -13,377 +12,221 @@
   <a class="logo" href="index.html">Sangat Works</a>
   <nav>
     <a href="index.html">Home</a>
-    <a href="map.html">Map</a>
-    <a href="profile.html" class="btn-small">My Profile</a>
+    <div id="accountArea"></div>
   </nav>
 </header>
 
-<main class="page-wrap">
-  <section class="form-card wide">
-    <h1>Your Sangat Works Profile</h1>
-    <p>Share your skills, business, community links and how you can help the Sangat.</p>
+<main class="home-flagship-page edit-profile-page">
+  <section class="ep-head">
+    <div>
+      <span class="home-section-kicker">Your profile</span>
+      <h1>Edit your profile</h1>
+      <p>This is how the Sangat finds you. The more you fill in, the higher you appear in the directory.</p>
+    </div>
+    <div class="ep-head-actions">
+      <a href="view.html" class="ep-btn is-primary" id="viewPublicProfileLink">View my public profile</a>
+      <button type="button" id="viewWalkthroughBtn" class="ep-btn">Walkthrough</button>
+    </div>
+  </section>
 
-    <div class="profile-homepage-guide">
-      <p>
-        To new users: Click this button to go to the homepage and go exploring :)
-        Best place to start would be the Directory!
-      </p>
+  <div id="pendingPaymentWarning" class="ep-alert hidden">
+    <p>Your account is not active yet. Please complete payment to unlock Sangat Works.</p>
+    <a href="pricing.html" class="ep-btn is-primary">Choose a plan</a>
+  </div>
 
-      <a href="index.html" class="btn-secondary">To the homepage</a>
-      <button type="button" id="viewWalkthroughBtn" class="btn-secondary">
-        View Sangat Works Walkthrough
-      </button>
+  <section class="ep-overview" aria-label="Your account at a glance">
+    <div class="ep-card" id="membershipBox">
+      <h2>Membership</h2>
+      <p class="ep-big" id="membershipPlan">-</p>
+      <dl class="ep-facts">
+        <div><dt>Status</dt><dd id="membershipStatus">-</dd></div>
+        <div><dt>Expires</dt><dd id="membershipExpiry">-</dd></div>
+        <div><dt>Days left</dt><dd id="membershipDays">-</dd></div>
+      </dl>
     </div>
 
-    <div id="pendingPaymentWarning" class="profile-payment-warning hidden">
-      <p>
-        Your account is not active yet. Please complete payment to unlock
-        Sangat Works.
-      </p>
-
-      <a href="pricing.html" class="btn-primary">Choose Subscription Plan</a>
+    <div class="ep-card" id="profileStrengthBox">
+      <h2>Profile strength <span class="ep-score" id="profileStrengthPercent">0%</span></h2>
+      <div class="ep-bar"><div id="profileStrengthFill"></div></div>
+      <ul class="ep-checklist" id="profileStrengthChecklist"></ul>
     </div>
 
-    <div id="membershipBox" class="profile-strength-box">
-      <div class="strength-top">
-        <strong>Membership Status</strong>
-      </div>
-
-      <p><strong>Plan:</strong> <span id="membershipPlan">Free</span></p>
-      <p><strong>Status:</strong> <span id="membershipStatus">Inactive</span></p>
-      <p><strong>Expiry Date:</strong> <span id="membershipExpiry">-</span></p>
-      <p><strong>Days Remaining:</strong> <span id="membershipDays">0</span></p>
+    <div class="ep-card" id="rankingScoreBox">
+      <h2>Ranking score <span class="ep-score" id="rankingScoreValue">-</span></h2>
+      <div class="ep-bar"><div id="rankingScoreFill"></div></div>
+      <p class="ep-small" id="rankingScoreSummary">Higher scores appear first across Sangat Works.</p>
+      <ul class="ep-checklist" id="rankingScoreTips"></ul>
     </div>
 
-    <div id="featuredListingBox" class="profile-strength-box">
-      <div class="strength-top">
-        <strong>Featured Listing</strong>
+    <div class="ep-card" id="memberDashboardBox">
+      <h2>Your stats</h2>
+      <div class="ep-stats">
+        <div><strong id="dashboardViews">0</strong><span>Profile views</span></div>
+        <div><strong id="dashboardWebsiteClicks">0</strong><span>Website clicks</span></div>
+        <div><strong id="dashboardLinkedInClicks">0</strong><span>LinkedIn clicks</span></div>
+        <div><strong id="dashboardGoogleClicks">0</strong><span>Google review clicks</span></div>
       </div>
-
-      <p>Promote your profile across Sangat Works for 30 days.</p>
-
-      <p><strong>Status:</strong> <span id="featuredStatus">Inactive</span></p>
-      <p><strong>Expiry Date:</strong> <span id="featuredExpiry">-</span></p>
-      <p><strong>Days Remaining:</strong> <span id="featuredDays">0</span></p>
-
-      <button type="button" id="becomeFeaturedBtn" class="btn-primary">
-        Become Featured (£5 / 30 Days)
-      </button>
-
-      <p id="featuredMessage" class="message"></p>
     </div>
 
-    <div id="profileStrengthBox" class="profile-strength-box">
-      <div class="strength-top">
-        <strong>Profile Strength</strong>
-        <span id="profileStrengthPercent">0%</span>
+    <div class="ep-card ep-featured" id="featuredListingBox">
+      <div>
+        <h2>Featured listing</h2>
+        <p class="ep-small">Appear at the top of the directory with a Featured badge for 30 days.</p>
+        <dl class="ep-facts ep-facts-inline">
+          <div><dt>Status</dt><dd id="featuredStatus">Inactive</dd></div>
+          <div><dt>Expires</dt><dd id="featuredExpiry">-</dd></div>
+          <div><dt>Days left</dt><dd id="featuredDays">0</dd></div>
+        </dl>
       </div>
-
-      <div class="strength-bar">
-        <div id="profileStrengthFill"></div>
+      <div class="ep-featured-action">
+        <button type="button" id="becomeFeaturedBtn" class="ep-btn is-primary">Become Featured (£5 / 30 days)</button>
+        <p id="featuredMessage" class="ep-small"></p>
       </div>
-
-      <ul id="profileStrengthChecklist"></ul>
     </div>
+  </section>
 
-    <div id="rankingScoreBox" class="profile-strength-box">
-      <div class="strength-top">
-        <strong>Ranking Score</strong>
-        <span id="rankingScoreValue">-</span>
-      </div>
-
-      <div class="strength-bar">
-        <div id="rankingScoreFill"></div>
-      </div>
-
-      <p id="rankingScoreSummary">Higher scores appear first in the directory, map, projects and pools.</p>
-
-      <ul id="rankingScoreTips"></ul>
-    </div>
-
-    <div id="memberDashboardBox" class="profile-strength-box">
-      <div class="strength-top">
-        <strong>Member Dashboard</strong>
-      </div>
-
-      <div class="dashboard-grid">
-        <div class="dashboard-stat">
-          <span class="dashboard-number" id="dashboardReviews">0</span>
-          <span class="dashboard-label">Reviews</span>
-        </div>
-
-        <div class="dashboard-stat">
-          <span class="dashboard-number" id="dashboardRecommendations">0</span>
-          <span class="dashboard-label">Recommendations</span>
-        </div>
-
-        <div class="dashboard-stat">
-          <span class="dashboard-number" id="dashboardViews">0</span>
-          <span class="dashboard-label">Profile Views</span>
-        </div>
-
-        <div class="dashboard-stat">
-          <span class="dashboard-number" id="dashboardTrustScore">0</span>
-          <span class="dashboard-label">Trust Score</span>
-        </div>
-
-        <div class="dashboard-stat">
-          <span class="dashboard-number" id="dashboardWebsiteClicks">0</span>
-          <span class="dashboard-label">Website Clicks</span>
-        </div>
-
-        <div class="dashboard-stat">
-          <span class="dashboard-number" id="dashboardLinkedInClicks">0</span>
-          <span class="dashboard-label">LinkedIn Clicks</span>
-        </div>
-
-        <div class="dashboard-stat">
-          <span class="dashboard-number" id="dashboardGoogleClicks">0</span>
-          <span class="dashboard-label">Google Clicks</span>
-        </div>
-      </div>
-
-      <hr style="margin: 1rem 0; opacity: 0.15;">
-
-      <p>
-        <strong>Status:</strong>
-        <span id="dashboardMemberLevel">Community Member</span>
-      </p>
-
-      <p>
-        Track your profile performance, reviews, recommendations and community reputation.
-      </p>
-    </div>
-
-    <form id="profileForm" class="profile-form">
-      <h2>Basic Info</h2>
-
-      <div class="upload-row">
-        <label>
-          Profile Photo
+  <form id="profileForm" class="ep-form" novalidate>
+    <section class="ep-section">
+      <header>
+        <h2>Photos</h2>
+        <p>A clear photo of your face gets far more messages. Add your logo if you have a business.</p>
+      </header>
+      <div class="ep-photos">
+        <label class="ep-photo-picker">
+          <span class="ep-photo-preview" id="profilePhotoPreview"></span>
+          <span class="ep-photo-text"><strong>Profile photo</strong><small>JPG or PNG. Click to choose a new one.</small></span>
           <input type="file" id="profilePhoto" accept="image/*" />
         </label>
-
-        <label>
-          Business Logo
+        <label class="ep-photo-picker">
+          <span class="ep-photo-preview is-logo" id="businessLogoPreview"></span>
+          <span class="ep-photo-text"><strong>Business logo</strong><small>Optional. Shown whole on a white background.</small></span>
           <input type="file" id="businessLogo" accept="image/*" />
         </label>
       </div>
+    </section>
 
-      <input type="text" id="fullName" placeholder="Full name" required />
-      <input type="text" id="businessName" placeholder="Business name" />
-      <input type="text" id="serviceTitle" placeholder="What do you do? e.g. Electrician" required />
-
-      <textarea id="description" placeholder="Tell people who you are and what you offer"></textarea>
-      <textarea id="whyContact" placeholder="Why should the Sangat contact you?"></textarea>
-
-      <input type="text" id="tags" placeholder="Tags e.g. electrician, rewiring, emergency, Woking" />
-
-      <h2>Trust & Experience</h2>
-
-      <input type="number" id="yearsExperience" placeholder="Years in industry" min="0" />
-      <textarea id="specialistWork" placeholder="Specialist work / projects e.g. extensions, commercial wiring, tax returns, tutoring GCSE maths"></textarea>
-      <input type="url" id="googleReviews" placeholder="Google Reviews link" />
-
-      <h2>Community</h2>
-
-      <select id="gurdwaraSelect">
-        <option value="">Select your Gurdwara</option>
-        <option value="add-new">+ Add New Gurdwara</option>
-      </select>
-
-      <input
-        type="text"
-        id="newGurdwaraName"
-        placeholder="Gurdwara name"
-        style="display:none;"
-      />
-
-      <input
-        type="text"
-        id="newGurdwaraAddress"
-        placeholder="Address"
-        style="display:none;"
-      />
-
-      <input
-        type="text"
-        id="newGurdwaraPostcode"
-        placeholder="Postcode"
-        style="display:none;"
-      />
-
-      <input type="hidden" id="associatedGurdwara" />
-
-      <select id="communityDiscount">
-        <option value="not-specified">Community discount preference</option>
-        <option value="yes">Yes, I can offer Sangat/community rates where possible</option>
-        <option value="sometimes">Sometimes, depending on the job</option>
-        <option value="no">No discount, but happy to support with fair pricing</option>
-      </select>
-
-      <h2>Fun Facts</h2>
-
-      <input type="text" id="funFactOne" placeholder="Fun fact 1" />
-      <input type="text" id="funFactTwo" placeholder="Fun fact 2" />
-
-      <h2>Contact & Links</h2>
-
-      <input type="tel" id="phone" placeholder="Phone number" />
-      <input type="email" id="email" placeholder="Public email" />
-      <input type="url" id="website" placeholder="Website link" />
-      <input type="url" id="linkedin" placeholder="LinkedIn link" />
-
-      <h2>Location</h2>
-
-      <input type="text" id="town" placeholder="Town / city" required />
-      <input type="text" id="postcode" placeholder="Postcode area e.g. GU21" />
-      <input type="text" id="serviceArea" placeholder="Service area e.g. Woking, Surrey, West London, Nationwide" />
-
-      <h2>Profile Style</h2>
-
-      <div class="two-col">
-        <select id="layoutStyle">
-          <option value="classic">Classic Layout</option>
-          <option value="minimal">Minimal Layout</option>
-          <option value="bold">Bold Layout</option>
-        </select>
-
-        <select id="themeColour">
-          <option value="gold">Gold</option>
-          <option value="green">Green</option>
-          <option value="blue">Blue</option>
-          <option value="purple">Purple</option>
-        </select>
+    <section class="ep-section">
+      <header>
+        <h2>About you</h2>
+        <p>The basics people see first on your card and profile.</p>
+      </header>
+      <div class="ep-grid">
+        <label>Full name <input type="text" id="fullName" required /></label>
+        <label><span>Business name <small>(optional)</small></span> <input type="text" id="businessName" /></label>
+        <label class="ep-wide">What do you do? <input type="text" id="serviceTitle" placeholder="e.g. Electrician, Mortgage Adviser, Web Developer" required /></label>
+        <label class="ep-wide">About you <textarea id="description" rows="5" placeholder="Who you are, what you offer and who you help"></textarea></label>
+        <label class="ep-wide">Why should the Sangat get in touch? <textarea id="whyContact" rows="3" placeholder="e.g. Free quotes, same-week availability, Punjabi speaking"></textarea></label>
+        <label class="ep-wide"><span>Skills &amp; services <small>(separate with commas)</small></span> <input type="text" id="tags" placeholder="e.g. rewiring, EV chargers, emergency callouts" /></label>
       </div>
+    </section>
 
-      <h2>Privacy</h2>
+    <section class="ep-section">
+      <header>
+        <h2>Experience</h2>
+        <p>Helps people trust you and choose the right person.</p>
+      </header>
+      <div class="ep-grid">
+        <label>Years in your industry <input type="number" id="yearsExperience" min="0" /></label>
+        <label>Community rates
+          <select id="communityDiscount">
+            <option value="not-specified">Prefer not to say</option>
+            <option value="yes">Yes, I offer Sangat/community rates where possible</option>
+            <option value="sometimes">Sometimes, depending on the job</option>
+            <option value="no">No discount, but happy to support with fair pricing</option>
+          </select>
+        </label>
+        <label class="ep-wide">Specialist work or projects <textarea id="specialistWork" rows="3" placeholder="e.g. extensions, commercial wiring, tax returns, GCSE maths"></textarea></label>
+        <label class="ep-wide"><span>Google Reviews link <small>(optional)</small></span> <input type="url" id="googleReviews" placeholder="https://" /></label>
+      </div>
+    </section>
 
-      <label class="check-row">
-        <input type="checkbox" id="isPublic" checked />
-        Show my profile publicly
-      </label>
-
-      <label class="check-row">
-        <input type="checkbox" id="showPhone" />
-        Show my phone number publicly
-      </label>
-
-      <label class="check-row">
-        <input type="checkbox" id="showEmail" />
-        Show my email publicly
-      </label>
-
-      <label class="check-row">
-        <input type="checkbox" id="showPostcode" />
-        Show my postcode publicly
-      </label>
-
-      <label class="check-row">
-        <input type="checkbox" id="showGurdwara" checked />
-        Show my associated Gurdwara publicly
-      </label>
-
-      <label class="check-row">
-        <input type="checkbox" id="showGoogleReviews" checked />
-        Show my Google Reviews link publicly
-      </label>
-
-      <label>
-        Who can send me connection requests?
-        <select id="connectionPrivacy">
-          <option value="everyone">Everyone</option>
-          <option value="nobody">Nobody</option>
-        </select>
-      </label>
-
-      <label>
-        Who can message me?
-        <select id="messagePrivacy">
-          <option value="requests">Anyone / Message Requests</option>
-          <option value="connections">Connections only</option>
-        </select>
-      </label>
-
-      <label class="check-row">
-        <input type="checkbox" id="allowMessageNotifications" checked />
-        Allow message notifications
-      </label>
-      <button type="submit" class="btn-primary full">Save Profile</button>
-    </form>
-
-    <p id="profileMessage" class="message"></p>
-  </section>
-</main>
-
-
-<div id="profilePhotoCropModal" class="photo-crop-modal hidden" role="dialog" aria-modal="true" aria-labelledby="photoCropTitle">
-  <div class="photo-crop-backdrop" data-close-photo-crop></div>
-  <section class="photo-crop-dialog" tabindex="-1">
-    <header class="photo-crop-header">
-      <h2 id="photoCropTitle">Edit profile photo</h2>
-      <button type="button" class="photo-crop-close" aria-label="Close photo editor" data-close-photo-crop>&times;</button>
-    </header>
-
-    <div class="photo-crop-body">
-      <div class="photo-crop-main">
-        <div class="photo-crop-stage">
-          <img id="photoCropImage" alt="Selected profile photo for cropping" />
+    <section class="ep-section">
+      <header>
+        <h2>Location &amp; Gurdwara</h2>
+        <p>Your town puts you on the map. Your Gurdwara adds you to its Gurdwara Network.</p>
+      </header>
+      <div class="ep-grid">
+        <label>Town / city <input type="text" id="town" required /></label>
+        <label><span>Postcode area <small>(e.g. GU21)</small></span> <input type="text" id="postcode" /></label>
+        <label class="ep-wide">Areas you cover <input type="text" id="serviceArea" placeholder="e.g. Woking, Surrey, West London, Nationwide" /></label>
+        <label class="ep-wide">Your local Gurdwara
+          <select id="gurdwaraSelect">
+            <option value="">Select your Gurdwara</option>
+            <option value="add-new">+ Add New Gurdwara</option>
+          </select>
+        </label>
+        <div class="ep-wide ep-grid ep-new-gurdwara" id="newGurdwaraFields" hidden>
+          <label>Gurdwara name <input type="text" id="newGurdwaraName" /></label>
+          <label>Postcode <input type="text" id="newGurdwaraPostcode" /></label>
+          <label class="ep-wide">Address <input type="text" id="newGurdwaraAddress" /></label>
         </div>
+        <input type="hidden" id="associatedGurdwara" />
+      </div>
+    </section>
 
-        <label class="photo-zoom-control" for="photoCropZoom">
-          <span>Zoom</span>
-          <input type="range" id="photoCropZoom" min="0.5" max="3" step="0.01" value="1" />
+    <section class="ep-section">
+      <header>
+        <h2>Contact &amp; links</h2>
+        <p>Phone and email only show if you tick them under Privacy below.</p>
+      </header>
+      <div class="ep-grid">
+        <label>Phone <input type="tel" id="phone" /></label>
+        <label>Public email <input type="email" id="email" /></label>
+        <label>Website <input type="url" id="website" placeholder="www.example.com" /></label>
+        <label>LinkedIn <input type="url" id="linkedin" placeholder="linkedin.com/in/..." /></label>
+      </div>
+    </section>
+
+    <section class="ep-section">
+      <header>
+        <h2>A bit more about you</h2>
+        <p>Two fun facts help people get to know you.</p>
+      </header>
+      <div class="ep-grid">
+        <label>Fun fact 1 <input type="text" id="funFactOne" /></label>
+        <label>Fun fact 2 <input type="text" id="funFactTwo" /></label>
+      </div>
+    </section>
+
+    <section class="ep-section">
+      <header>
+        <h2>Privacy</h2>
+        <p>Choose what the Sangat can see and how people can reach you.</p>
+      </header>
+      <div class="ep-toggles">
+        <label class="ep-toggle"><input type="checkbox" id="isPublic" checked /> <span>Show my profile in the directory</span></label>
+        <label class="ep-toggle"><input type="checkbox" id="showPhone" /> <span>Show my phone number</span></label>
+        <label class="ep-toggle"><input type="checkbox" id="showEmail" /> <span>Show my email</span></label>
+        <label class="ep-toggle"><input type="checkbox" id="showPostcode" /> <span>Show my postcode</span></label>
+        <label class="ep-toggle"><input type="checkbox" id="showGurdwara" checked /> <span>Show my Gurdwara</span></label>
+        <label class="ep-toggle"><input type="checkbox" id="showGoogleReviews" checked /> <span>Show my Google Reviews link</span></label>
+        <label class="ep-toggle"><input type="checkbox" id="allowMessageNotifications" checked /> <span>Allow message notifications</span></label>
+      </div>
+      <div class="ep-grid ep-grid-top">
+        <label>Who can send me connection requests?
+          <select id="connectionPrivacy">
+            <option value="everyone">Everyone</option>
+            <option value="nobody">Nobody</option>
+          </select>
+        </label>
+        <label>Who can message me?
+          <select id="messagePrivacy">
+            <option value="requests">Anyone (as message requests)</option>
+            <option value="connections">Connections only</option>
+          </select>
         </label>
       </div>
+    </section>
 
-      <aside class="photo-preview-panel" aria-label="Preview on Sangat Works">
-        <h3>Preview on Sangat Works</h3>
-
-        <div class="photo-preview-card directory-preview-card">
-          <img class="photo-preview-image directory-preview-image" alt="Directory preview" />
-          <div>
-            <strong data-preview-name>Member name</strong>
-            <span data-preview-service>Service</span>
-            <small data-preview-location>Location</small>
-          </div>
-        </div>
-
-        <div class="photo-preview-card network-preview-card">
-          <img class="photo-preview-image network-preview-image" alt="My Network preview" />
-          <div>
-            <strong data-preview-name>Member name</strong>
-            <span data-preview-service>Service</span>
-          </div>
-        </div>
-
-        <div class="photo-preview-card public-profile-preview-card">
-          <img class="photo-preview-image public-profile-preview-image" alt="Public profile preview" />
-          <div>
-            <strong data-preview-name>Member name</strong>
-            <span data-preview-service>Service</span>
-            <small data-preview-location>Location</small>
-          </div>
-        </div>
-      </aside>
+    <div class="ep-savebar">
+      <p id="profileMessage" class="ep-save-message" role="status"></p>
+      <button type="submit" class="ep-btn is-primary">Save profile</button>
     </div>
+  </form>
+</main>
 
-    <p id="photoCropMessage" class="message photo-crop-message"></p>
-
-    <footer class="photo-crop-footer">
-      <button type="button" id="photoCropReset" class="btn-secondary">Reset</button>
-      <div class="photo-crop-actions">
-        <button type="button" id="photoCropCancel" class="btn-secondary">Cancel</button>
-        <button type="button" id="photoCropSave" class="btn-primary">Save photo</button>
-      </div>
-    </footer>
-  </section>
-</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 <script type="module" src="js/nav.js"></script>
-<script type="module" src="js/profile.js?v=5001"></script>
+<script type="module" src="js/profile.js"></script>
 <script type="module" src="js/onboarding.js"></script>
 </body>
 </html>
-
-

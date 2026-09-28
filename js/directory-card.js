@@ -1,9 +1,9 @@
 /*
   Member card for the directory grid/list, plus shared photo framing helpers.
 
-  Photo framing: super admins can set users/{uid}.cardPhoto = { x, y, zoom }
-  (x/y are 0-100 % focus points, zoom 1-3). Published via publicProfiles and
-  applied wherever a member's photo is cropped into a card.
+  Photo framing: super admins can set users/{uid}.cardPhoto = { x, y, zoom, photoUrl }
+  (x/y are 0-100 % focus points, zoom 1-3, photoUrl = the photo it was set for).
+  Published via publicProfiles and applied wherever a member's photo is cropped.
 */
 
 import { isFeaturedActive } from "./ranking.js";
@@ -55,7 +55,11 @@ function parseLegacyPosition(value) {
 }
 
 export function getCardPhotoFraming(profile) {
-  const saved = profile?.cardPhoto;
+  const currentPhoto = profile?.profilePhotoUrl || profile?.photoUrl || "";
+  // Framing made for an older photo doesn't apply once the member uploads a new one.
+  const saved = profile?.cardPhoto && (!profile.cardPhoto.photoUrl || profile.cardPhoto.photoUrl === currentPhoto)
+    ? profile.cardPhoto
+    : null;
   const legacy = parseLegacyPosition(
     profile?.profileImagePosition || profile?.profilePhotoPosition || profile?.imagePosition || profile?.photoPosition
   );

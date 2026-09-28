@@ -158,9 +158,11 @@ export function adjustMemberPhoto(profile, onSaved) {
     title: getCardIdentity(profile),
     framing: getCardPhotoFraming(profile),
     onSave: async (framing) => {
-      await updateDoc(doc(db, "users", uid), { cardPhoto: framing });
-      profile.cardPhoto = framing;
-      onSaved?.(framing);
+      // Remember which photo this framing was made for, so a new upload starts centred.
+      const cardPhoto = { ...framing, photoUrl };
+      await updateDoc(doc(db, "users", uid), { cardPhoto });
+      profile.cardPhoto = cardPhoto;
+      onSaved?.(cardPhoto);
     }
   });
 }

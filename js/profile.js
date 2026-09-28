@@ -100,11 +100,7 @@ const featuredDays = document.getElementById("featuredDays");
 const becomeFeaturedBtn = document.getElementById("becomeFeaturedBtn");
 const featuredMessage = document.getElementById("featuredMessage");
 
-const dashboardReviews = document.getElementById("dashboardReviews");
-const dashboardRecommendations = document.getElementById("dashboardRecommendations");
 const dashboardViews = document.getElementById("dashboardViews");
-const dashboardTrustScore = document.getElementById("dashboardTrustScore");
-const dashboardMemberLevel = document.getElementById("dashboardMemberLevel");
 
 const dashboardWebsiteClicks = document.getElementById("dashboardWebsiteClicks");
 const dashboardLinkedInClicks = document.getElementById("dashboardLinkedInClicks");
@@ -121,7 +117,7 @@ function calculateProfileStrength(profile) {
     { label: "Add your town/location", complete: !!profile.town },
     { label: "Add years of experience", complete: !!profile.yearsExperience },
     { label: "Add specialist work/projects", complete: !!profile.specialistWork },
-    { label: "Add Gurdwara/Sangat association", complete: !!profile.associatedGurdwara },
+    { label: "Add Gurdwara/Sangat association", complete: !!profile.gurdwaraId || !!profile.associatedGurdwara },
     { label: "Add website or LinkedIn", complete: !!profile.website || !!profile.linkedin },
     { label: "Add 2 fun facts", complete: !!profile.funFactOne && !!profile.funFactTwo }
   ];
@@ -138,13 +134,11 @@ function calculateProfileStrength(profile) {
   }
 
   if (profileStrengthChecklist) {
-    profileStrengthChecklist.innerHTML = checks
-      .map(check => `
-        <li class="${check.complete ? "complete" : ""}">
-          ${check.complete ? "✓" : "○"} ${check.label}
-        </li>
-      `)
-      .join("");
+    const todo = checks.filter(check => !check.complete);
+    profileStrengthChecklist.innerHTML = todo.length
+      ? todo.slice(0, 4).map(check => `<li>${check.label}</li>`).join("") +
+        (todo.length > 4 ? `<li class="ep-more">+${todo.length - 4} more</li>` : "")
+      : `<li class="complete">Your profile is complete.</li>`;
   }
 }
 
@@ -429,56 +423,17 @@ function renderFeaturedListingStatus(profile) {
   }
 }
 
+// Profile views and link clicks are counted by the trackProfileMetric Cloud Function.
 function renderMemberDashboard(profile) {
-  if (
-    !dashboardReviews ||
-    !dashboardRecommendations ||
-    !dashboardViews ||
-    !dashboardTrustScore ||
-    !dashboardMemberLevel
-  ) {
-    return;
-  }
-
-  const reviews = profile.reviewCount || 0;
-  const recommendations = profile.recommendationCount || 0;
-  const views = profile.profileViews || 0;
-
-  const trustScore = Math.min(
-    100,
-    Math.round(
-      reviews * 10 +
-      recommendations * 6 +
-      views * 0.2
-    )
-  );
-
-  dashboardReviews.textContent = reviews;
-  dashboardRecommendations.textContent = recommendations;
-  dashboardViews.textContent = views;
-  dashboardTrustScore.textContent = trustScore;
-
-  if (dashboardWebsiteClicks) {
-    dashboardWebsiteClicks.textContent = profile.websiteClicks || 0;
-  }
-
-  if (dashboardLinkedInClicks) {
-    dashboardLinkedInClicks.textContent = profile.linkedinClicks || 0;
-  }
-
-  if (dashboardGoogleClicks) {
-    dashboardGoogleClicks.textContent = profile.googleReviewClicks || 0;
-  }
-
-  if (trustScore >= 80) {
-    dashboardMemberLevel.textContent = "Highly Trusted Member";
-  } else if (trustScore >= 50) {
-    dashboardMemberLevel.textContent = "Trusted Member";
-  } else if (trustScore >= 20) {
-    dashboardMemberLevel.textContent = "Growing Community Member";
-  } else {
-    dashboardMemberLevel.textContent = "Community Member";
-  }
+  const stats = [
+    [dashboardViews, profile.profileViews],
+    [dashboardWebsiteClicks, profile.websiteClicks],
+    [dashboardLinkedInClicks, profile.linkedinClicks],
+    [dashboardGoogleClicks, profile.googleReviewClicks]
+  ];
+  stats.forEach(([element, count]) => {
+    if (element) element.textContent = Number(count || 0).toLocaleString("en-GB");
+  });
 }
 
 function getTags(tagsString) {
@@ -534,26 +489,45 @@ async function loadGurdwaras(selectedGurdwaraId = "") {
 }
 
 function setupGurdwaraSelect() {
-  if (!gurdwaraSelect || !newGurdwaraName || !newGurdwaraAddress || !newGurdwaraPostcode) return;
-
-  function setNewGurdwaraFieldsVisible(isVisible) {
-    const display = isVisible ? "block" : "none";
-    [newGurdwaraName, newGurdwaraAddress, newGurdwaraPostcode].forEach((field) => {
-      field.style.display = display;
-      field.required = isVisible;
-
-      if (!isVisible) {
-        field.value = "";
-      }
-    });
-  }
+  const wrapper = document.getElementById("newGurdwaraFields");
+  if (!gurdwaraSelect || !wrapper) return;
 
   gurdwaraSelect.addEventListener("change", () => {
-    if (gurdwaraSelect.value === "add-new") {
-      setNewGurdwaraFieldsVisible(true);
-    } else {
-      setNewGurdwaraFieldsVisible(false);
-    }
+    const adding = gurdwaraSelect.value === "add-new";
+    wrapper.hidden = !adding;
+    [newGurdwaraName, newGurdwaraAddress, newGurdwaraPostcode].forEach((field) => {
+      if (!field) return;
+      field.required = adding;
+      if (!adding) field.value = "";
+    });
+  });
+}
+
+// Photo previews: the saved photo (with its framing) and logo, or a newly chosen file.
+function renderPhotoPreviews(profile) {
+  const photoPreview = document.getElementById("profilePhotoPreview");
+  const logoPreview = document.getElementById("businessLogoPreview");
+  if (photoPreview) {
+    photoPreview.innerHTML = renderFramedPhoto(profile, { className: "ep-photo-frame", alt: "Your profile photo" });
+  }
+  if (logoPreview) {
+    logoPreview.innerHTML = profile.businessLogoUrl
+      ? `<img src="${escapeHtml(profile.businessLogoUrl)}" alt="Your business logo">`
+      : `<span class="ep-photo-empty">No logo</span>`;
+  }
+}
+
+function setupPhotoInputs() {
+  [["profilePhoto", "profilePhotoPreview"], ["businessLogo", "businessLogoPreview"]].forEach(([inputId, previewId]) => {
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+    if (!input || !preview) return;
+    input.addEventListener("change", () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      preview.innerHTML = `<img class="ep-photo-new" src="${URL.createObjectURL(file)}" alt="New ${inputId === "profilePhoto" ? "profile photo" : "logo"}">`;
+      preview.closest(".ep-photo-picker")?.classList.add("has-new-file");
+    });
   });
 }
 
@@ -601,8 +575,6 @@ function fillForm(profile) {
   document.getElementById("postcode").value = profile.postcode || "";
   document.getElementById("serviceArea").value = profile.serviceArea || "";
 
-  document.getElementById("layoutStyle").value = profile.layoutStyle || "classic";
-  document.getElementById("themeColour").value = profile.themeColour || "gold";
 
   document.getElementById("isPublic").checked = profile.isPublic !== false;
   document.getElementById("showPhone").checked = profile.showPhone === true;
@@ -903,6 +875,10 @@ if (profileForm) {
     currentUser = user;
 
     setupGurdwaraSelect();
+    setupPhotoInputs();
+
+    const publicLink = document.getElementById("viewPublicProfileLink");
+    if (publicLink) publicLink.href = `view.html?id=${encodeURIComponent(user.uid)}`;
 
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
@@ -916,6 +892,7 @@ if (profileForm) {
 
       await loadGurdwaras(existingProfile.gurdwaraId || "");
       fillForm(existingProfile);
+      renderPhotoPreviews(existingProfile);
       calculateProfileStrength(existingProfile);
       renderMembershipStatus(existingProfile);
       renderPendingPaymentWarning(existingProfile);
@@ -946,6 +923,17 @@ if (profileForm) {
       window.location.href = "pricing.html?payment_required=1";
       return;
     }
+
+    const missing = [["fullName", "your full name"], ["serviceTitle", "what you do"], ["town", "your town"]]
+      .filter(([id]) => !value(id));
+    if (missing.length) {
+      profileMessage.textContent = `Please add ${missing.map(([, label]) => label).join(", ")}.`;
+      document.getElementById(missing[0][0])?.focus();
+      return;
+    }
+
+    const saveButton = profileForm.querySelector('button[type="submit"]');
+    if (saveButton) saveButton.disabled = true;
 
     try {
       profileMessage.textContent = "Saving profile...";
@@ -1057,8 +1045,6 @@ if (profileForm) {
         postcode: value("postcode"),
         serviceArea: value("serviceArea"),
 
-        layoutStyle: value("layoutStyle"),
-        themeColour: value("themeColour"),
 
         isPublic: checked("isPublic"),
         showPhone: checked("showPhone"),
@@ -1085,10 +1071,19 @@ if (profileForm) {
       renderPendingPaymentWarning(existingProfile);
       renderFeaturedListingStatus(existingProfile);
       renderMemberDashboard(existingProfile);
+      renderPhotoPreviews(existingProfile);
+      ["profilePhoto", "businessLogo"].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.value = "";
+      });
+      document.querySelectorAll(".ep-photo-picker.has-new-file").forEach(picker => picker.classList.remove("has-new-file"));
+      renderRankingScore(currentUser.uid);
 
-      profileMessage.textContent = "Profile saved successfully.";
+      profileMessage.textContent = "Profile saved.";
     } catch (error) {
       profileMessage.textContent = error.message;
+    } finally {
+      if (saveButton) saveButton.disabled = false;
     }
   });
 }
