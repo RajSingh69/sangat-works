@@ -76,7 +76,8 @@ function safeExternalUrl(value = "") {
   const trimmed = String(value).trim();
   if (!trimmed) return "";
   try {
-    const url = new URL(trimmed, window.location.origin);
+    // Bare domains like "www.example.com" need https://, not the site's own origin.
+    const url = new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
     if (!["http:", "https:"].includes(url.protocol)) return "";
     return url.href;
   } catch (error) {
@@ -638,157 +639,191 @@ async function trackProfileMetric(targetUserId, metric) {
     throw new Error(data.error || "Profile metric was not recorded.");
   }
 }
+const PV_ICONS = {
+  pin: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9.5" r="2.5" fill="currentColor"/></svg>`,
+  check: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  star: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z" fill="currentColor"/></svg>`
+};
+
+function getVerifiedLabels(profile) {
+  return [
+    ["Email", profile.emailVerifiedBadge || profile.emailVerified || profile.isEmailVerified],
+    ["Business", profile.businessVerified || profile.isBusinessVerified],
+    ["Community", profile.communityVerified || profile.isCommunityVerified],
+    ["Gurdwara", profile.gurdwaraVerified || profile.isGurdwaraVerified]
+  ].filter(([, value]) => value === true).map(([label]) => label);
+}
+
+// Filled in by reviews.js once reviews load (see "sw:reviews-loaded").
+function renderRatingSummary() {
+  const summary = window.swReviewSummary;
+  if (!summary || !summary.count) return "";
+  return `<a class="pv-rating" href="#reviews">${PV_ICONS.star}<strong>${summary.average.toFixed(1)}</strong> <span>(${summary.count} review${summary.count === 1 ? "" : "s"})</span></a>`;
+}
+
+window.addEventListener("sw:reviews-loaded", () => {
+  const slot = document.getElementById("pvRatingSlot");
+  if (slot) slot.innerHTML = renderRatingSummary();
+});
+
 function renderProfile(profile) {
-  const tags = profile.tags || [];
-  const tagsHtml = tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("");
+  const tags = (Array.isArray(profile.tags) ? profile.tags : []).filter(Boolean);
   const websiteUrl = safeExternalUrl(profile.website);
   const linkedInUrl = safeExternalUrl(profile.linkedin);
   const reviewsUrl = safeExternalUrl(profile.googleReviews);
 
-  const membershipBadge = profile.isFoundingMember
-    ? `<span class="trust-badge verified">Founding Member #${escapeHtml(profile.memberNumber || "")}</span>`
-    : "";
+  const businessName = profile.businessName || "";
+  const displayName = businessName || profile.fullName || "Member profile";
+  const personName = businessName && profile.fullName && profile.fullName !== businessName ? profile.fullName : "";
+  const title = profile.serviceTitle || profile.businessType || "Sangat Works Member";
+  const town = [profile.town, profile.showPostcode && profile.postcode ? profile.postcode : ""].filter(Boolean).join(" ");
+  const memberSince = timestampToDate(profile.createdAt);
+  const gurdwaraName = profile.showGurdwara !== false ? (profile.gurdwaraName || profile.associatedGurdwara || "") : "";
 
-  const featuredBadge = isFeaturedActive(profile)
-    ? `<span class="trust-badge featured-badge">Featured Member</span>`
-    : "";
+  const badges = [
+    isFeaturedActive(profile) ? `<span class="pv-badge is-featured">Featured Member</span>` : "",
+    profile.isFoundingMember ? `<span class="pv-badge is-founding">Founding Member${profile.memberNumber ? ` #${escapeHtml(profile.memberNumber)}` : ""}</span>` : "",
+    ...getVerifiedLabels(profile).map(label => `<span class="pv-badge is-verified">${PV_ICONS.check}${escapeHtml(label)} verified</span>`)
+  ].filter(Boolean).join("");
 
   const discountText = {
     yes: "Offers Sangat/community rates where possible",
     sometimes: "May offer community rates depending on the job",
-    no: "No fixed discount, but supports fair pricing",
-    "not-specified": ""
-  };
+    no: "No fixed discount, but supports fair pricing"
+  }[profile.communityDiscount] || "";
 
-  const businessName = profile.businessName || "";
-  const displayName = businessName || profile.fullName || "Member profile";
-  const title = profile.serviceTitle || "Sangat Works Member";
-  const location = `${profile.town || "Location not provided"}${profile.showPostcode && profile.postcode ? ` ${profile.postcode}` : ""}`;
-
-  const experienceRows = [
-    profile.yearsExperience ? `<p><strong>Experience</strong><span>${escapeHtml(profile.yearsExperience)} years</span></p>` : "",
-    profile.specialistWork ? `<p><strong>Specialist work</strong><span>${escapeHtml(profile.specialistWork)}</span></p>` : ""
-  ].join("");
-
-  const businessRows = [
-    profile.fullName ? `<p><strong>Name</strong><span>${escapeHtml(profile.fullName)}</span></p>` : "",
-    businessName ? `<p><strong>Business</strong><span>${escapeHtml(businessName)}</span></p>` : "",
-    profile.serviceArea ? `<p><strong>Service area</strong><span>${escapeHtml(profile.serviceArea)}</span></p>` : "",
-    profile.showGurdwara && (profile.gurdwaraName || profile.associatedGurdwara) ? `<p><strong>Local Gurdwara</strong><span>${escapeHtml(profile.gurdwaraName || profile.associatedGurdwara)}</span></p>` : "",
-    discountText[profile.communityDiscount] ? `<p><strong>Community support</strong><span>${escapeHtml(discountText[profile.communityDiscount])}</span></p>` : ""
-  ].join("");
+  const facts = [
+    profile.yearsExperience ? ["Experience", `${profile.yearsExperience} years`] : null,
+    profile.specialistWork ? ["Specialist work", profile.specialistWork] : null,
+    profile.serviceArea ? ["Service area", profile.serviceArea] : null,
+    discountText ? ["Community rates", discountText] : null
+  ].filter(Boolean);
 
   const funFacts = [profile.funFactOne, profile.funFactTwo].filter(Boolean);
-  const contactLinks = [
-    websiteUrl ? `<a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener" class="tracked-link" data-click-type="websiteClicks">Website</a>` : "",
-    linkedInUrl ? `<a href="${escapeHtml(linkedInUrl)}" target="_blank" rel="noopener" class="tracked-link" data-click-type="linkedinClicks">LinkedIn</a>` : "",
-    profile.showGoogleReviews && reviewsUrl ? `<a href="${escapeHtml(reviewsUrl)}" target="_blank" rel="noopener" class="tracked-link" data-click-type="googleReviewClicks">Google Reviews</a>` : ""
-  ].join("");
+
+  const contactRows = [
+    profile.showPhone && profile.phone ? `<a class="pv-contact-row" href="tel:${escapeHtml(String(profile.phone).replace(/[^\d+]/g, ""))}"><span>Phone</span><strong>${escapeHtml(profile.phone)}</strong></a>` : "",
+    profile.showEmail && profile.email ? `<a class="pv-contact-row" href="mailto:${escapeHtml(profile.email)}"><span>Email</span><strong>${escapeHtml(profile.email)}</strong></a>` : "",
+    websiteUrl ? `<a class="pv-contact-row tracked-link" data-click-type="websiteClicks" href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener"><span>Website</span><strong>${escapeHtml(websiteUrl.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""))}</strong></a>` : "",
+    linkedInUrl ? `<a class="pv-contact-row tracked-link" data-click-type="linkedinClicks" href="${escapeHtml(linkedInUrl)}" target="_blank" rel="noopener"><span>LinkedIn</span><strong>View profile</strong></a>` : "",
+    profile.showGoogleReviews && reviewsUrl ? `<a class="pv-contact-row tracked-link" data-click-type="googleReviewClicks" href="${escapeHtml(reviewsUrl)}" target="_blank" rel="noopener"><span>Google reviews</span><strong>Read reviews</strong></a>` : ""
+  ].filter(Boolean).join("");
+
+  const sangatFacts = [
+    businessName && profile.fullName ? `<div><dt>Name</dt><dd>${escapeHtml(profile.fullName)}</dd></div>` : "",
+    gurdwaraName ? `<div><dt>Local Gurdwara</dt><dd>${profile.gurdwaraId
+      ? `<a href="skills-network.html?gurdwara=${encodeURIComponent(profile.gurdwaraId)}">${escapeHtml(gurdwaraName)}</a>`
+      : escapeHtml(gurdwaraName)}</dd></div>` : "",
+    memberSince ? `<div><dt>Member since</dt><dd>${escapeHtml(memberSince.toLocaleDateString("en-GB", { month: "long", year: "numeric" }))}</dd></div>` : ""
+  ].filter(Boolean).join("");
 
   return `
-    <article class="public-profile-card professional-profile theme-${escapeHtml(profile.themeColour || "gold")}">
-      <header class="professional-profile-header">
-        <div class="profile-visual-row">
-          <div class="profile-photo-block">
-            ${renderFramedPhoto(profile, { className: "profile-image", alt: "Profile photo" })}
-            ${canAdjustPhotos && profile.profilePhotoUrl ? `<button type="button" class="photo-adjust-inline" data-adjust-viewed-photo>Adjust photo</button>` : ""}
+    <article class="pv">
+      <header class="pv-hero">
+        <div class="pv-hero-inner">
+          <div class="pv-photo-block">
+            ${renderFramedPhoto(profile, { className: "pv-photo", alt: displayName })}
+            ${canAdjustPhotos && profile.profilePhotoUrl ? `<button type="button" class="pv-adjust" data-adjust-viewed-photo>Adjust photo</button>` : ""}
           </div>
-          ${profile.businessLogoUrl ? `<img src="${escapeHtml(profile.businessLogoUrl)}" class="logo-image" alt="Business logo">` : ""}
+
+          <div class="pv-identity">
+            ${badges ? `<div class="pv-badges">${badges}</div>` : ""}
+            <h1>${escapeHtml(displayName)}</h1>
+            ${personName ? `<p class="pv-person">${escapeHtml(personName)}</p>` : ""}
+            <p class="pv-title">${escapeHtml(title)}</p>
+            <div class="pv-meta">
+              ${town ? `<span>${PV_ICONS.pin}${escapeHtml(town)}</span>` : ""}
+              <span id="pvRatingSlot">${renderRatingSummary()}</span>
+            </div>
+            ${renderRelationshipActions(profile)}
+          </div>
+
+          ${profile.businessLogoUrl ? `<img class="pv-logo" src="${escapeHtml(profile.businessLogoUrl)}" alt="${escapeHtml(displayName)} logo">` : ""}
         </div>
-        <div class="profile-identity-block">
-          <h1>${escapeHtml(displayName)}</h1>
-          <p class="service">${escapeHtml(title)}</p>
-          <p class="profile-location-line">${escapeHtml(location)}</p>
-          <div class="badges-row">${featuredBadge}${membershipBadge}</div>
-        </div>
-        ${renderRelationshipActions(profile)}
       </header>
 
-      <div class="professional-profile-grid">
-        ${profile.description || profile.whyContact ? `
-          <section class="profile-section-card profile-section-wide">
-            <h2>About</h2>
-            ${profile.description ? `<p>${escapeHtml(profile.description)}</p>` : ""}
-            ${profile.whyContact ? `<p><strong>Why contact me:</strong> ${escapeHtml(profile.whyContact)}</p>` : ""}
-          </section>
-        ` : ""}
+      <div class="pv-body">
+        <div class="pv-main">
+          ${profile.description ? `
+            <section class="pv-card">
+              <h2>About</h2>
+              <p class="pv-text">${escapeHtml(profile.description)}</p>
+            </section>` : ""}
 
-        ${tags.length ? `
-          <section class="profile-section-card">
-            <h2>Skills</h2>
-            <div class="tags">${tagsHtml}</div>
-          </section>
-        ` : ""}
+          ${profile.whyContact ? `
+            <section class="pv-card pv-card-highlight">
+              <h2>Why get in touch</h2>
+              <p class="pv-text">${escapeHtml(profile.whyContact)}</p>
+            </section>` : ""}
 
-        ${experienceRows ? `
-          <section class="profile-section-card profile-detail-list">
-            <h2>Experience</h2>
-            ${experienceRows}
-          </section>
-        ` : ""}
+          ${tags.length ? `
+            <section class="pv-card">
+              <h2>Skills &amp; services</h2>
+              <div class="pv-tags">${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join("")}</div>
+            </section>` : ""}
 
-        ${businessRows ? `
-          <section class="profile-section-card profile-detail-list">
-            <h2>Business / Organisation</h2>
-            ${businessRows}
-          </section>
-        ` : ""}
+          ${facts.length ? `
+            <section class="pv-card">
+              <h2>Experience</h2>
+              <dl class="pv-facts">${facts.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>
+            </section>` : ""}
 
-        ${funFacts.length ? `
-          <section class="profile-section-card">
-            <h2>Activity</h2>
-            ${funFacts.map(fact => `<p>${escapeHtml(fact)}</p>`).join("")}
-          </section>
-        ` : ""}
+          ${funFacts.length ? `
+            <section class="pv-card">
+              <h2>A bit more about me</h2>
+              ${funFacts.map(fact => `<p class="pv-text">${escapeHtml(fact)}</p>`).join("")}
+            </section>` : ""}
+        </div>
 
-        ${profile.showPhone || profile.showEmail || contactLinks ? `
-          <section class="profile-section-card">
-            <h2>Contact</h2>
-            ${profile.showPhone ? `<p>${escapeHtml(profile.phone || "Not provided")}</p>` : ""}
-            ${profile.showEmail ? `<p>${escapeHtml(profile.email || "Not provided")}</p>` : ""}
-            <div class="card-links">${contactLinks}</div>
-          </section>
-        ` : ""}
+        <aside class="pv-side">
+          ${contactRows ? `
+            <section class="pv-card">
+              <h2>Contact</h2>
+              <div class="pv-contact">${contactRows}</div>
+            </section>` : ""}
+
+          ${sangatFacts ? `
+            <section class="pv-card">
+              <h2>In the Sangat</h2>
+              <dl class="pv-facts">${sangatFacts}</dl>
+            </section>` : ""}
+        </aside>
       </div>
     </article>
   `;
 }
+
 function renderRelationshipActions() {
   if (!currentUser || !viewedProfileId || currentUser.uid === viewedProfileId) return "";
 
-  let connectLabel = "Connect";
-  let connectAttr = `data-connect-user-id="${viewedProfileId}"`;
-  let connectClass = "";
-
+  let connectButton = `<button type="button" class="pv-btn" data-connect-user-id="${viewedProfileId}">Connect</button>`;
   if (currentConnection?.status === "pending" && currentConnection.requesterId === currentUser.uid) {
-    connectLabel = "Requested";
-    connectAttr = "disabled";
+    connectButton = `<button type="button" class="pv-btn" disabled>Request sent</button>`;
   } else if (currentConnection?.status === "pending" && currentConnection.recipientId === currentUser.uid) {
-    connectLabel = "Accept Connection";
-    connectAttr = `data-accept-connection-id="${currentConnection.id}"`;
-    connectClass = "project-accept-btn";
+    connectButton = `<button type="button" class="pv-btn is-accept" data-accept-connection-id="${currentConnection.id}">Accept connection</button>`;
   } else if (currentConnection?.status === "accepted") {
-    connectLabel = "Connected";
-    connectAttr = "disabled";
-    connectClass = "project-accept-btn";
+    connectButton = `<button type="button" class="pv-btn" disabled>Connected</button>`;
   } else if (currentConnection?.status === "blocked") {
-    connectLabel = "Unavailable";
-    connectAttr = "disabled";
+    connectButton = `<button type="button" class="pv-btn" disabled>Unavailable</button>`;
   }
 
   return `
-    <div class="member-action-panel">
-      <div class="card-links">
-        <button type="button" class="btn-small ${connectClass}" ${connectAttr}>${connectLabel}</button>
-        <button type="button" class="btn-small" data-message-user-id="${viewedProfileId}">Message</button>
-        ${currentConnection?.status === "accepted" ? `<button type="button" class="btn-small project-withdraw-btn" data-remove-user-id="${viewedProfileId}">Remove Connection</button>` : ""}
-        <button type="button" class="btn-small project-withdraw-btn" data-block-user-id="${viewedProfileId}">Block Member</button>
-        <button type="button" class="btn-small" data-report-user-id="${viewedProfileId}">Report Member</button>
-      </div>
-      <p id="profileActionMessage" class="message"></p>
+    <div class="pv-actions">
+      <button type="button" class="pv-btn is-primary" data-message-user-id="${viewedProfileId}">Message</button>
+      ${connectButton}
+      <details class="pv-more">
+        <summary>More</summary>
+        <div class="pv-more-menu">
+          ${currentConnection?.status === "accepted" ? `<button type="button" data-remove-user-id="${viewedProfileId}">Remove connection</button>` : ""}
+          <button type="button" data-report-user-id="${viewedProfileId}">Report member</button>
+          <button type="button" class="is-danger" data-block-user-id="${viewedProfileId}">Block member</button>
+        </div>
+      </details>
     </div>
+    <p id="profileActionMessage" class="pv-action-message" role="status"></p>
   `;
 }
+
 async function startFeaturedCheckout() {
   if (!currentUser) {
     if (featuredMessage) {

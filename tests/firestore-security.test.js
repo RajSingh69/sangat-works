@@ -111,32 +111,30 @@ describe("Firestore security rules: networking and messaging", () => {
     await assertFails(updateDoc(doc(bobDb, "users/alice"), { fullName: "Owned" }));
   });
 
-  it("binds reviews to the authenticated reviewer and blocks self-review", async () => {
+  it("allows one clean review per reviewer and blocks self-review", async () => {
     const aliceDb = testEnv.authenticatedContext("alice").firestore();
     const bobDb = testEnv.authenticatedContext("bob").firestore();
-
-    await assertSucceeds(setDoc(doc(aliceDb, "users/bob/reviews/rev1"), {
+    const review = (reviewerId, extra = {}) => ({
       profileId: "bob",
-      reviewerId: "alice",
+      reviewerId,
       reviewerName: "Alice",
+      serviceUsed: "Website",
       rating: 5,
       reviewText: "Great work",
-      createdAt: serverTimestamp()
-    }));
+      createdAt: serverTimestamp(),
+      ...extra
+    });
 
-    await assertFails(setDoc(doc(aliceDb, "users/bob/reviews/rev2"), {
-      profileId: "bob",
-      reviewerId: "charlie",
-      rating: 5,
-      createdAt: serverTimestamp()
-    }));
-
-    await assertFails(setDoc(doc(bobDb, "users/bob/reviews/rev3"), {
-      profileId: "bob",
-      reviewerId: "bob",
-      rating: 5,
-      createdAt: serverTimestamp()
-    }));
+    await assertSucceeds(setDoc(doc(aliceDb, "users/bob/reviews/alice"), review("alice")));
+    // Second review from the same person, or one stored under someone else's id.
+    await assertFails(setDoc(doc(aliceDb, "users/bob/reviews/alice"), review("alice")));
+    await assertFails(setDoc(doc(aliceDb, "users/bob/reviews/rev2"), review("alice")));
+    await assertFails(setDoc(doc(aliceDb, "users/bob/reviews/charlie"), review("charlie")));
+    // No private extras (like an email) and ratings stay 1-5.
+    await testEnv.withSecurityRulesDisabled(context => deleteDoc(doc(context.firestore(), "users/bob/reviews/alice")));
+    await assertFails(setDoc(doc(aliceDb, "users/bob/reviews/alice"), review("alice", { reviewerEmail: "alice@example.com" })));
+    await assertFails(setDoc(doc(aliceDb, "users/bob/reviews/alice"), review("alice", { rating: 9 })));
+    await assertFails(setDoc(doc(bobDb, "users/bob/reviews/bob"), review("bob")));
   });
 
   it("accepts active founding access and rejects expired founding access", async () => {

@@ -181,12 +181,21 @@ service cloud.firestore {
       allow update: if (isSelf(uid) && validSelfProfileUpdate()) || isSuperAdmin();
       allow delete: if isSuperAdmin() && resource.data.internalAccount != true;
 
+      // Public reviews (js/reviews.js): one per reviewer, stored under their uid,
+      // with no email or other private details.
       match /reviews/{reviewId} {
         allow read: if true;
         allow create: if hasActiveMembership()
-          && request.resource.data.createdAt == request.time
+          && reviewId == request.auth.uid
+          && uid != request.auth.uid
+          && request.resource.data.keys().hasOnly(["profileId", "reviewerId", "reviewerName", "serviceUsed", "rating", "reviewText", "createdAt"])
+          && request.resource.data.profileId == uid
           && request.resource.data.reviewerId == request.auth.uid
-          && uid != request.auth.uid;
+          && request.resource.data.rating is int && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
+          && request.resource.data.reviewerName is string && request.resource.data.reviewerName.size() > 0 && request.resource.data.reviewerName.size() <= 120
+          && request.resource.data.get("serviceUsed", "") is string && request.resource.data.get("serviceUsed", "").size() <= 120
+          && request.resource.data.reviewText is string && request.resource.data.reviewText.size() >= 5 && request.resource.data.reviewText.size() <= 2000
+          && request.resource.data.createdAt == request.time;
         allow update, delete: if isAdmin();
       }
     }

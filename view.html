@@ -12,42 +12,54 @@
   <a class="logo" href="index.html">Sangat Works</a>
   <nav>
     <a href="index.html">Home</a>
-    <a href="map.html">Map</a>
+    <a href="directory.html">Directory</a>
     <div id="accountArea"></div>
   </nav>
 </header>
 
-<main class="page-wrap">
+<main class="home-flagship-page profile-view-page">
   <section id="publicProfile" class="public-profile">
-    <div class="empty-state">Loading profile...</div>
+    <div class="pv-loading">Loading profile...</div>
   </section>
 
-  <section class="reviews-section">
-    <h2>Reviews & Recommendations</h2>
-    <p>See what other members of the Sangat have said.</p>
+  <section class="pv-reviews" id="reviews" aria-labelledby="reviewsTitle">
+    <div class="pv-reviews-head">
+      <div>
+        <span class="home-section-kicker">Reviews &amp; Recommendations</span>
+        <h2 id="reviewsTitle">What the Sangat says</h2>
+      </div>
+    </div>
 
-    <div id="reviewsList"></div>
+    <div class="pv-reviews-layout">
+      <div id="reviewsList" class="pv-reviews-list"></div>
 
-    <form id="reviewForm" class="review-form">
-      <h3>Leave a Review</h3>
+      <form id="reviewForm" class="pv-card pv-review-form">
+        <h3>Leave a review</h3>
+        <p class="pv-form-note">Your review shows your Sangat Works profile name. One review per member.</p>
 
-      <input type="text" id="reviewerName" placeholder="Your name" required />
-      <input type="text" id="serviceUsed" placeholder="Service used e.g. Electrical work, tutoring, website" />
+        <label>How was it?
+          <select id="rating" required>
+            <option value="">Choose a rating</option>
+            <option value="5">5 - Excellent</option>
+            <option value="4">4 - Very good</option>
+            <option value="3">3 - Good</option>
+            <option value="2">2 - Okay</option>
+            <option value="1">1 - Poor</option>
+          </select>
+        </label>
 
-      <select id="rating" required>
-        <option value="">Select rating</option>
-        <option value="5">5 - Excellent</option>
-        <option value="4">4 - Very good</option>
-        <option value="3">3 - Good</option>
-        <option value="2">2 - Okay</option>
-        <option value="1">1 - Poor</option>
-      </select>
+        <label><span>What did they help with? <small>(optional)</small></span>
+          <input type="text" id="serviceUsed" maxlength="120" placeholder="e.g. Electrical work, tutoring, website" />
+        </label>
 
-      <textarea id="reviewText" placeholder="Write your review or recommendation" required></textarea>
+        <label>Your review
+          <textarea id="reviewText" rows="4" maxlength="2000" placeholder="Share your experience" required></textarea>
+        </label>
 
-      <button type="submit" class="btn-primary full">Submit Review</button>
-      <p id="reviewMessage" class="message"></p>
-    </form>
+        <button type="submit" class="pv-btn is-primary">Submit review</button>
+        <p id="reviewMessage" class="pv-action-message" role="status"></p>
+      </form>
+    </div>
   </section>
 </main>
 

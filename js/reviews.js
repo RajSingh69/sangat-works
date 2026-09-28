@@ -1,4 +1,11 @@
-﻿import { auth, db } from "./firebase.js";
+/*
+  Reviews on a member's profile (view.html). Each member can leave one review
+  per profile, stored at users/{profileId}/reviews/{reviewerUid}. The reviewer's
+  name comes from their own profile; no email is stored because reviews are public.
+*/
+
+import { auth, db } from "./firebase.js";
+import { getUserProfile } from "./member-network.js";
 
 import {
   onAuthStateChanged
@@ -6,143 +13,33 @@ import {
 
 import {
   collection,
-  addDoc,
+  doc,
+  getDoc,
   getDocs,
-  query,
   orderBy,
-  serverTimestamp
+  query,
+  serverTimestamp,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const reviewsList = document.getElementById("reviewsList");
 const reviewForm = document.getElementById("reviewForm");
-const reviewMessage = document.getElementById("reviewMessage");
 
-const params = new URLSearchParams(window.location.search);
-const profileId = params.get("id");
+const profileId = new URLSearchParams(window.location.search).get("id");
 
 let currentUser = null;
+let authChecked = false;
+let reviewerIds = new Set();
+const reviewFormHtml = reviewForm?.innerHTML || "";
 
-onAuthStateChanged(auth, (user) => {
-  currentUser = user;
-
-  if (!user && reviewForm) {
-    reviewForm.innerHTML = `
-      <div class="empty-state">
-        Please log in to leave a review.
-      </div>
-    `;
-  }
-
-  if (user && user.uid === profileId && reviewForm) {
-    reviewForm.innerHTML = `
-      <div class="empty-state">
-        You cannot review your own profile.
-      </div>
-    `;
-  }
-});
-
-function stars(rating) {
-  return "★".repeat(rating) + "☆".repeat(5 - rating);
+// The form is redrawn by updateFormState, so look its message line up each time.
+function setReviewMessage(text) {
+  const message = document.getElementById("reviewMessage");
+  if (message) message.textContent = text;
 }
 
-async function loadReviews() {
-  if (!profileId || !reviewsList) return;
-
-  reviewsList.innerHTML = `<div class="empty-state">Loading reviews...</div>`;
-
-  const reviewsRef = collection(db, "users", profileId, "reviews");
-  const reviewsQuery = query(reviewsRef, orderBy("createdAt", "desc"));
-  const snapshot = await getDocs(reviewsQuery);
-
-  if (snapshot.empty) {
-    reviewsList.innerHTML = `
-      <div class="empty-state">
-        No reviews yet. Be the first to recommend this member.
-      </div>
-    `;
-    return;
-  }
-
-  let total = 0;
-  let reviews = [];
-
-  snapshot.forEach(docSnap => {
-    const review = docSnap.data();
-    total += Number(review.rating || 0);
-    reviews.push(review);
-  });
-
-  const average = (total / reviews.length).toFixed(1);
-
-  reviewsList.innerHTML = `
-    <div class="review-summary">
-      <strong>${average}/5</strong>
-      <span>${stars(Math.round(average))}</span>
-      <p>${reviews.length} review${reviews.length === 1 ? "" : "s"}</p>
-    </div>
-
-    ${reviews.map(review => `
-      <div class="review-card">
-        <div class="review-top">
-          <strong>${escapeHtml(review.reviewerName || "Sangat Member")}</strong>
-          <span>${stars(Number(review.rating || 0))}</span>
-        </div>
-
-        ${review.serviceUsed ? `<p><strong>Service used:</strong> ${escapeHtml(review.serviceUsed)}</p>` : ""}
-        <p>${escapeHtml(review.reviewText || "")}</p>
-      </div>
-    `).join("")}
-  `;
-}
-
-if (reviewForm) {
-  reviewForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    if (!currentUser) {
-      reviewMessage.textContent = "Please log in to leave a review.";
-      return;
-    }
-
-    if (currentUser.uid === profileId) {
-      reviewMessage.textContent = "You cannot review your own profile.";
-      return;
-    }
-
-    const reviewerName = document.getElementById("reviewerName").value.trim();
-    const serviceUsed = document.getElementById("serviceUsed").value.trim();
-    const rating = Number(document.getElementById("rating").value);
-    const reviewText = document.getElementById("reviewText").value.trim();
-
-    try {
-      reviewMessage.textContent = "Saving review...";
-
-      await addDoc(collection(db, "users", profileId, "reviews"), {
-        profileId,
-        reviewerId: currentUser.uid,
-        reviewerUid: currentUser.uid,
-        reviewerEmail: currentUser.email,
-        reviewerName,
-        serviceUsed,
-        rating,
-        reviewText,
-        createdAt: serverTimestamp()
-      });
-
-      reviewForm.reset();
-      reviewMessage.textContent = "Review added successfully.";
-
-      await loadReviews();
-    } catch (error) {
-      reviewMessage.textContent = error.message;
-    }
-  });
-}
-
-loadReviews();
 function escapeHtml(value) {
-  return String(value || "")
+  return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -150,3 +47,136 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function stars(rating) {
+  const full = Math.max(0, Math.min(5, Math.round(rating)));
+  return `<span class="pv-stars" aria-label="${full} out of 5">${"&#9733;".repeat(full)}<span>${"&#9733;".repeat(5 - full)}</span></span>`;
+}
+
+function formatDate(value) {
+  const date = value?.toDate ? value.toDate() : null;
+  return date ? date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";
+}
+
+// Shows the form, or a note explaining why this person can't review. Safe to call
+// repeatedly as sign-in and reviews finish loading in either order.
+function updateFormState() {
+  if (!reviewForm || !profileId || !authChecked) return;
+  let note = "";
+  if (!currentUser) note = `<a href="login.html">Log in</a> to leave a review.`;
+  else if (currentUser.uid === profileId) note = "This is your profile. Reviews from other members will appear here.";
+  else if (reviewerIds.has(currentUser.uid)) note = "Thanks, you've already reviewed this member.";
+
+  const html = note ? `<h3>Leave a review</h3><p class="pv-form-note">${note}</p>` : reviewFormHtml;
+  if (reviewForm.dataset.state !== (note || "form")) {
+    reviewForm.innerHTML = html;
+    reviewForm.dataset.state = note || "form";
+  }
+}
+
+async function loadReviews() {
+  if (!profileId || !reviewsList) return;
+
+  reviewsList.innerHTML = `<div class="pv-card pv-empty">Loading reviews...</div>`;
+
+  try {
+    const snapshot = await getDocs(query(collection(db, "users", profileId, "reviews"), orderBy("createdAt", "desc")));
+    const reviews = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+    reviewerIds = new Set(reviews.map(review => review.reviewerId || review.reviewerUid).filter(Boolean));
+
+    const count = reviews.length;
+    const average = count ? reviews.reduce((total, review) => total + Number(review.rating || 0), 0) / count : 0;
+    window.swReviewSummary = { average, count };
+    window.dispatchEvent(new CustomEvent("sw:reviews-loaded"));
+    updateFormState();
+
+    if (!count) {
+      reviewsList.innerHTML = `<div class="pv-card pv-empty">No reviews yet. Worked with this member? Be the first to recommend them.</div>`;
+      return;
+    }
+
+    reviewsList.innerHTML = `
+      <div class="pv-card pv-review-summary">
+        <strong>${average.toFixed(1)}</strong>
+        <div>${stars(average)}<span>${count} review${count === 1 ? "" : "s"}</span></div>
+      </div>
+      ${reviews.map(review => {
+        const reviewerId = review.reviewerId || review.reviewerUid || "";
+        const name = escapeHtml(review.reviewerName || "Sangat member");
+        return `
+          <article class="pv-card pv-review">
+            <div class="pv-review-top">
+              ${reviewerId ? `<a href="view.html?id=${encodeURIComponent(reviewerId)}"><strong>${name}</strong></a>` : `<strong>${name}</strong>`}
+              ${stars(Number(review.rating || 0))}
+            </div>
+            ${review.serviceUsed || review.createdAt ? `<p class="pv-review-meta">${[review.serviceUsed ? escapeHtml(review.serviceUsed) : "", escapeHtml(formatDate(review.createdAt))].filter(Boolean).join(" &middot; ")}</p>` : ""}
+            <p class="pv-text">${escapeHtml(review.reviewText || "")}</p>
+          </article>`;
+      }).join("")}
+    `;
+  } catch (error) {
+    console.error("Could not load reviews:", error);
+    reviewsList.innerHTML = `<div class="pv-card pv-empty">Reviews couldn't be loaded right now.</div>`;
+  }
+}
+
+async function getReviewerName(user) {
+  const profile = await getUserProfile(user.uid).catch(() => null);
+  return profile?.fullName || profile?.displayName || profile?.businessName || user.displayName || "Sangat member";
+}
+
+if (reviewForm) {
+  reviewForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!currentUser || currentUser.uid === profileId) return updateFormState();
+
+    const rating = Number(document.getElementById("rating").value);
+    const serviceUsed = document.getElementById("serviceUsed").value.trim();
+    const reviewText = document.getElementById("reviewText").value.trim();
+
+    if (!rating) {
+      setReviewMessage("Choose a rating.");
+      return;
+    }
+    if (reviewText.length < 5) {
+      setReviewMessage("Write a few words about your experience.");
+      return;
+    }
+
+    const submitButton = reviewForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    setReviewMessage("Saving review...");
+
+    try {
+      const reviewRef = doc(db, "users", profileId, "reviews", currentUser.uid);
+      if ((await getDoc(reviewRef)).exists()) {
+        reviewerIds.add(currentUser.uid);
+        updateFormState();
+        return;
+      }
+
+      await setDoc(reviewRef, {
+        profileId,
+        reviewerId: currentUser.uid,
+        reviewerName: await getReviewerName(currentUser),
+        serviceUsed,
+        rating,
+        reviewText,
+        createdAt: serverTimestamp()
+      });
+
+      await loadReviews();
+    } catch (error) {
+      console.error("Could not save review:", error);
+      setReviewMessage("Couldn't save your review. Please try again.");
+      submitButton.disabled = false;
+    }
+  });
+}
+
+onAuthStateChanged(auth, (user) => {
+  currentUser = user;
+  authChecked = true;
+  updateFormState();
+});
+
+loadReviews();
