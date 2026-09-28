@@ -130,6 +130,13 @@ function calculateProfileStrength(profile) {
     profileStrengthPercent.textContent = `${percent}%`;
   }
 
+  // Until the profile is half done, the main button sends people to the form.
+  const completeProfileBtn = document.getElementById("completeProfileBtn");
+  const viewPublicProfileBtn = document.getElementById("viewPublicProfileLink");
+  const isNewProfile = percent < 50;
+  completeProfileBtn?.classList.toggle("hidden", !isNewProfile);
+  viewPublicProfileBtn?.classList.toggle("is-primary", !isNewProfile);
+
   if (profileStrengthFill) {
     profileStrengthFill.style.width = `${percent}%`;
   }

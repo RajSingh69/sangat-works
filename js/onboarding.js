@@ -11,83 +11,63 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const onboardingHTML = `
-<div class="onboarding-overlay" id="onboardingOverlay">
+<div class="onboarding-overlay" id="onboardingOverlay" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle0">
 
   <div class="onboarding-modal">
 
-    <div class="onboarding-progress" id="onboardingProgress">
-      Step 1 of 6
+    <div class="onboarding-top">
+      <div class="onboarding-progress" id="onboardingProgress">
+        Step 1 of 4
+      </div>
+      <button type="button" class="onboarding-skip" id="onboardingSkip">Skip</button>
     </div>
 
     <div class="onboarding-step active">
-      <div class="onboarding-icon">🤝</div>
-      <h2>Welcome to Sangat Works</h2>
+      <div class="onboarding-icon"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 14.5c3 0 6 1.8 6 5"/></svg></div>
+      <h2 id="onboardingTitle0">Welcome to Sangat Works</h2>
       <p>
-        Sangat Works helps Sikhs find, support and recommend trusted businesses,
-        tradespeople, professionals and community members across the UK.
+        You're in. Sangat Works helps Sikhs across the UK find, hire and recommend
+        each other: businesses, tradespeople, professionals and students.
       </p>
     </div>
 
     <div class="onboarding-step">
-      <div class="onboarding-icon">🗺️</div>
-      <h2>Directory & Map</h2>
+      <div class="onboarding-icon"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></div>
+      <h2>First, fill in your profile</h2>
       <p>
-        Use the Directory and Map to search for Sikh businesses, services and
-        professionals by skill, location, Gurdwara, rating and featured status.
+        Add a photo, what you do and your town. That's what puts you in the Directory
+        and on the Map, and a fuller profile appears higher up.
+      </p>
+      <p>
+        Add your Gurdwara too and you'll show up in its Gurdwara Network.
       </p>
     </div>
 
     <div class="onboarding-step">
-      <div class="onboarding-icon">🤝</div>
-      <h2>Gurdwara Network</h2>
+      <div class="onboarding-icon"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+      <h2>Find people and work</h2>
       <p>
-        Add your local Gurdwara to your profile and you'll automatically appear in its
-        Gurdwara Network, alongside the businesses, trades and professionals in its Sangat.
+        Search the Directory and Map for anyone in the Sangat. Opportunities has jobs,
+        freelance work, mentoring and seva, and Young Professionals connects students
+        and graduates with mentors.
       </p>
     </div>
 
     <div class="onboarding-step">
-      <div class="onboarding-icon">🎓</div>
-      <h2>Young Professionals</h2>
+      <div class="onboarding-icon"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg></div>
+      <h2>Tell us what you think</h2>
       <p>
-        Young Professionals helps Sikh students, graduates and working professionals
-        connect, network and discover opportunities for collaboration, mentorship
-        and career growth.
-      </p>
-    </div>
-
-    <div class="onboarding-step">
-      <div class="onboarding-icon">💡</div>
-      <h2>FAQs & Suggestions</h2>
-      <p>
-        Use FAQs & Suggestions to ask questions, share feedback and suggest features
-        you would like to see added to Sangat Works.
-      </p>
-      <p>
-        The platform is still growing, so community feedback directly helps shape
-        what gets built next.
-      </p>
-    </div>
-
-    <div class="onboarding-step">
-      <div class="onboarding-icon">⭐</div>
-      <h2>Membership Benefits</h2>
-      <p>
-        Membership unlocks access to the Directory, Map, Young Professionals,
-        Gurdwara Network, Featured Listings and future community tools.
-      </p>
-      <p>
-        Every member helps strengthen the Sangat by supporting businesses,
-        sharing opportunities and building trusted connections.
+        Sangat Works is new and growing. Ask questions or suggest features on the
+        FAQ page, and we'll build what members ask for.
       </p>
     </div>
 
     <div class="onboarding-actions">
-      <button id="onboardingPrev" class="btn-secondary">
-        Previous
+      <button id="onboardingPrev" class="btn-secondary" type="button">
+        Back
       </button>
 
-      <button id="onboardingNext" class="btn-primary">
+      <button id="onboardingNext" class="btn-primary" type="button">
         Next
       </button>
     </div>
@@ -129,8 +109,32 @@ function openOnboarding(uid = "") {
         showStep(currentStep);
       } else {
         await completeOnboarding(uid);
+        goToProfileForm();
       }
     });
+
+  document
+    .getElementById("onboardingSkip")
+    .addEventListener("click", () => completeOnboarding(uid));
+
+  document.addEventListener("keydown", function closeOnEscape(event) {
+    if (event.key !== "Escape") return;
+    document.removeEventListener("keydown", closeOnEscape);
+    completeOnboarding(uid);
+  });
+
+  document.getElementById("onboardingNext").focus();
+}
+
+// The tour ends where new members need to be: the profile form.
+function goToProfileForm() {
+  const form = document.getElementById("profileForm");
+  if (!form) {
+    window.location.href = "profile.html#profileForm";
+    return;
+  }
+  form.scrollIntoView({ behavior: "smooth", block: "start" });
+  form.querySelector("input:not([type=file]), textarea")?.focus({ preventScroll: true });
 }
 
 function showStep(index) {
@@ -153,7 +157,7 @@ function showStep(index) {
 
   if (nextBtn) {
     nextBtn.textContent = index === steps.length - 1
-      ? "Join the Sangat"
+      ? "Set up my profile"
       : "Next";
   }
 }

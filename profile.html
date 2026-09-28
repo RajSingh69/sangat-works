@@ -24,6 +24,7 @@
       <p>This is how the Sangat finds you. The more you fill in, the higher you appear in the directory.</p>
     </div>
     <div class="ep-head-actions">
+      <a href="#profileForm" class="ep-btn is-primary hidden" id="completeProfileBtn">Complete my profile</a>
       <a href="view.html" class="ep-btn is-primary" id="viewPublicProfileLink">View my public profile</a>
       <button type="button" id="viewWalkthroughBtn" class="ep-btn">Walkthrough</button>
     </div>
@@ -68,32 +69,6 @@
       </div>
     </div>
 
-    <div class="ep-card ep-featured" id="featuredListingBox">
-      <div>
-        <h2>Featured listing</h2>
-        <p class="ep-small">Appear at the top of the directory with a Featured badge for 30 days.</p>
-        <dl class="ep-facts ep-facts-inline">
-          <div><dt>Status</dt><dd id="featuredStatus">Inactive</dd></div>
-          <div><dt>Expires</dt><dd id="featuredExpiry">-</dd></div>
-          <div><dt>Days left</dt><dd id="featuredDays">0</dd></div>
-        </dl>
-      </div>
-      <div class="ep-featured-action">
-        <button type="button" id="becomeFeaturedBtn" class="ep-btn is-primary">Become Featured (£5 / 30 days)</button>
-        <p id="featuredMessage" class="ep-small"></p>
-      </div>
-    </div>
-
-    <div class="ep-card ep-featured ep-verify" id="verificationBox">
-      <div>
-        <h2>Business verification <span class="ep-verify-status" id="verificationStatus">Not verified</span></h2>
-        <p class="ep-small" id="verificationText">We check your business is real (website, companies register or trade body) and add a green Business Verified badge to your profile and card. It also adds points to your ranking.</p>
-      </div>
-      <div class="ep-featured-action">
-        <button type="button" id="getVerifiedBtn" class="ep-btn is-primary">Get verified (£15 one-off)</button>
-        <p id="verificationMessage" class="ep-small"></p>
-      </div>
-    </div>
   </section>
 
   <form id="profileForm" class="ep-form" novalidate>
@@ -234,6 +209,35 @@
       <button type="submit" class="ep-btn is-primary">Save profile</button>
     </div>
   </form>
+
+  <section class="ep-overview ep-offers" aria-label="Boost your profile">
+    <div class="ep-card ep-featured" id="featuredListingBox">
+      <div>
+        <h2>Featured listing</h2>
+        <p class="ep-small">Appear at the top of the directory with a Featured badge for 30 days.</p>
+        <dl class="ep-facts ep-facts-inline">
+          <div><dt>Status</dt><dd id="featuredStatus">Inactive</dd></div>
+          <div><dt>Expires</dt><dd id="featuredExpiry">-</dd></div>
+          <div><dt>Days left</dt><dd id="featuredDays">0</dd></div>
+        </dl>
+      </div>
+      <div class="ep-featured-action">
+        <button type="button" id="becomeFeaturedBtn" class="ep-btn is-primary">Become Featured (£5 / 30 days)</button>
+        <p id="featuredMessage" class="ep-small"></p>
+      </div>
+    </div>
+
+    <div class="ep-card ep-featured ep-verify" id="verificationBox">
+      <div>
+        <h2>Business verification <span class="ep-verify-status" id="verificationStatus">Not verified</span></h2>
+        <p class="ep-small" id="verificationText">We check your business is real (website, companies register or trade body) and add a green Business Verified badge to your profile and card. It also adds points to your ranking.</p>
+      </div>
+      <div class="ep-featured-action">
+        <button type="button" id="getVerifiedBtn" class="ep-btn is-primary">Get verified (£15 one-off)</button>
+        <p id="verificationMessage" class="ep-small"></p>
+      </div>
+    </div>
+  </section>
 </main>
 
 <script type="module" src="js/nav.js"></script>

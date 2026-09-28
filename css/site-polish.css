@@ -111,3 +111,47 @@
   border-radius: 12px;
 }
 .checkout-btn:disabled { opacity: 0.75; cursor: progress; }
+
+/* Welcome tour */
+.onboarding-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.onboarding-skip {
+  min-height: 44px;
+  padding: 0 14px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: none;
+}
+.onboarding-skip:hover { color: var(--text, #172033); background: rgba(18, 60, 105, 0.06); transform: none; }
+.onboarding-icon { display: grid; place-items: center; color: var(--orange-fill, #c64d0e); }
+.onboarding-icon svg { display: block; }
+
+/* Profile page: paid offers sit below the form */
+.ep-offers { margin: 28px 0 0; }
+
+/* Profile page beside the sidebar: keep inside the screen with a gutter */
+.member-shell-enabled .edit-profile-page {
+  max-width: min(1180px, calc(100% - var(--sw-sidebar) - 36px));
+}
+.member-shell-enabled.sidebar-collapsed .edit-profile-page {
+  max-width: min(1180px, calc(100% - var(--sw-sidebar-collapsed) - 36px));
+}
+@media (max-width: 1020px) {
+  .member-shell-enabled .edit-profile-page,
+  .member-shell-enabled.sidebar-collapsed .edit-profile-page {
+    max-width: none;
+    width: calc(100% - 32px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
