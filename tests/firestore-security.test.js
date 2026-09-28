@@ -724,6 +724,17 @@ describe("Firestore security rules: ranking fields are admin/server only", () =>
     await assertSucceeds(deleteDoc(doc(aliceDb, "opportunities/o1")));
   });
 
+  it("keeps email addresses out of Young Professional profiles", async () => {
+    await testEnv.clearFirestore();
+    await seed(testEnv, "users/alice", { uid: "alice", role: "member", hasSubscription: true, subscriptionStatus: "active" });
+    const aliceDb = testEnv.authenticatedContext("alice").firestore();
+    const profile = { uid: "alice", fullName: "Alice", industry: "Law" };
+
+    await assertFails(setDoc(doc(aliceDb, "youngProfessionals/alice"), { ...profile, email: "alice@example.com" }));
+    await assertSucceeds(setDoc(doc(aliceDb, "youngProfessionals/alice"), profile));
+    await assertFails(setDoc(doc(aliceDb, "youngProfessionals/bob"), { ...profile, uid: "bob" }));
+  });
+
   it("lets anyone read the homepage totals but nobody write them", async () => {
     await testEnv.clearFirestore();
     await seed(testEnv, "siteStats/public", { members: 3 });

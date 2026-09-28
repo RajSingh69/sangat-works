@@ -1,516 +1,350 @@
-import { auth, db } from "./firebase.js";
-import { protectPage } from "./subscription-guard.js";
-import { compareByRanking } from "./ranking.js";
+/*
+  Young Professionals: members add a short YP profile (youngProfessionals/{uid})
+  saying whether they're looking for work and/or offering mentoring. Cards use
+  the member's public profile photo and link to their main profile.
+  No email is stored because every member can read these.
+*/
 
-import {
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { db } from "./firebase.js";
+import { protectPage } from "./subscription-guard.js";
+import { getPublicProfiles, openConversationWithUser } from "./member-network.js";
+import { compareByRanking } from "./ranking.js";
+import { escapeHtml, renderFramedPhoto } from "./directory-card.js";
+import { isListedInDirectory } from "./industries.js";
 
 import {
   collection,
+  deleteDoc,
+  deleteField,
   doc,
   getDoc,
   getDocs,
-  setDoc,
-  serverTimestamp
+  serverTimestamp,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-const ypForm = document.getElementById("ypForm");
-const ypMessage = document.getElementById("ypMessage");
-
-const ypFullName = document.getElementById("ypFullName");
-const ypTown = document.getElementById("ypTown");
-const ypUniversity = document.getElementById("ypUniversity");
-const ypDegree = document.getElementById("ypDegree");
-const ypGraduationYear = document.getElementById("ypGraduationYear");
-const ypIndustry = document.getElementById("ypIndustry");
-const ypSkills = document.getElementById("ypSkills");
-const ypLinkedin = document.getElementById("ypLinkedin");
-const ypBio = document.getElementById("ypBio");
-const ypLookingForWork = document.getElementById("ypLookingForWork");
-const ypOfferingMentorship = document.getElementById("ypOfferingMentorship");
-
-const ypSearchInput = document.getElementById("ypSearchInput");
-const ypIndustryFilter = document.getElementById("ypIndustryFilter");
-const ypTownFilter = document.getElementById("ypTownFilter");
-const ypStatusFilter = document.getElementById("ypStatusFilter");
-const ypResetFiltersBtn = document.getElementById("ypResetFiltersBtn");
-
-const ypResults = document.getElementById("ypResults");
-const ypCount = document.getElementById("ypCount");
+const $ = id => document.getElementById(id);
+const els = {
+  count: $("ypCount"),
+  results: $("ypResults"),
+  search: $("ypSearchInput"),
+  industry: $("ypIndustryFilter"),
+  town: $("ypTownFilter"),
+  reset: $("ypResetFiltersBtn"),
+  heroButton: $("ypHeroButton"),
+  modal: $("ypFormModal"),
+  form: $("ypForm"),
+  message: $("ypMessage"),
+  saveBtn: $("ypSaveBtn"),
+  removeBtn: $("ypRemoveBtn")
+};
+const fields = {
+  fullName: $("ypFullName"),
+  town: $("ypTown"),
+  university: $("ypUniversity"),
+  degree: $("ypDegree"),
+  graduationYear: $("ypGraduationYear"),
+  industry: $("ypIndustry"),
+  skills: $("ypSkills"),
+  linkedin: $("ypLinkedin"),
+  bio: $("ypBio"),
+  lookingForWork: $("ypLookingForWork"),
+  offeringMentorship: $("ypOfferingMentorship")
+};
 
 let currentUser = null;
 let userMainProfile = {};
+let myYpProfile = null;
 let youngProfiles = [];
-let memberProfilesById = new Map();
+let memberProfiles = new Map();
+let activeStatus = "";
+const expanded = new Set();
 
-function cleanValue(value) {
-  return String(value || "").trim();
+const clean = value => String(value ?? "").trim();
+const lower = value => clean(value).toLowerCase();
+
+function safeLink(value) {
+  const raw = clean(value);
+  if (!raw) return "";
+  try {
+    const url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch (error) {
+    return "";
+  }
 }
 
-function lowerValue(value) {
-  return cleanValue(value).toLowerCase();
+// ---------- loading ----------
+
+async function loadYoungProfessionals() {
+  const snapshot = await getDocs(collection(db, "youngProfessionals"));
+  const all = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+  memberProfiles = await getPublicProfiles(all.map(profile => profile.id));
+
+  // Only people whose main membership is active (same rule as the directory).
+  youngProfiles = all.filter(profile => isListedInDirectory(memberProfiles.get(profile.id)));
+  myYpProfile = all.find(profile => profile.id === currentUser.uid) || null;
+
+  populateFilters();
+  updateHeroButton();
+  render();
 }
 
-function getSkillsArray(value) {
-  return cleanValue(value)
-    .split(",")
-    .map(skill => skill.trim())
-    .filter(Boolean);
-}
+// ---------- filters ----------
 
-function escapeHtml(value) {
-  return String(value || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function formatYear(value) {
-  const year = cleanValue(value);
-
-  if (!year) return "";
-
-  return year;
-}
-
-function fillForm(profile) {
-  if (!profile) return;
-
-  ypFullName.value =
-    profile.fullName ||
-    userMainProfile.fullName ||
-    currentUser?.displayName ||
-    "";
-
-  ypTown.value =
-    profile.town ||
-    userMainProfile.town ||
-    "";
-
-  ypUniversity.value = profile.university || "";
-  ypDegree.value = profile.degree || "";
-  ypGraduationYear.value = profile.graduationYear || "";
-  ypIndustry.value = profile.industry || "";
-  ypSkills.value = (profile.skills || []).join(", ");
-  ypLinkedin.value = profile.linkedin || userMainProfile.linkedin || "";
-  ypBio.value = profile.bio || "";
-  ypLookingForWork.checked = profile.lookingForWork === true;
-  ypOfferingMentorship.checked = profile.offeringMentorship === true;
-}
-
-function populateSelect(selectElement, values, defaultLabel) {
-  if (!selectElement) return;
-
-  const currentValue = selectElement.value;
-
-  selectElement.innerHTML = `<option value="">${defaultLabel}</option>`;
-
-  values.forEach(value => {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = value;
-    selectElement.appendChild(option);
-  });
-
-  selectElement.value = currentValue;
+function populateSelect(select, values, label) {
+  const current = select.value;
+  select.innerHTML = `<option value="">${label}</option>${values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+  select.value = values.includes(current) ? current : "";
 }
 
 function populateFilters() {
-  const industries = [...new Set(
-    youngProfiles
-      .map(profile => cleanValue(profile.industry))
-      .filter(Boolean)
-  )].sort();
-
-  const towns = [...new Set(
-    youngProfiles
-      .map(profile => cleanValue(profile.town))
-      .filter(Boolean)
-  )].sort();
-
-  populateSelect(ypIndustryFilter, industries, "All industries");
-  populateSelect(ypTownFilter, towns, "All towns");
+  const unique = key => [...new Set(youngProfiles.map(profile => clean(profile[key])).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  populateSelect(els.industry, unique("industry"), "All industries");
+  populateSelect(els.town, unique("town"), "All towns");
 }
 
-function getSearchableText(profile) {
-  return `
-    ${profile.fullName || ""}
-    ${profile.town || ""}
-    ${profile.university || ""}
-    ${profile.degree || ""}
-    ${profile.graduationYear || ""}
-    ${profile.industry || ""}
-    ${(profile.skills || []).join(" ")}
-    ${profile.bio || ""}
-  `.toLowerCase();
-}
-
-function profileMatchesFilters(profile) {
-  const searchText = lowerValue(ypSearchInput?.value);
-  const selectedIndustry = lowerValue(ypIndustryFilter?.value);
-  const selectedTown = lowerValue(ypTownFilter?.value);
-  const selectedStatus = cleanValue(ypStatusFilter?.value);
-
-  if (searchText && !getSearchableText(profile).includes(searchText)) {
-    return false;
+function matches(profile, status = activeStatus) {
+  const search = lower(els.search.value);
+  if (search) {
+    const text = [profile.fullName, profile.town, profile.university, profile.degree, profile.graduationYear, profile.industry, ...(profile.skills || []), profile.bio]
+      .map(lower).join(" ");
+    if (!text.includes(search)) return false;
   }
-
-  if (selectedIndustry && lowerValue(profile.industry) !== selectedIndustry) {
-    return false;
-  }
-
-  if (selectedTown && lowerValue(profile.town) !== selectedTown) {
-    return false;
-  }
-
-  if (selectedStatus === "looking" && profile.lookingForWork !== true) {
-    return false;
-  }
-
-  if (selectedStatus === "mentor" && profile.offeringMentorship !== true) {
-    return false;
-  }
-
+  if (els.industry.value && lower(profile.industry) !== lower(els.industry.value)) return false;
+  if (els.town.value && lower(profile.town) !== lower(els.town.value)) return false;
+  if (status === "looking" && profile.lookingForWork !== true) return false;
+  if (status === "mentor" && profile.offeringMentorship !== true) return false;
   return true;
 }
 
-function renderProfileCard(profile) {
-  const skills = profile.skills || [];
+// ---------- rendering ----------
 
-  const skillsHtml = skills
-    .slice(0, 8)
-    .map(skill => `<span class="tag">${escapeHtml(skill)}</span>`)
-    .join("");
+function renderCard(profile) {
+  const member = memberProfiles.get(profile.id) || {};
+  const isMine = profile.id === currentUser?.uid;
+  const name = profile.fullName || member.fullName || "Young Professional";
+  const linkedin = safeLink(profile.linkedin);
+  const skills = (profile.skills || []).filter(Boolean).slice(0, 6);
+  const bio = clean(profile.bio);
+  const isLong = bio.length > 200;
 
-  const graduationText = profile.graduationYear
-    ? `Graduated / graduating ${escapeHtml(formatYear(profile.graduationYear))}`
-    : "";
+  const facts = [
+    profile.university,
+    profile.degree,
+    profile.graduationYear ? `Class of ${profile.graduationYear}` : "",
+    profile.town
+  ].filter(Boolean);
 
   return `
-    <div class="yp-card">
-      <h3>${escapeHtml(profile.fullName || "Young Professional")}</h3>
-
-      <p class="service">
-        ${escapeHtml(profile.industry || "Industry not provided")}
-      </p>
-
+    <article class="yp-card${isMine ? " is-mine" : ""}">
+      <div class="yp-card-head">
+        ${renderFramedPhoto(member, { className: "yp-photo", alt: "" })}
+        <div class="yp-card-id">
+          <h3>${escapeHtml(name)}</h3>
+          <p>${escapeHtml(profile.industry || "Industry not added")}</p>
+        </div>
+      </div>
       <div class="yp-badges">
-        ${
-          profile.lookingForWork === true
-            ? `<span class="yp-badge green">Looking for work</span>`
-            : ""
-        }
-
-        ${
-          profile.offeringMentorship === true
-            ? `<span class="yp-badge">Offering mentorship</span>`
-            : ""
-        }
+        ${isMine ? `<span class="yp-badge is-you">You</span>` : ""}
+        ${profile.lookingForWork === true ? `<span class="yp-badge is-looking">Looking for work</span>` : ""}
+        ${profile.offeringMentorship === true ? `<span class="yp-badge is-mentor">Offers mentoring</span>` : ""}
       </div>
-
-      <div class="yp-meta">
-        ${
-          profile.town
-            ? `<div><strong>Town:</strong> ${escapeHtml(profile.town)}</div>`
-            : ""
-        }
-
-        ${
-          profile.university
-            ? `<div><strong>University:</strong> ${escapeHtml(profile.university)}</div>`
-            : ""
-        }
-
-        ${
-          profile.degree
-            ? `<div><strong>Degree:</strong> ${escapeHtml(profile.degree)}</div>`
-            : ""
-        }
-
-        ${
-          graduationText
-            ? `<div><strong>Year:</strong> ${graduationText}</div>`
-            : ""
-        }
+      ${facts.length ? `<ul class="opp-facts">${facts.map(fact => `<li>${escapeHtml(fact)}</li>`).join("")}</ul>` : ""}
+      ${bio ? `<p class="opp-description${isLong && !expanded.has(profile.id) ? " is-clamped" : ""}">${escapeHtml(bio)}</p>` : ""}
+      ${isLong ? `<button type="button" class="opp-more" data-yp-expand="${escapeHtml(profile.id)}">${expanded.has(profile.id) ? "Show less" : "Read more"}</button>` : ""}
+      ${skills.length ? `<div class="opp-tags">${skills.map(skill => `<span>${escapeHtml(skill)}</span>`).join("")}</div>` : ""}
+      <div class="opp-actions yp-actions">
+        ${isMine
+          ? `<button type="button" class="btn-primary" data-open-yp-form>Edit my profile</button>`
+          : `<button type="button" class="btn-primary" data-yp-message="${escapeHtml(profile.id)}">Message</button>`}
+        <a class="btn-secondary" href="view.html?id=${encodeURIComponent(profile.id)}">View profile</a>
+        ${linkedin ? `<a class="btn-secondary" href="${escapeHtml(linkedin)}" target="_blank" rel="noopener">LinkedIn</a>` : ""}
       </div>
-
-      ${
-        skillsHtml
-          ? `<div class="tags">${skillsHtml}</div>`
-          : ""
-      }
-
-      ${
-        profile.bio
-          ? `<p class="yp-bio">${escapeHtml(profile.bio).substring(0, 220)}${profile.bio.length > 220 ? "..." : ""}</p>`
-          : `<p class="yp-bio">No bio added yet.</p>`
-      }
-
-      <div class="yp-actions">
-        ${
-          profile.linkedin
-            ? `<a href="${escapeHtml(profile.linkedin)}" target="_blank">LinkedIn</a>`
-            : ""
-        }
-
-        ${
-          profile.uid
-            ? `<a href="view.html?id=${encodeURIComponent(profile.uid)}">Main Profile</a>`
-            : ""
-        }
-      </div>
-    </div>
-  `;
+    </article>`;
 }
 
-function renderProfiles() {
-  const filteredProfiles = youngProfiles
-    .filter(profileMatchesFilters)
-    .sort((a, b) => {
-      const rankingDiff = compareByRanking(memberProfilesById.get(a.id) || {}, memberProfilesById.get(b.id) || {});
-      if (rankingDiff) return rankingDiff;
+function render() {
+  const counts = { "": 0, looking: 0, mentor: 0 };
+  Object.keys(counts).forEach(status => { counts[status] = youngProfiles.filter(profile => matches(profile, status)).length; });
+  $("ypCountAll").textContent = counts[""];
+  $("ypCountLooking").textContent = counts.looking;
+  $("ypCountMentor").textContent = counts.mentor;
+  document.querySelectorAll("[data-yp-status]").forEach(tab => {
+    const active = tab.dataset.ypStatus === activeStatus;
+    tab.classList.toggle("is-active", active);
+    tab.setAttribute("aria-selected", String(active));
+  });
 
-      if (a.lookingForWork === true && b.lookingForWork !== true) return -1;
-      if (b.lookingForWork === true && a.lookingForWork !== true) return 1;
+  const shown = youngProfiles.filter(profile => matches(profile)).sort((a, b) => {
+    const ranking = compareByRanking(memberProfiles.get(a.id) || {}, memberProfiles.get(b.id) || {});
+    if (ranking) return ranking;
+    return (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0);
+  });
 
-      const aTime = a.updatedAt?.seconds || a.createdAt?.seconds || 0;
-      const bTime = b.updatedAt?.seconds || b.createdAt?.seconds || 0;
+  els.count.textContent = `Showing ${shown.length} of ${youngProfiles.length}`;
 
-      return bTime - aTime;
-    });
-
-  if (ypCount) {
-    ypCount.textContent = `Showing ${filteredProfiles.length} young professional${filteredProfiles.length === 1 ? "" : "s"}`;
-  }
-
-  if (!ypResults) return;
-
-  if (filteredProfiles.length === 0) {
-    ypResults.innerHTML = `
-      <div class="empty-state">
-        No young professionals match these filters yet.
-      </div>
-    `;
+  if (!shown.length) {
+    const none = !youngProfiles.length;
+    els.results.innerHTML = `
+      <div class="opp-empty">
+        <strong>${none ? "No young professionals yet. Be the first to add yourself." : "Nobody matches those filters."}</strong>
+        ${none ? `<button type="button" class="btn-primary" data-open-yp-form>Add my profile</button>` : ""}
+      </div>`;
     return;
   }
-
-  ypResults.innerHTML = filteredProfiles
-    .map(profile => renderProfileCard(profile))
-    .join("");
+  els.results.innerHTML = shown.map(renderCard).join("");
 }
 
-async function loadMainUserProfile(uid) {
-  const userRef = doc(db, "users", uid);
-  const userSnap = await getDoc(userRef);
-
-  if (userSnap.exists()) {
-    userMainProfile = userSnap.data();
-  }
+function updateHeroButton() {
+  els.heroButton.textContent = myYpProfile ? "Edit my Young Professional profile" : "Add my Young Professional profile";
 }
 
-async function loadCurrentYoungProfile(uid) {
-  const ypRef = doc(db, "youngProfessionals", uid);
-  const ypSnap = await getDoc(ypRef);
+// ---------- form ----------
 
-  if (ypSnap.exists()) {
-    fillForm(ypSnap.data());
-  } else {
-    fillForm({
-      fullName: userMainProfile.fullName || currentUser?.displayName || "",
-      town: userMainProfile.town || "",
-      linkedin: userMainProfile.linkedin || ""
-    });
-  }
+function openForm() {
+  const profile = myYpProfile || {};
+  fields.fullName.value = profile.fullName || userMainProfile.fullName || "";
+  fields.town.value = profile.town || userMainProfile.town || "";
+  fields.university.value = profile.university || "";
+  fields.degree.value = profile.degree || "";
+  fields.graduationYear.value = profile.graduationYear || "";
+  fields.industry.value = profile.industry || "";
+  fields.skills.value = (profile.skills || []).join(", ");
+  fields.linkedin.value = profile.linkedin || userMainProfile.linkedin || "";
+  fields.bio.value = profile.bio || "";
+  fields.lookingForWork.checked = profile.lookingForWork === true;
+  fields.offeringMentorship.checked = profile.offeringMentorship === true;
+
+  els.message.textContent = "";
+  els.saveBtn.disabled = false;
+  els.removeBtn.hidden = !myYpProfile;
+  els.modal.hidden = false;
+  document.body.classList.add("opp-modal-open");
+  fields.fullName.focus();
 }
 
-async function loadYoungProfessionals() {
-  if (ypResults) {
-    ypResults.innerHTML = `
-      <div class="empty-state">
-        Loading young professionals...
-      </div>
-    `;
-  }
-
-  if (ypCount) {
-    ypCount.textContent = "Loading profiles...";
-  }
-
-  const [snapshot, usersSnapshot] = await Promise.all([
-    getDocs(collection(db, "youngProfessionals")),
-    getDocs(collection(db, "publicProfiles"))
-  ]);
-
-  const activeUserIds = new Set();
-  memberProfilesById = new Map();
-
-  usersSnapshot.forEach(docSnap => {
-    const user = docSnap.data();
-    memberProfilesById.set(docSnap.id, user);
-    const expiryDate = user.subscriptionExpiresAt?.toDate
-      ? user.subscriptionExpiresAt.toDate()
-      : user.subscriptionExpiresAt
-      ? new Date(user.subscriptionExpiresAt)
-      : null;
-    const notExpired = !expiryDate || expiryDate > new Date();
-
-    const freeAccessExpiryDate = user.freeAccessExpiresAt?.toDate
-      ? user.freeAccessExpiresAt.toDate()
-      : user.freeAccessExpiresAt
-      ? new Date(user.freeAccessExpiresAt)
-      : null;
-    const freeAccessActive =
-      user.accessType === "admin_granted_free_year" &&
-      freeAccessExpiryDate &&
-      freeAccessExpiryDate > new Date();
-
-    if (
-      (user.role === "admin" || user.role === "super_admin") ||
-      freeAccessActive ||
-      (
-        user.hasSubscription === true &&
-        user.subscriptionStatus === "active" &&
-        notExpired
-      ) ||
-      (
-        user.hasSubscription === true &&
-        user.subscriptionStatus === "cancelling" &&
-        expiryDate &&
-        expiryDate > new Date()
-      )
-    ) {
-      activeUserIds.add(docSnap.id);
-    }
-  });
-
-  youngProfiles = [];
-
-  snapshot.forEach(docSnap => {
-    if (activeUserIds.has(docSnap.id)) {
-      youngProfiles.push({
-        id: docSnap.id,
-        ...docSnap.data()
-      });
-    }
-  });
-
-  populateFilters();
-  renderProfiles();
+function closeForm() {
+  els.modal.hidden = true;
+  document.body.classList.remove("opp-modal-open");
 }
 
-async function saveYoungProfessionalProfile(event) {
+async function saveProfile(event) {
   event.preventDefault();
+  if (!currentUser) return;
 
-  if (!currentUser) {
-    ypMessage.textContent = "You need to be logged in.";
+  if (!clean(fields.fullName.value) || !clean(fields.industry.value)) {
+    els.message.textContent = "Please add your name and industry.";
     return;
   }
+  const linkedinRaw = clean(fields.linkedin.value);
+  if (linkedinRaw && !safeLink(linkedinRaw)) {
+    els.message.textContent = "That LinkedIn link doesn't look right.";
+    return;
+  }
+
+  els.saveBtn.disabled = true;
+  els.message.textContent = "Saving...";
 
   try {
-    ypMessage.textContent = "Saving profile...";
-
-    const ypRef = doc(db, "youngProfessionals", currentUser.uid);
-    const existingSnap = await getDoc(ypRef);
-
-    const profileData = {
+    const data = {
       uid: currentUser.uid,
-      email: currentUser.email || "",
-
-      fullName: cleanValue(ypFullName.value),
-      town: cleanValue(ypTown.value),
-      university: cleanValue(ypUniversity.value),
-      degree: cleanValue(ypDegree.value),
-      graduationYear: cleanValue(ypGraduationYear.value),
-      industry: cleanValue(ypIndustry.value),
-      skills: getSkillsArray(ypSkills.value),
-      linkedin: cleanValue(ypLinkedin.value),
-      bio: cleanValue(ypBio.value),
-
-      lookingForWork: ypLookingForWork.checked === true,
-      offeringMentorship: ypOfferingMentorship.checked === true,
-
+      fullName: clean(fields.fullName.value),
+      town: clean(fields.town.value),
+      university: clean(fields.university.value),
+      degree: clean(fields.degree.value),
+      graduationYear: clean(fields.graduationYear.value),
+      industry: clean(fields.industry.value),
+      skills: clean(fields.skills.value).split(",").map(skill => skill.trim()).filter(Boolean),
+      linkedin: linkedinRaw ? safeLink(linkedinRaw) : "",
+      bio: clean(fields.bio.value),
+      lookingForWork: fields.lookingForWork.checked,
+      offeringMentorship: fields.offeringMentorship.checked,
+      // Older profiles stored the sign-in email; YP profiles are visible to all members.
+      email: deleteField(),
       updatedAt: serverTimestamp()
     };
+    if (!myYpProfile) data.createdAt = serverTimestamp();
 
-    if (!existingSnap.exists()) {
-      profileData.createdAt = serverTimestamp();
-    }
-
-    await setDoc(ypRef, profileData, { merge: true });
-
-    ypMessage.textContent = "Young Professional profile saved.";
-
+    await setDoc(doc(db, "youngProfessionals", currentUser.uid), data, { merge: true });
+    closeForm();
     await loadYoungProfessionals();
   } catch (error) {
-    ypMessage.textContent = error.message;
+    console.error("Could not save Young Professional profile:", error);
+    els.message.textContent = "Couldn't save. Please try again.";
+    els.saveBtn.disabled = false;
   }
 }
 
-function attachListeners() {
-  if (ypForm) {
-    ypForm.addEventListener("submit", saveYoungProfessionalProfile);
-  }
-
-  if (ypSearchInput) {
-    ypSearchInput.addEventListener("keyup", renderProfiles);
-  }
-
-  if (ypIndustryFilter) {
-    ypIndustryFilter.addEventListener("change", renderProfiles);
-  }
-
-  if (ypTownFilter) {
-    ypTownFilter.addEventListener("change", renderProfiles);
-  }
-
-  if (ypStatusFilter) {
-    ypStatusFilter.addEventListener("change", renderProfiles);
-  }
-
-  if (ypResetFiltersBtn) {
-    ypResetFiltersBtn.addEventListener("click", () => {
-      if (ypSearchInput) ypSearchInput.value = "";
-      if (ypIndustryFilter) ypIndustryFilter.value = "";
-      if (ypTownFilter) ypTownFilter.value = "";
-      if (ypStatusFilter) ypStatusFilter.value = "";
-
-      renderProfiles();
-    });
+async function removeProfile() {
+  if (!window.confirm("Remove your Young Professional profile? Your main Sangat Works profile stays as it is.")) return;
+  try {
+    await deleteDoc(doc(db, "youngProfessionals", currentUser.uid));
+    closeForm();
+    await loadYoungProfessionals();
+  } catch (error) {
+    console.error("Could not remove Young Professional profile:", error);
+    els.message.textContent = "Couldn't remove it. Please try again.";
   }
 }
+
+// ---------- events ----------
+
+document.addEventListener("click", async (event) => {
+  const target = event.target.closest("button, a");
+  if (!target) return;
+
+  if (target.matches("[data-open-yp-form]")) return openForm();
+  if (target.matches("[data-close-yp-form]")) return closeForm();
+
+  if (target.dataset.ypStatus !== undefined) {
+    activeStatus = target.dataset.ypStatus;
+    render();
+  } else if (target.dataset.ypExpand) {
+    const id = target.dataset.ypExpand;
+    expanded.has(id) ? expanded.delete(id) : expanded.add(id);
+    render();
+  } else if (target.dataset.ypMessage) {
+    target.disabled = true;
+    target.textContent = "Opening chat...";
+    try {
+      await openConversationWithUser(currentUser.uid, target.dataset.ypMessage);
+    } catch (error) {
+      window.alert(error.message || "Messaging is temporarily unavailable.");
+      target.disabled = false;
+      target.textContent = "Message";
+    }
+  }
+});
+
+els.modal.addEventListener("click", event => {
+  if (event.target === els.modal) closeForm();
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !els.modal.hidden) closeForm();
+});
+els.form.addEventListener("submit", saveProfile);
+els.removeBtn.addEventListener("click", removeProfile);
+[els.search, els.industry, els.town].forEach(input => input.addEventListener("input", render));
+els.reset.addEventListener("click", () => {
+  els.search.value = "";
+  els.industry.value = "";
+  els.town.value = "";
+  activeStatus = "";
+  render();
+});
 
 protectPage({
-  onAllowed: () => {
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
-
-      currentUser = user;
-
-      try {
-        attachListeners();
-
-        await loadMainUserProfile(user.uid);
-        await loadCurrentYoungProfile(user.uid);
-        await loadYoungProfessionals();
-      } catch (error) {
-        if (ypResults) {
-          ypResults.innerHTML = `
-            <div class="empty-state">
-              Error loading Young Professionals: ${error.message}
-            </div>
-          `;
-        }
-
-        if (ypMessage) {
-          ypMessage.textContent = error.message;
-        }
-      }
-    });
+  onAllowed: async (user) => {
+    currentUser = user;
+    try {
+      const mainSnap = await getDoc(doc(db, "users", user.uid));
+      userMainProfile = mainSnap.exists() ? mainSnap.data() : {};
+      await loadYoungProfessionals();
+    } catch (error) {
+      console.error("Could not load Young Professionals:", error);
+      els.results.innerHTML = `<div class="opp-empty"><strong>Couldn't load Young Professionals.</strong><span>Please refresh the page.</span></div>`;
+      els.count.textContent = "";
+    }
   }
 });

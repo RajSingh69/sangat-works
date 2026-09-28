@@ -1,0 +1,85 @@
+/* =========================================
+   YOUNG PROFESSIONALS (young-professionals.html, js/young-professionals.js)
+   Builds on the Opportunities board styles (opportunities.css).
+========================================= */
+
+.yp-page .story-actions button { font: inherit; font-size: 1rem; font-weight: 800; cursor: pointer; }
+
+.opp-filters.yp-filters { grid-template-columns: minmax(0, 1fr) 210px 180px auto; }
+
+.yp-reset {
+  padding: 11px 16px;
+  font: inherit;
+  font-weight: 800;
+  color: var(--home-ink);
+  background: #fff;
+  border: 1px solid var(--home-border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.yp-reset:hover { border-color: rgba(255, 122, 24, 0.5); }
+
+.yp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.yp-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid var(--home-border);
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(8, 46, 80, 0.07);
+}
+
+.yp-card.is-mine { border-color: rgba(255, 122, 24, 0.45); }
+
+.yp-card-head { display: flex; align-items: center; gap: 14px; min-width: 0; }
+
+.yp-photo {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: var(--home-cream);
+  box-shadow: 0 6px 14px rgba(8, 46, 80, 0.12);
+}
+
+.yp-card-id { min-width: 0; }
+.yp-card-id h3 { margin: 0; font-size: 1.15rem; line-height: 1.25; color: var(--home-ink); overflow-wrap: anywhere; }
+.yp-card-id p { margin: 3px 0 0; font-weight: 800; color: var(--home-orange); }
+
+.yp-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.yp-badges:empty { display: none; }
+
+.yp-badge {
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  border-radius: 999px;
+}
+
+.yp-badge.is-looking { color: #16603d; background: rgba(31, 122, 77, 0.12); }
+.yp-badge.is-mentor { color: #5b21b6; background: rgba(124, 58, 237, 0.12); }
+.yp-badge.is-you { color: #fff; background: var(--home-orange); }
+
+.yp-actions { margin-top: 4px; padding-top: 14px; border-top: 1px solid var(--home-border); }
+
+.yp-form-checks { display: grid; gap: 10px; }
+.yp-form-checks .opp-check { white-space: normal; }
+.opp-form-actions .yp-remove { margin-right: auto; }
+
+@media (max-width: 900px) {
+  .opp-filters.yp-filters { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 560px) {
+  .opp-filters.yp-filters { grid-template-columns: 1fr; }
+  .yp-grid { grid-template-columns: 1fr; }
+}

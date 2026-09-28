@@ -329,7 +329,10 @@ service cloud.firestore {
 
     match /youngProfessionals/{uid} {
       allow read: if hasActiveMembership();
-      allow create, update: if isSelf(uid) && hasActiveMembership() && request.resource.data.uid == request.auth.uid;
+      // Every member can read these, so no email address is stored.
+      allow create, update: if isSelf(uid) && hasActiveMembership()
+        && request.resource.data.uid == request.auth.uid
+        && !("email" in request.resource.data);
       allow delete: if isSelf(uid) || isAdmin();
     }
 
