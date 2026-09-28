@@ -389,6 +389,9 @@ function isFeaturedActive(profile) {
   return getDaysRemaining(profile.featuredExpiresAt) > 0;
 }
 
+const FEATURED_PAID_NOTE = "Payment received, thank you! Your profile will show as Featured within a minute (refresh to see it).";
+let featuredJustPaid = false;
+
 function renderFeaturedListingStatus(profile) {
   if (!featuredStatus || !featuredExpiry || !featuredDays || !becomeFeaturedBtn) return;
 
@@ -419,7 +422,7 @@ function renderFeaturedListingStatus(profile) {
   } else {
     becomeFeaturedBtn.textContent = "Become Featured (£5 / 30 Days)";
     if (featuredMessage) {
-      featuredMessage.textContent = "";
+      featuredMessage.textContent = featuredJustPaid ? FEATURED_PAID_NOTE : "";
     }
   }
 }
@@ -907,6 +910,13 @@ if (getVerifiedBtn) {
       renderVerificationStatus(existingProfile);
     }
   });
+}
+
+// Back from Stripe after paying for a Featured listing (renderFeaturedListingStatus shows the note).
+if (new URLSearchParams(window.location.search).get("featured") === "paid") {
+  featuredJustPaid = true;
+  if (featuredMessage) featuredMessage.textContent = FEATURED_PAID_NOTE;
+  history.replaceState(null, "", window.location.pathname);
 }
 
 // Back from Stripe after paying for verification.

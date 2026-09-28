@@ -208,9 +208,14 @@ exports.createCheckoutSession = onRequest(
             quantity: 1
           }
         ],
-        success_url:
-          "https://sangatworks.co.uk/success.html?session_id={CHECKOUT_SESSION_ID}",
-        cancel_url: "https://sangatworks.co.uk/cancel.html",
+        // Featured Listing buyers are already members, so send them back to their
+        // profile rather than the new-member "finish creating your account" page.
+        success_url: billingType === "featured"
+          ? "https://sangatworks.co.uk/profile.html?featured=paid"
+          : "https://sangatworks.co.uk/success.html?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url: billingType === "featured"
+          ? "https://sangatworks.co.uk/profile.html"
+          : "https://sangatworks.co.uk/cancel.html",
         metadata,
         payment_intent_data:
           billingType === "oneoff" || billingType === "featured"
