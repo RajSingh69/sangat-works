@@ -211,7 +211,7 @@ service cloud.firestore {
     // edits, closes or deletes their own; admins can close or delete any post.
     function validOpportunity(data) {
       return data.keys().hasOnly(["ownerId", "type", "title", "industry", "description", "location", "remote",
-          "pay", "closingDate", "applyLink", "status", "createdAt", "updatedAt"])
+          "pay", "closingDate", "applyLink", "status", "createdAt", "updatedAt", "featuredUntil", "featuredSessionId"])
         && data.keys().hasAll(["ownerId", "type", "title", "industry", "description", "location", "remote",
           "pay", "closingDate", "applyLink", "status", "createdAt", "updatedAt"])
         && data.type in ["job", "freelance", "collaboration", "mentoring", "volunteering"]
@@ -226,10 +226,18 @@ service cloud.firestore {
         && data.status in ["open", "closed"];
     }
 
+    // featuredUntil/featuredSessionId are only set by the Stripe webhook (functions/promotions.js).
+    function keepsFeaturedFields() {
+      return request.resource.data.get("featuredUntil", null) == resource.data.get("featuredUntil", null)
+        && request.resource.data.get("featuredSessionId", null) == resource.data.get("featuredSessionId", null);
+    }
+
     match /opportunities/{opportunityId} {
       allow read: if hasActiveMembership();
       allow create: if hasActiveMembership()
         && validOpportunity(request.resource.data)
+        && !("featuredUntil" in request.resource.data)
+        && !("featuredSessionId" in request.resource.data)
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.status == "open"
         && request.resource.data.createdAt == request.time
@@ -239,7 +247,8 @@ service cloud.firestore {
           && validOpportunity(request.resource.data)
           && request.resource.data.ownerId == resource.data.ownerId
           && request.resource.data.createdAt == resource.data.createdAt
-          && request.resource.data.updatedAt == request.time)
+          && request.resource.data.updatedAt == request.time
+          && keepsFeaturedFields())
         || (isAdmin()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "updatedAt"])
           && request.resource.data.status in ["open", "closed"])

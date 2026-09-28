@@ -722,6 +722,29 @@ describe("Firestore security rules: ranking fields are admin/server only", () =>
     await assertSucceeds(updateDoc(doc(modDb, "opportunities/o1"), { status: "closed", updatedAt: serverTimestamp() }));
     await assertFails(deleteDoc(doc(bobDb, "opportunities/o1")));
     await assertSucceeds(deleteDoc(doc(aliceDb, "opportunities/o1")));
+
+    // Featuring is paid for through Stripe: members can't set it themselves...
+    const { Timestamp } = require("firebase/firestore");
+    const soon = Timestamp.fromMillis(Date.now() + 86400000);
+    await assertFails(setDoc(doc(aliceDb, "opportunities/o7"), post("alice", { featuredUntil: soon })));
+    await assertSucceeds(setDoc(doc(aliceDb, "opportunities/o8"), post("alice")));
+    await assertFails(updateDoc(doc(aliceDb, "opportunities/o8"), { featuredUntil: soon, updatedAt: serverTimestamp() }));
+    // ...but can still edit a post the webhook has featured, without changing that.
+    await testEnv.withSecurityRulesDisabled(context => updateDoc(doc(context.firestore(), "opportunities/o8"), { featuredUntil: soon, featuredSessionId: "cs_test" }));
+    await assertSucceeds(updateDoc(doc(aliceDb, "opportunities/o8"), { title: "Junior developer (featured)", updatedAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(aliceDb, "opportunities/o8"), { featuredUntil: Timestamp.fromMillis(Date.now() + 90 * 86400000), updatedAt: serverTimestamp() }));
+  });
+
+  it("keeps business verification in the hands of the super admin", async () => {
+    await testEnv.clearFirestore();
+    await seed(testEnv, "users/alice", { uid: "alice", role: "member", hasSubscription: true, subscriptionStatus: "active" });
+    await seed(testEnv, "users/owner", { uid: "owner", role: "super_admin" });
+    const aliceDb = testEnv.authenticatedContext("alice").firestore();
+    await assertFails(updateDoc(doc(aliceDb, "users/alice"), { businessVerified: true }));
+    await assertFails(updateDoc(doc(aliceDb, "users/alice"), { verificationRequest: { status: "pending" } }));
+    await assertSucceeds(updateDoc(doc(testEnv.authenticatedContext("owner").firestore(), "users/alice"), {
+      businessVerified: true, "verificationRequest.status": "approved"
+    }));
   });
 
   it("keeps email addresses out of Young Professional profiles", async () => {

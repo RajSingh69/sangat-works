@@ -344,3 +344,21 @@
   .ep-savebar { bottom: 8px; }
   .ep-savebar .ep-btn { min-width: 0; }
 }
+
+/* Business verification */
+.ep-verify { background: linear-gradient(135deg, #fff, #f1fbf5); border-color: rgba(31, 122, 77, 0.25); }
+
+.ep-verify-status {
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--home-muted);
+  background: rgba(100, 116, 139, 0.12);
+  border-radius: 999px;
+}
+
+.ep-verify-status[data-state="verified"] { color: #16603d; background: rgba(31, 122, 77, 0.14); }
+.ep-verify-status[data-state="pending"] { color: #7a5a06; background: rgba(214, 161, 31, 0.18); }
+.ep-verify-status[data-state="rejected"] { color: #8a1c1c; background: rgba(180, 35, 24, 0.1); }
+.ep-verify h2 { justify-content: flex-start; }
+.ep-verify .ep-btn[hidden] { display: none; }

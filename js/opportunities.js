@@ -12,6 +12,7 @@ import { compareByRanking } from "./ranking.js";
 import { escapeHtml, getCardIdentity, renderFramedPhoto } from "./directory-card.js";
 import { INDUSTRY_BUCKETS } from "./industries.js";
 import { isAdminUser } from "./roles.js";
+import { startPromotionCheckout } from "./promotions.js";
 
 import {
   addDoc,
@@ -83,6 +84,12 @@ function toDate(value) {
 function todayString() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+// Featured posts (paid for through Stripe) go to the top of the board until featuredUntil.
+function isFeatured(item) {
+  const until = toDate(item.featuredUntil);
+  return item.kind === "opportunity" && item.status === "open" && Boolean(until && until > new Date());
 }
 
 function isLive(item) {
@@ -169,9 +176,11 @@ function getVisibleItems() {
   });
 
   const newest = (a, b) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0);
-  if (els.sort.value === "newest") return items.sort(newest);
-  // Paid, active, verified posters first (same ranking as the directory), newest first within that.
+  const featuredFirst = (a, b) => Number(isFeatured(b)) - Number(isFeatured(a));
+  if (els.sort.value === "newest") return items.sort((a, b) => featuredFirst(a, b) || newest(a, b));
+  // Featured first, then paid, active, verified posters (same ranking as the directory), newest first within that.
   return items.sort((a, b) => {
+    if (featuredFirst(a, b)) return featuredFirst(a, b);
     if (a.ownerId === b.ownerId) return newest(a, b);
     return compareByRanking(profiles.get(a.ownerId) || {}, profiles.get(b.ownerId) || {}) || newest(a, b);
   });
@@ -222,6 +231,11 @@ function renderActions(item) {
 
   const buttons = [];
   if (isMine) {
+    if (item.status === "open") {
+      buttons.push(isFeatured(item)
+        ? `<button type="button" class="opp-feature-btn is-active" data-feature-opp="${item.id}" title="Add another 14 days">Featured until ${escapeHtml(formatClosing(toDate(item.featuredUntil).toISOString().slice(0, 10)))} &middot; Extend</button>`
+        : `<button type="button" class="opp-feature-btn" data-feature-opp="${item.id}">Feature this post &middot; £5 for 14 days</button>`);
+    }
     buttons.push(`<button type="button" class="btn-secondary" data-edit-opp="${item.id}">Edit</button>`);
     buttons.push(item.status === "open"
       ? `<button type="button" class="btn-secondary" data-close-opp="${item.id}">Mark as filled</button>`
@@ -252,8 +266,9 @@ function renderCard(item) {
     : "";
 
   return `
-    <article class="opp-card type-${type.id}${isOpen ? "" : " is-closed"}">
+    <article class="opp-card type-${type.id}${isOpen ? "" : " is-closed"}${isFeatured(item) ? " is-featured" : ""}">
       <div class="opp-card-top">
+        ${isFeatured(item) ? `<span class="opp-featured-badge">&#9733; Featured</span>` : ""}
         <span class="opp-type-badge">${escapeHtml(type.label)}</span>
         ${industry && industry !== "Other" ? `<span class="opp-industry">${escapeHtml(industry)}</span>` : ""}
         ${statusBadge}
@@ -411,7 +426,7 @@ document.addEventListener("click", async (event) => {
   if (target.matches("[data-open-opportunity-form]")) return openForm();
   if (target.matches("[data-close-opportunity-form]")) return closeForm();
 
-  const { type, expandOpp, editOpp, closeOpp, reopenOpp, deleteOpp, adminCloseOpp, messageOpp } = target.dataset;
+  const { type, expandOpp, editOpp, closeOpp, reopenOpp, deleteOpp, adminCloseOpp, messageOpp, featureOpp } = target.dataset;
 
   try {
     if (type && target.classList.contains("opp-type-tab")) {
@@ -434,6 +449,16 @@ document.addEventListener("click", async (event) => {
       target.disabled = true;
       target.textContent = "Opening chat...";
       await openConversationWithUser(currentUser.uid, messageOpp);
+    } else if (featureOpp) {
+      target.disabled = true;
+      target.textContent = "Opening secure checkout...";
+      try {
+        await startPromotionCheckout("featured_opportunity", { opportunityId: featureOpp });
+      } catch (checkoutError) {
+        window.alert(checkoutError.message);
+        render();
+      }
+      return;
     }
   } catch (error) {
     console.error("Opportunity action failed:", error);
@@ -459,6 +484,16 @@ els.form.addEventListener("submit", submitForm);
 fillSelect(els.industry, INDUSTRY_NAMES.map(name => [name, name]), "All industries");
 fillSelect(els.formIndustry, INDUSTRY_NAMES.map(name => [name, name]), "Choose an industry");
 fillSelect(els.formType, TYPES.map(type => [type.id, type.label]), "Choose a type");
+
+// Back from Stripe after paying to feature a post.
+if (new URLSearchParams(window.location.search).get("featured") === "paid") {
+  const note = document.createElement("div");
+  note.className = "opp-paid-note";
+  note.setAttribute("role", "status");
+  note.innerHTML = "<strong>Thank you!</strong> Your post is now featured at the top of the board for 14 days. It can take a minute to show.";
+  els.results.before(note);
+  history.replaceState(null, "", window.location.pathname);
+}
 
 const requestedType = new URLSearchParams(window.location.search).get("type");
 if (ALL_TYPES.some(type => type.id === requestedType)) activeType = requestedType;

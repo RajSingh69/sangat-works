@@ -19,7 +19,8 @@ import {
   updateDoc,
   query,
   orderBy,
-  serverTimestamp
+  serverTimestamp,
+  where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 import {
@@ -832,6 +833,88 @@ function setupParivarActions() {
   });
 }
 
+// Paid business verification requests (functions/promotions.js). Only the super admin
+// can change users/{uid}, so the buttons only show for them.
+function safeWebsite(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch (error) {
+    return "";
+  }
+}
+
+async function loadVerificationRequests() {
+  const container = document.getElementById("adminVerificationRequests");
+  if (!container) return;
+
+  try {
+    const snapshot = await getDocs(query(collection(db, "users"), where("verificationRequest.status", "==", "pending")));
+    const canDecide = isSuperAdmin(currentAdminData);
+
+    container.innerHTML = snapshot.empty
+      ? `<div class="empty-state">No verification requests waiting.</div>`
+      : snapshot.docs.map(docSnap => {
+          const user = docSnap.data();
+          const request = user.verificationRequest || {};
+          const website = safeWebsite(user.website);
+          const paid = request.paidAt?.toDate ? request.paidAt.toDate().toLocaleDateString("en-GB") : "";
+          return `
+            <div class="admin-user-card verification-request">
+              <strong>${escapeHtml(user.businessName || user.fullName || "Member")}</strong>
+              <p>${escapeHtml([user.fullName, user.serviceTitle, user.town].filter(Boolean).join(" · "))}</p>
+              <p>${website ? `<a href="${escapeHtml(website)}" target="_blank" rel="noopener">${escapeHtml(website)}</a> · ` : "No website · "}Paid ${escapeHtml(paid)}${request.amountPaid ? ` (£${escapeHtml(request.amountPaid)})` : ""}</p>
+              <div class="card-links">
+                <a class="btn-small" href="view.html?id=${encodeURIComponent(docSnap.id)}" target="_blank" rel="noopener">View profile</a>
+                ${canDecide ? `
+                  <button type="button" class="btn-small verification-action" data-uid="${escapeHtml(docSnap.id)}" data-action="approve">Approve</button>
+                  <button type="button" class="btn-small verification-action" data-uid="${escapeHtml(docSnap.id)}" data-action="reject">Reject</button>` : `<span>Only the super admin can approve or reject.</span>`}
+              </div>
+            </div>`;
+        }).join("");
+  } catch (error) {
+    console.error("Could not load verification requests:", error);
+    container.innerHTML = `<div class="empty-state">Could not load verification requests.</div>`;
+  }
+}
+
+function setupVerificationActions() {
+  const container = document.getElementById("adminVerificationRequests");
+  if (!container) return;
+
+  container.addEventListener("click", async (event) => {
+    const button = event.target.closest(".verification-action");
+    if (!button) return;
+    const { uid, action } = button.dataset;
+    const review = {
+      "verificationRequest.reviewedAt": serverTimestamp(),
+      "verificationRequest.reviewedBy": auth.currentUser?.uid || ""
+    };
+
+    try {
+      if (action === "approve") {
+        if (!window.confirm("Approve and add the Business Verified badge?")) return;
+        button.disabled = true;
+        await updateDoc(doc(db, "users", uid), { ...review, businessVerified: true, "verificationRequest.status": "approved" });
+        adminStatus.textContent = "Approved. Their Business Verified badge is now showing.";
+      } else {
+        const note = window.prompt("Why couldn't they be verified? (They'll see this on their profile page.)", "");
+        if (note === null) return;
+        button.disabled = true;
+        await updateDoc(doc(db, "users", uid), { ...review, "verificationRequest.status": "rejected", "verificationRequest.reviewNote": note.trim().slice(0, 300) });
+        adminStatus.textContent = "Rejected. Remember to refund their £15 in Stripe (Payments, find the payment, Refund).";
+      }
+      await loadVerificationRequests();
+    } catch (error) {
+      console.error("Verification action failed:", error);
+      adminStatus.textContent = "That didn't work. Please try again.";
+      button.disabled = false;
+    }
+  });
+}
+
 async function loadAdminDashboard() {
   await loadUsers();
   await loadFaqs();
@@ -839,6 +922,8 @@ async function loadAdminDashboard() {
   setupReportActions();
   await loadParivarMessages();
   setupParivarActions();
+  await loadVerificationRequests();
+  setupVerificationActions();
 }
 
 onAuthStateChanged(auth, async (user) => {

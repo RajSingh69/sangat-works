@@ -39,6 +39,7 @@ import {
 import { getRankingBreakdown } from "./ranking.js";
 import { renderFramedPhoto } from "./directory-card.js";
 import { adjustMemberPhoto } from "./photo-framer.js";
+import { startPromotionCheckout } from "./promotions.js";
 
 const FEATURED_LISTING_PRICE_ID = "price_1TlZxODbE6tXsxNUzI1ng4Iy";
 const CHECKOUT_FUNCTION_URL = "https://europe-west1-sangat-works.cloudfunctions.net/createCheckoutSession";
@@ -424,6 +425,33 @@ function renderFeaturedListingStatus(profile) {
 }
 
 // Profile views and link clicks are counted by the trackProfileMetric Cloud Function.
+// Paid business verification (functions/promotions.js); a super admin approves it in Admin.
+function renderVerificationStatus(profile) {
+  const status = document.getElementById("verificationStatus");
+  const text = document.getElementById("verificationText");
+  const button = document.getElementById("getVerifiedBtn");
+  if (!status || !text || !button) return;
+
+  const request = profile.verificationRequest || {};
+  const verified = profile.businessVerified === true || profile.isBusinessVerified === true;
+  const state = verified ? "verified" : request.status === "pending" ? "pending" : request.status === "rejected" ? "rejected" : "none";
+
+  status.textContent = { verified: "Verified", pending: "Being reviewed", rejected: "Not approved", none: "Not verified" }[state];
+  status.dataset.state = state;
+  button.hidden = state === "verified" || state === "pending";
+  button.textContent = state === "rejected" ? "Try again (£15)" : "Get verified (£15 one-off)";
+
+  if (state === "verified") {
+    text.textContent = "Your Business Verified badge is showing on your profile and directory card.";
+  } else if (state === "pending") {
+    text.textContent = "Thanks, we've received your payment. We'll check your business and add the badge, usually within a few days.";
+  } else if (state === "rejected") {
+    text.textContent = request.reviewNote
+      ? `We couldn't verify your business: ${request.reviewNote}`
+      : "We couldn't verify your business this time. Your payment has been refunded. Get in touch if you have questions.";
+  }
+}
+
 function renderMemberDashboard(profile) {
   const stats = [
     [dashboardViews, profile.profileViews],
@@ -865,6 +893,29 @@ if (viewWalkthroughBtn) {
   });
 }
 
+const getVerifiedBtn = document.getElementById("getVerifiedBtn");
+if (getVerifiedBtn) {
+  getVerifiedBtn.addEventListener("click", async () => {
+    const message = document.getElementById("verificationMessage");
+    getVerifiedBtn.disabled = true;
+    getVerifiedBtn.textContent = "Opening secure checkout...";
+    try {
+      await startPromotionCheckout("business_verification");
+    } catch (error) {
+      if (message) message.textContent = error.message;
+      getVerifiedBtn.disabled = false;
+      renderVerificationStatus(existingProfile);
+    }
+  });
+}
+
+// Back from Stripe after paying for verification.
+if (new URLSearchParams(window.location.search).get("verification") === "paid") {
+  const message = document.getElementById("verificationMessage");
+  if (message) message.textContent = "Payment received. Your request is with our team.";
+  history.replaceState(null, "", window.location.pathname);
+}
+
 if (profileForm) {
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
@@ -897,6 +948,7 @@ if (profileForm) {
       renderMembershipStatus(existingProfile);
       renderPendingPaymentWarning(existingProfile);
       renderFeaturedListingStatus(existingProfile);
+      renderVerificationStatus(existingProfile);
       renderMemberDashboard(existingProfile);
       renderRankingScore(user.uid);
     } else {
@@ -1070,6 +1122,7 @@ if (profileForm) {
       renderMembershipStatus(existingProfile);
       renderPendingPaymentWarning(existingProfile);
       renderFeaturedListingStatus(existingProfile);
+      renderVerificationStatus(existingProfile);
       renderMemberDashboard(existingProfile);
       renderPhotoPreviews(existingProfile);
       ["profilePhoto", "businessLogo"].forEach(id => {

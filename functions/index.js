@@ -8,5 +8,7 @@ Object.assign(
   require("./charity"),
   require("./networking"),
   require("./profile-sync"),
-  require("./site-stats")
+  require("./site-stats"),
+  // Only the HTTP function; the webhook helper in promotions.js isn't a deployable function.
+  { createPromotionCheckout: require("./promotions").createPromotionCheckout }
 );

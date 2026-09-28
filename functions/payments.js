@@ -30,6 +30,7 @@ const {
   verifyRequestUser,
   verifyStripeSignupSession
 } = require("./shared");
+const { handlePromotionPayment } = require("./promotions");
 
 exports.verifyPaidSignupSession = onRequest(
   {
@@ -817,6 +818,11 @@ exports.stripeWebhook = onRequest(
     try {
       if (event.type === "checkout.session.completed") {
         const session = event.data.object;
+
+        // Featured opportunities and business verification (functions/promotions.js).
+        if (await handlePromotionPayment(session)) {
+          return res.status(200).send("Promotion payment handled");
+        }
 
         const uid = session.metadata?.uid;
         const email = session.metadata?.email;
