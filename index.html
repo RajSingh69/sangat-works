@@ -168,8 +168,8 @@
 
 <script type="module">
   import { db } from "./js/firebase.js";
-  import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-  import { INDUSTRY_BUCKETS, getIndustryBucket, isListedInDirectory } from "./js/industries.js";
+  import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+  import { INDUSTRY_BUCKETS } from "./js/industries.js";
 
   const heroStats = document.getElementById("homeHeroStats");
   const industryGrid = document.getElementById("homeIndustryGrid");
@@ -225,49 +225,32 @@
     heroStats.innerHTML = items.map(([icon, value, label]) => `<div><span class="stat-icon">${icon}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(label)}</small></div>`).join("");
   }
 
-  // Open opportunities plus open home & trade projects (members only; null for visitors).
-  async function getOpenOpportunityCount() {
-    try {
-      const today = new Date().toISOString().slice(0, 10);
-      const [opportunities, projects] = await Promise.all([
-        getDocs(query(collection(db, "opportunities"), where("status", "==", "open"))),
-        getDocs(query(collection(db, "projects"), where("status", "==", "open")))
-      ]);
-      const liveOpportunities = opportunities.docs.filter((docSnap) => {
-        const closingDate = docSnap.data().closingDate;
-        return !closingDate || closingDate >= today;
-      });
-      return liveOpportunities.length + projects.size;
-    } catch (error) {
-      return null;
-    }
-  }
-
+  // siteStats/public holds counts only (kept up to date by the site-stats Cloud
+  // Functions), so visitors see real numbers without reading anyone's profile.
   async function loadHomepageData() {
     renderIndustries(null);
 
-    // Same members the directory lists. Only signed-in members can read these,
-    // so visitors just see the industries without numbers.
-    let profiles = null;
+    let stats = null;
     try {
-      const snapshot = await getDocs(query(collection(db, "publicProfiles"), where("isPublic", "==", true)));
-      profiles = snapshot.docs.map((docSnap) => docSnap.data()).filter(isListedInDirectory);
+      const snap = await getDoc(doc(db, "siteStats", "public"));
+      stats = snap.exists() ? snap.data() : null;
     } catch (error) {
-      console.info("Member counts are shown to signed-in members only.");
+      console.warn("Could not load homepage totals", error);
+    }
+    if (!stats) {
+      renderHeroStats({});
+      return;
     }
 
-    const counts = profiles && profiles.reduce((map, profile) => {
-      const industry = getIndustryBucket(profile);
-      return map.set(industry, (map.get(industry) || 0) + 1);
-    }, new Map());
-    renderIndustries(counts);
+    renderIndustries(new Map(Object.entries(stats.industryCounts || {})));
 
-    const list = profiles || [];
+    const today = new Date().toISOString().slice(0, 10);
+    const openOpportunities = (stats.openOpportunityClosingDates || []).filter((date) => !date || date >= today).length;
     renderHeroStats({
-      members: list.length,
-      industries: counts ? [...counts.keys()].filter((name) => name !== "Other").length : 0,
-      locations: new Set(list.map((profile) => profile.town || profile.serviceArea).filter(Boolean)).size,
-      projects: await getOpenOpportunityCount()
+      members: stats.members,
+      industries: stats.industries,
+      locations: stats.locations,
+      projects: openOpportunities + Number(stats.openProjects || 0)
     });
   }
 

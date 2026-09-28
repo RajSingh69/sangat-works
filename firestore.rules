@@ -168,6 +168,12 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    // Homepage totals written by the site-stats Cloud Functions: counts only.
+    match /siteStats/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /publicProfiles/{uid} {
       allow get: if true;
       allow list: if hasActiveMembership() || isAdmin();

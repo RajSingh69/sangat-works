@@ -7,5 +7,6 @@ Object.assign(
   require("./payments"),
   require("./charity"),
   require("./networking"),
-  require("./profile-sync")
+  require("./profile-sync"),
+  require("./site-stats")
 );

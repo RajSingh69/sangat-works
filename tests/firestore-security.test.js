@@ -626,6 +626,42 @@ describe("Firestore security rules: Shaheed Parivars messages", () => {
   });
 });
 
+describe("Homepage totals (functions/site-stats-core.js)", () => {
+  const core = require("../functions/site-stats-core");
+
+  it("uses the same industry groups as the website", async () => {
+    const site = await import("../js/industries.js");
+    assert.deepStrictEqual(
+      core.INDUSTRY_BUCKETS.map(bucket => [bucket.name, bucket.keywords]),
+      site.INDUSTRY_BUCKETS.map(bucket => [bucket.name, bucket.keywords])
+    );
+    const samples = ["Software Developer", "Community Charity Seva", "Maintenance and repairs", "IT Support", "Mortgage Advisor", "Wedding Photographer"];
+    samples.forEach(serviceTitle => {
+      assert.strictEqual(core.getIndustryBucket({ serviceTitle }), site.getIndustryBucket({ serviceTitle }), serviceTitle);
+    });
+  });
+
+  it("counts listed members, industries and locations without exposing anyone", () => {
+    const active = { hasSubscription: true, subscriptionStatus: "active" };
+    const stats = core.summariseSiteStats([
+      { ...active, serviceTitle: "Web Developer", town: "Leicester" },
+      { ...active, serviceTitle: "Electrician", town: "leicester " },
+      { ...active, serviceTitle: "Accountant", serviceArea: "London" },
+      { hasSubscription: false, serviceTitle: "Plumber", town: "Derby" },
+      { role: "super_admin", serviceTitle: "Something else" }
+    ], [{ closingDate: "" }, { closingDate: "2026-12-01" }], 2);
+
+    assert.deepStrictEqual(stats, {
+      members: 4,
+      industries: 3,
+      industryCounts: { Technology: 1, Trades: 1, "Law & Professional Services": 1, Other: 1 },
+      locations: 2,
+      openOpportunityClosingDates: ["", "2026-12-01"],
+      openProjects: 2
+    });
+  });
+});
+
 describe("Firestore security rules: ranking fields are admin/server only", () => {
   let testEnv;
 
@@ -686,6 +722,14 @@ describe("Firestore security rules: ranking fields are admin/server only", () =>
     await assertSucceeds(updateDoc(doc(modDb, "opportunities/o1"), { status: "closed", updatedAt: serverTimestamp() }));
     await assertFails(deleteDoc(doc(bobDb, "opportunities/o1")));
     await assertSucceeds(deleteDoc(doc(aliceDb, "opportunities/o1")));
+  });
+
+  it("lets anyone read the homepage totals but nobody write them", async () => {
+    await testEnv.clearFirestore();
+    await seed(testEnv, "siteStats/public", { members: 3 });
+    await seed(testEnv, "users/owner", { uid: "owner", role: "super_admin" });
+    await assertSucceeds(getDoc(doc(testEnv.unauthenticatedContext().firestore(), "siteStats/public")));
+    await assertFails(setDoc(doc(testEnv.authenticatedContext("owner").firestore(), "siteStats/public"), { members: 9999 }));
   });
 
   it("lets only the super admin frame the site's own pictures", async () => {
