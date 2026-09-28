@@ -155,3 +155,45 @@
     margin-right: auto;
   }
 }
+
+/* Directory on phones and tablets: the one-column hero could grow wider than
+   the screen to fit its longest line, which cut the heading and search off. */
+@media (max-width: 1250px) {
+  .directory-hero { grid-template-columns: minmax(0, 1fr); }
+  .directory-hero-content { min-width: 0; }
+  .directory-hero .directory-industry-tabs { overflow-x: auto; scrollbar-width: none; }
+}
+
+/* Featured carousel on phones: just the middle card, no overlapping fan */
+@media (max-width: 640px) {
+  .directory-fan-card:not(.is-center) { opacity: 0; visibility: hidden; pointer-events: none; }
+  .directory-fan-card { width: min(245px, 72vw); }
+}
+
+/* Tile arrows stay hidden on phones (the drawn-arrow style had brought them back) */
+@media (max-width: 640px) {
+  .industry-tile-arrow,
+  .industry-tile-arrow.home-arrow { display: none; }
+}
+
+/* Tablets have no sidebar, so pages shouldn't keep the sidebar's left margin */
+@media (max-width: 1020px) {
+  .member-shell-enabled .home-flagship-page,
+  .member-shell-enabled.sidebar-collapsed .home-flagship-page,
+  .member-shell-enabled .home-footer,
+  .member-shell-enabled.sidebar-collapsed .home-footer {
+    margin-left: 0;
+  }
+  .member-shell-enabled .yp-page,
+  .member-shell-enabled.sidebar-collapsed .yp-page,
+  .member-shell-enabled .edit-profile-page,
+  .member-shell-enabled.sidebar-collapsed .edit-profile-page {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Carousel below its heading on narrow screens, not on top of it */
+@media (max-width: 900px) {
+  .directory-fan-stage { grid-row: auto; }
+}

@@ -163,10 +163,10 @@ function renderDirectoryStats(groups = getIndustryGroups(allProfiles)) {
   const industryCount = [...groups.values()].filter((profiles) => profiles.length > 0).length;
   const locationCount = new Set(allProfiles.map((profile) => cleanValue(profile.town)).filter(Boolean)).size;
   directoryHeroStats.innerHTML = `
-    <div><span aria-hidden="true">M</span><strong>${allProfiles.length}</strong><small>Members</small></div>
-    <div><span aria-hidden="true">I</span><strong>${industryCount}</strong><small>Industries</small></div>
-    <div><span aria-hidden="true">UK</span><strong>${locationCount}</strong><small>UK Locations</small></div>
-    <div><span aria-hidden="true">+</span><strong>Growing</strong><small>Every week</small></div>
+    <div><span aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 14.5c3 0 6 1.8 6 5"/></svg></span><strong>${allProfiles.length}</strong><small>Members</small></div>
+    <div><span aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/></svg></span><strong>${industryCount}</strong><small>Industries</small></div>
+    <div><span aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><strong>${locationCount}</strong><small>UK Locations</small></div>
+    <div><span aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17 10 11l4 4 6-7"/><path d="M15 8h5v5"/></svg></span><strong>Growing</strong><small>Every week</small></div>
   `;
 }
 
