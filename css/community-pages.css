@@ -643,3 +643,59 @@
   .home-flagship-page .home-hero-stats div { padding: 12px 14px; }
   .home-hero-logo { width: 210px; }
 }
+
+/* Homepage polish pass: readable orange text, drawn icons, touch targets */
+.home-flagship-page { --home-orange-text: #b34700; }
+.home-section-kicker,
+.feature-body small,
+.home-text-link,
+.industry-tile-arrow,
+.industry-tile.is-empty .industry-tile-count { color: var(--home-orange-text); }
+.story-hero .home-section-kicker { color: var(--home-warm-orange); }
+
+.home-arrow {
+  display: inline-block;
+  width: 1.05em;
+  height: 1.05em;
+  margin-left: 4px;
+  vertical-align: -0.18em;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E") center / contain no-repeat;
+  transition: transform 0.2s ease;
+}
+.industry-tile-arrow.home-arrow { width: 20px; height: 20px; margin: 0; }
+.home-feature-card:hover .home-arrow,
+.home-feature-card:focus-visible .home-arrow,
+.home-text-link:hover .home-arrow,
+.home-hero-primary:hover .home-arrow { transform: translateX(3px); }
+
+.home-flagship-page .home-hero-stats .stat-icon { display: inline-grid; place-items: center; }
+.home-flagship-page .home-hero-stats .stat-icon svg { width: 20px; height: 20px; }
+.home-flagship-page .home-hero-stats > a {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  column-gap: 12px;
+  align-items: center;
+  padding: 18px 24px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+.home-flagship-page .home-hero-stats > a:hover { background: rgba(255, 255, 255, 0.06); }
+.home-flagship-page .home-hero-stats > a small { color: #ffd5a7; }
+
+.home-flagship-page h3.community-subheading {
+  margin: 44px 0 18px;
+  color: var(--home-ink);
+  font-size: clamp(1.25rem, 1.8vw, 1.6rem);
+}
+
+.home-flagship-page .home-text-link { padding-block: 10px; }
+
+@media (max-width: 760px) {
+  .home-flagship-page .home-hero-stats > a { padding: 12px 14px; }
+  .home-flagship-page .auth-switch-note a { display: inline-block; padding: 10px 2px; }
+  .home-footer a { margin: 0; padding: 9px 0; }
+}
