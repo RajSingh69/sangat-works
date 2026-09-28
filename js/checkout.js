@@ -15,8 +15,6 @@ const PRICE_IDS = {
 const FUNCTION_URL =
   "https://europe-west1-sangat-works.cloudfunctions.net/createCheckoutSession";
 
-console.log("checkout.js loaded");
-
 const MEMBERSHIP_PLANS = [
   "yearly_subscription",
   "monthly_subscription",
@@ -43,7 +41,6 @@ function sendToLoginWithPlan(selectedPlan) {
 }
 
 async function startCheckout(selectedPlan) {
-  console.log("Checkout button clicked");
 
   const user = auth.currentUser;
 
@@ -69,10 +66,6 @@ async function startCheckout(selectedPlan) {
     return;
   }
 
-  console.log("Selected plan:", selectedPlan);
-  console.log("Selected price:", selectedPrice);
-  console.log("Billing type:", billingType);
-
   try {
     const response = await fetch(FUNCTION_URL, {
       method: "POST",
@@ -88,8 +81,6 @@ async function startCheckout(selectedPlan) {
     });
 
     const data = await response.json();
-
-    console.log("Function returned:", data);
 
     if (data.error) {
       alert(data.error);

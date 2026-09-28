@@ -1,4 +1,3 @@
-console.log("subscription-guard.js loaded");
 
 import { auth, db } from "./firebase.js";
 
@@ -105,13 +104,6 @@ export function protectPage(options = {}) {
 
       const userData = userSnap.data();
       const allowed = hasActiveSubscription(userData);
-
-      console.log("Subscription check:", userData);
-      console.log("isFoundingMember value:", userData.isFoundingMember);
-      console.log("hasSubscription value:", userData.hasSubscription);
-      console.log("subscriptionStatus value:", userData.subscriptionStatus);
-      console.log("subscriptionExpiresAt value:", userData.subscriptionExpiresAt);
-      console.log("Allowed:", allowed);
 
       if (!allowed) {
         window.location.href =
