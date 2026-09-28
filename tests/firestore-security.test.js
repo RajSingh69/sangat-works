@@ -735,6 +735,46 @@ describe("Firestore security rules: ranking fields are admin/server only", () =>
     await assertFails(updateDoc(doc(aliceDb, "opportunities/o8"), { featuredUntil: Timestamp.fromMillis(Date.now() + 90 * 86400000), updatedAt: serverTimestamp() }));
   });
 
+  it("shows only approved employer jobs to members and keeps employer contacts private", async () => {
+    await testEnv.clearFirestore();
+    await seed(testEnv, "users/alice", { uid: "alice", role: "member", hasSubscription: true, subscriptionStatus: "active" });
+    await seed(testEnv, "users/mod", { uid: "mod", role: "admin" });
+    await seed(testEnv, "employerJobs/live1", { title: "Accountant", status: "live" });
+    await seed(testEnv, "employerJobs/review1", { title: "Pending", status: "pending_review" });
+    await seed(testEnv, "employerJobContacts/review1", { contactEmail: "boss@example.com" });
+    const aliceDb = testEnv.authenticatedContext("alice").firestore();
+    const modDb = testEnv.authenticatedContext("mod").firestore();
+    const { collection, query, where, getDocs } = require("firebase/firestore");
+
+    await assertSucceeds(getDoc(doc(aliceDb, "employerJobs/live1")));
+    await assertFails(getDoc(doc(aliceDb, "employerJobs/review1")));
+    await assertSucceeds(getDocs(query(collection(aliceDb, "employerJobs"), where("status", "==", "live"))));
+    await assertFails(getDoc(doc(testEnv.unauthenticatedContext().firestore(), "employerJobs/live1")));
+    await assertFails(getDoc(doc(aliceDb, "employerJobContacts/review1")));
+    await assertFails(setDoc(doc(aliceDb, "employerJobs/fake"), { title: "Free post", status: "live" }));
+    await assertFails(updateDoc(doc(aliceDb, "employerJobs/review1"), { status: "live" }));
+
+    await assertSucceeds(getDoc(doc(modDb, "employerJobContacts/review1")));
+    await assertSucceeds(updateDoc(doc(modDb, "employerJobs/review1"), { status: "live", reviewedBy: "mod" }));
+    await assertFails(updateDoc(doc(modDb, "employerJobs/review1"), { title: "Edited by admin" }));
+  });
+
+  it("validates employer job posts before payment", () => {
+    const { validateEmployerJob } = require("../functions/employer-jobs");
+    const good = {
+      companyName: "Kaur Accounts", title: "Junior Accountant", industry: "Law & Professional Services",
+      location: "Leicester", description: "Supporting clients with bookkeeping and year-end accounts.",
+      applyLink: "kauraccounts.co.uk/jobs", contactName: "Harpreet", contactEmail: "HR@KaurAccounts.co.uk"
+    };
+    const { job, contact } = validateEmployerJob(good);
+    assert.strictEqual(job.applyLink, "https://kauraccounts.co.uk/jobs");
+    assert.strictEqual(contact.contactEmail, "hr@kauraccounts.co.uk");
+    assert.throws(() => validateEmployerJob({ ...good, industry: "Spam" }), /industry/);
+    assert.throws(() => validateEmployerJob({ ...good, applyLink: "", applyEmail: "" }), /applications/);
+    assert.throws(() => validateEmployerJob({ ...good, contactEmail: "nope" }), /contact email/);
+    assert.throws(() => validateEmployerJob({ ...good, location: "", remote: false }), /location/);
+  });
+
   it("keeps business verification in the hands of the super admin", async () => {
     await testEnv.clearFirestore();
     await seed(testEnv, "users/alice", { uid: "alice", role: "member", hasSubscription: true, subscriptionStatus: "active" });

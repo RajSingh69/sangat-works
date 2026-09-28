@@ -440,3 +440,23 @@ body.opp-modal-open { overflow: hidden; }
   border: 1px solid rgba(31, 122, 77, 0.3);
   border-radius: 12px;
 }
+
+/* Post a job (employers) */
+.pj-points { margin: 18px 0 0; padding-left: 20px; line-height: 1.8; color: rgba(255, 255, 255, 0.88); }
+.pj-points strong { color: #ffb45f; }
+.post-job-wrap { max-width: 780px; }
+.post-job-form { padding: clamp(20px, 3vw, 32px); background: #fff; border: 1px solid var(--home-border); border-radius: 18px; box-shadow: 0 12px 30px rgba(8, 46, 80, 0.07); }
+.post-job-form h2 { margin: 6px 0 0; font-size: 1.3rem; color: var(--home-ink); }
+.post-job-form .btn-primary { font: inherit; font-weight: 800; cursor: pointer; }
+.post-job-terms { margin: 4px 0 0; font-size: 0.86rem; color: var(--home-muted); }
+.post-job-note[hidden] { display: none; }
+.post-job-note.is-warning { color: #7a2e0e; background: #fff4ea; border-color: rgba(255, 122, 24, 0.4); }
+.post-job-form[hidden] { display: none; }
+
+/* Employer posts on the board */
+.opp-employer-badge { padding: 4px 10px; font-size: 0.76rem; font-weight: 800; color: #1d4f7a; background: rgba(29, 95, 153, 0.1); border-radius: 999px; }
+.opp-poster-company { display: grid; place-items: center; width: 40px; height: 40px; font-weight: 900; color: #fff; background: var(--home-navy); border-radius: 50%; }
+.opp-hire-link { color: var(--home-orange); font-weight: 800; }
+
+.opp-hire-note { margin: 18px 0 0; color: rgba(255, 255, 255, 0.85); }
+.opp-hire-note .opp-hire-link { color: #ffb45f; }

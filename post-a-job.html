@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Post a Job | Sangat Works</title>
+  <meta name="description" content="Hiring? Post your job to the Sangat Works network of Sikh professionals, graduates and tradespeople. £25 for 30 days." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">Sangat Works</a>
+  <nav>
+    <a href="index.html">Home</a>
+    <div id="accountArea"></div>
+  </nav>
+</header>
+
+<main class="home-flagship-page story-page post-job-page">
+  <section class="story-hero">
+    <div class="story-wrap">
+      <span class="home-section-kicker">For employers</span>
+      <h1>Hiring? <span>Reach the Sangat.</span></h1>
+      <p>
+        Post your job to the Sangat Works network of Sikh professionals, graduates and tradespeople
+        across the UK. You don't need to be a member.
+      </p>
+      <ul class="pj-points">
+        <li><strong>£25</strong> for 30 days on our Opportunities board</li>
+        <li>Checked by our team before it goes live (usually within 1-2 working days)</li>
+        <li>Candidates apply straight to you, by your link or email</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="story-section">
+    <div class="story-wrap post-job-wrap">
+      <div class="opp-paid-note post-job-note" id="postJobNote" hidden></div>
+
+      <form id="postJobForm" class="opp-form post-job-form" novalidate>
+        <h2>About the job</h2>
+        <div class="opp-form-row">
+          <label>Company name <input type="text" id="pjCompany" maxlength="120" required /></label>
+          <label>Job title <input type="text" id="pjTitle" maxlength="120" placeholder="e.g. Junior Accountant" required /></label>
+        </div>
+        <div class="opp-form-row">
+          <label>Industry <select id="pjIndustry" required></select></label>
+          <label><span>Pay <small>(optional)</small></span> <input type="text" id="pjPay" maxlength="80" placeholder="e.g. £26k-£30k" /></label>
+        </div>
+        <div class="opp-form-row">
+          <label>Location <input type="text" id="pjLocation" maxlength="80" placeholder="e.g. Leicester" /></label>
+          <label class="opp-check opp-form-remote"><input type="checkbox" id="pjRemote" /> Can be done remotely</label>
+        </div>
+        <label>Job description <textarea id="pjDescription" rows="7" maxlength="3000" placeholder="The role, what you're looking for, hours, benefits..." required></textarea></label>
+        <div class="opp-form-row">
+          <label><span>Link to apply <small>(or give an email)</small></span> <input type="url" id="pjApplyLink" maxlength="300" placeholder="https://" /></label>
+          <label><span>Email for applications <small>(optional)</small></span> <input type="email" id="pjApplyEmail" maxlength="200" /></label>
+        </div>
+        <label><span>Closing date <small>(optional, up to 30 days)</small></span> <input type="date" id="pjClosing" /></label>
+
+        <h2>Your details</h2>
+        <p class="opp-modal-lead">Only our team sees these, in case we need to ask about your post.</p>
+        <div class="opp-form-row">
+          <label>Your name <input type="text" id="pjContactName" maxlength="120" required /></label>
+          <label>Your email <input type="email" id="pjContactEmail" maxlength="200" required /></label>
+        </div>
+        <label><span>Phone <small>(optional)</small></span> <input type="tel" id="pjContactPhone" maxlength="40" /></label>
+
+        <p class="post-job-terms">By continuing you confirm this is a genuine vacancy. If we can't approve your post, we'll refund you in full.</p>
+        <p class="opp-form-message" id="pjMessage" role="status"></p>
+        <div class="opp-form-actions">
+          <button type="submit" class="btn-primary" id="pjSubmit">Continue to payment (£25)</button>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>Sangat Works — built for community support.</p>
+</footer>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/post-a-job.js"></script>
+</body>
+</html>

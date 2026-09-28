@@ -915,6 +915,93 @@ function setupVerificationActions() {
   });
 }
 
+// Paid job posts from non-member employers (functions/employer-jobs.js).
+async function loadEmployerJobs() {
+  const container = document.getElementById("adminEmployerJobs");
+  if (!container) return;
+
+  try {
+    const [pendingSnap, liveSnap] = await Promise.all([
+      getDocs(query(collection(db, "employerJobs"), where("status", "==", "pending_review"))),
+      getDocs(query(collection(db, "employerJobs"), where("status", "==", "live")))
+    ]);
+    const jobs = [...pendingSnap.docs, ...liveSnap.docs];
+    if (!jobs.length) {
+      container.innerHTML = `<div class="empty-state">No employer job posts waiting or live.</div>`;
+      return;
+    }
+
+    const contacts = new Map(await Promise.all(jobs.map(async jobSnap => {
+      const contactSnap = await getDoc(doc(db, "employerJobContacts", jobSnap.id)).catch(() => null);
+      return [jobSnap.id, contactSnap?.exists() ? contactSnap.data() : {}];
+    })));
+
+    container.innerHTML = jobs.map(jobSnap => {
+      const job = jobSnap.data();
+      const contact = contacts.get(jobSnap.id) || {};
+      const live = job.status === "live";
+      const liveUntil = job.liveUntil?.toDate ? job.liveUntil.toDate().toLocaleDateString("en-GB") : "";
+      const paid = job.paidAt?.toDate ? job.paidAt.toDate().toLocaleDateString("en-GB") : "";
+      const applyLink = safeWebsite(job.applyLink);
+      return `
+        <details class="admin-user-card employer-job"${live ? "" : " open"}>
+          <summary><strong>${escapeHtml(job.title || "Job")}</strong> at ${escapeHtml(job.companyName || "?")} · ${live ? `Live until ${escapeHtml(liveUntil)}` : `Waiting for review (paid ${escapeHtml(paid)})`}</summary>
+          <p>${escapeHtml([job.industry, job.location, job.remote ? "Remote OK" : "", job.pay, job.closingDate ? `Closes ${job.closingDate}` : ""].filter(Boolean).join(" · "))}</p>
+          <p style="white-space:pre-line">${escapeHtml(job.description || "")}</p>
+          <p>Apply: ${applyLink ? `<a href="${escapeHtml(applyLink)}" target="_blank" rel="noopener">${escapeHtml(applyLink)}</a>` : ""}${applyLink && job.applyEmail ? " or " : ""}${escapeHtml(job.applyEmail || "")}</p>
+          <p><strong>Contact:</strong> ${escapeHtml([contact.contactName, contact.contactEmail, contact.contactPhone].filter(Boolean).join(" · ") || "Not available")}</p>
+          <div class="card-links">
+            ${live
+              ? `<button type="button" class="btn-small employer-job-action" data-id="${escapeHtml(jobSnap.id)}" data-action="removed">Take down</button>`
+              : `<button type="button" class="btn-small employer-job-action" data-id="${escapeHtml(jobSnap.id)}" data-action="live">Approve (30 days)</button>
+                 <button type="button" class="btn-small employer-job-action" data-id="${escapeHtml(jobSnap.id)}" data-action="rejected">Reject</button>`}
+          </div>
+        </details>`;
+    }).join("");
+  } catch (error) {
+    console.error("Could not load employer jobs:", error);
+    container.innerHTML = `<div class="empty-state">Could not load employer job posts.</div>`;
+  }
+}
+
+function setupEmployerJobActions() {
+  const container = document.getElementById("adminEmployerJobs");
+  if (!container) return;
+
+  container.addEventListener("click", async (event) => {
+    const button = event.target.closest(".employer-job-action");
+    if (!button) return;
+    const { id, action } = button.dataset;
+    const update = { status: action, reviewedAt: serverTimestamp(), reviewedBy: auth.currentUser?.uid || "" };
+
+    if (action === "live") {
+      if (!window.confirm("Approve this job? It goes live on Opportunities for 30 days.")) return;
+      update.liveUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    } else if (action === "rejected") {
+      const note = window.prompt("Reason for rejecting (for your records):", "");
+      if (note === null) return;
+      update.reviewNote = note.trim().slice(0, 300);
+    } else if (!window.confirm("Take this job off the board?")) {
+      return;
+    }
+
+    button.disabled = true;
+    try {
+      await updateDoc(doc(db, "employerJobs", id), update);
+      adminStatus.textContent = action === "live"
+        ? "Approved. The job is now live on Opportunities."
+        : action === "rejected"
+        ? "Rejected. Remember to refund their £25 in Stripe (Payments, find the payment, Refund)."
+        : "Job taken down.";
+      await loadEmployerJobs();
+    } catch (error) {
+      console.error("Employer job action failed:", error);
+      adminStatus.textContent = "That didn't work. Please try again.";
+      button.disabled = false;
+    }
+  });
+}
+
 async function loadAdminDashboard() {
   await loadUsers();
   await loadFaqs();
@@ -924,6 +1011,8 @@ async function loadAdminDashboard() {
   setupParivarActions();
   await loadVerificationRequests();
   setupVerificationActions();
+  await loadEmployerJobs();
+  setupEmployerJobActions();
 }
 
 onAuthStateChanged(auth, async (user) => {

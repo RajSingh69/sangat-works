@@ -67,6 +67,7 @@ let currentUser = null;
 let canModerate = false;
 let opportunities = [];
 let projects = [];
+let employerJobs = [];  // paid posts from non-member employers (functions/employer-jobs.js)
 let profiles = new Map();
 let activeType = "all";
 let editingId = "";
@@ -93,8 +94,18 @@ function isFeatured(item) {
 }
 
 function isLive(item) {
-  if (item.status !== "open") return false;
+  if (item.kind === "employer") {
+    const until = toDate(item.liveUntil);
+    if (item.status !== "live" || !until || until <= new Date()) return false;
+  } else if (item.status !== "open") {
+    return false;
+  }
   return !item.closingDate || item.closingDate >= todayString();
+}
+
+// Everything members can currently see on the board.
+function livePool() {
+  return [...opportunities.filter(isLive), ...employerJobs.filter(isLive), ...projects];
 }
 
 function timeAgo(value) {
@@ -126,11 +137,15 @@ function safeLink(value) {
 
 async function loadBoard() {
   try {
-    const [openSnap, mineSnap, projectSnap] = await Promise.all([
+    const [openSnap, mineSnap, projectSnap, employerSnap] = await Promise.all([
       getDocs(query(collection(db, "opportunities"), where("status", "==", "open"))),
       getDocs(query(collection(db, "opportunities"), where("ownerId", "==", currentUser.uid))),
       getDocs(query(collection(db, "projects"), where("status", "==", "open"))).catch(error => {
         console.warn("Could not load trade projects:", error);
+        return { docs: [] };
+      }),
+      getDocs(query(collection(db, "employerJobs"), where("status", "==", "live"))).catch(error => {
+        console.warn("Could not load employer jobs:", error);
         return { docs: [] };
       })
     ]);
@@ -139,6 +154,7 @@ async function loadBoard() {
     [...openSnap.docs, ...mineSnap.docs].forEach(item => byId.set(item.id, { id: item.id, kind: "opportunity", ...item.data() }));
     opportunities = [...byId.values()];
     projects = projectSnap.docs.map(item => ({ id: item.id, ...item.data(), kind: "project", type: "project" }));
+    employerJobs = employerSnap.docs.map(item => ({ id: item.id, ...item.data(), kind: "employer", type: "job", ownerId: "" }));
     profiles = await getPublicProfiles([...opportunities, ...projects].map(item => item.ownerId));
     render();
   } catch (error) {
@@ -158,7 +174,7 @@ function getVisibleItems() {
 
   const pool = mineOnly
     ? [...opportunities, ...projects].filter(item => item.ownerId === currentUser.uid)
-    : [...opportunities.filter(isLive), ...projects];
+    : livePool();
 
   const items = pool.filter(item => {
     if (activeType !== "all" && item.type !== activeType) return false;
@@ -168,7 +184,7 @@ function getVisibleItems() {
     if (!search) return true;
     const owner = profiles.get(item.ownerId);
     const haystack = [
-      item.title, item.description, item.location, item.industry, item.pay, item.budget,
+      item.title, item.description, item.location, item.industry, item.pay, item.budget, item.companyName,
       ...(Array.isArray(item.requiredTrades) ? item.requiredTrades : []),
       owner ? getCardIdentity(owner) : "", owner?.fullName
     ].filter(Boolean).join(" ").toLowerCase();
@@ -188,7 +204,7 @@ function getVisibleItems() {
 
 function renderTabs() {
   const liveCount = id => {
-    const pool = [...opportunities.filter(isLive), ...projects];
+    const pool = livePool();
     return id === "all" ? pool.length : pool.filter(item => item.type === id).length;
   };
   const tabs = [{ id: "all", plural: "All" }, ...ALL_TYPES];
@@ -199,6 +215,10 @@ function renderTabs() {
 }
 
 function renderPoster(item) {
+  if (item.kind === "employer") {
+    const initial = escapeHtml(String(item.companyName || "?").trim().charAt(0).toUpperCase());
+    return `<div class="opp-poster"><span class="opp-poster-company" aria-hidden="true">${initial}</span><span><strong>${escapeHtml(item.companyName || "Employer")}</strong><small>Employer post &middot; ${escapeHtml(timeAgo(item.createdAt))}</small></span></div>`;
+  }
   const owner = profiles.get(item.ownerId);
   const name = owner ? getCardIdentity(owner) : item.ownerName || "Sangat Works member";
   const avatar = renderFramedPhoto(owner || {}, { className: "opp-poster-photo" });
@@ -224,6 +244,16 @@ function renderFacts(item) {
 
 function renderActions(item) {
   const isMine = currentUser && item.ownerId === currentUser.uid;
+
+  if (item.kind === "employer") {
+    const link = safeLink(item.applyLink);
+    const buttons = [
+      link ? `<a class="btn-primary" href="${escapeHtml(link)}" target="_blank" rel="noopener">Apply</a>` : "",
+      item.applyEmail ? `<a class="${link ? "btn-secondary" : "btn-primary"}" href="mailto:${escapeHtml(item.applyEmail)}?subject=${encodeURIComponent(`Application: ${item.title || "your job on Sangat Works"}`)}">Apply by email</a>` : "",
+      canModerate ? `<button type="button" class="opp-danger" data-remove-employer-job="${item.id}">Take down (admin)</button>` : ""
+    ];
+    return buttons.join("");
+  }
 
   if (item.kind === "project") {
     return `<a class="btn-primary" href="projects.html#openProjectsSection">${isMine ? "Manage project" : "View &amp; apply"}</a>`;
@@ -269,6 +299,7 @@ function renderCard(item) {
     <article class="opp-card type-${type.id}${isOpen ? "" : " is-closed"}${isFeatured(item) ? " is-featured" : ""}">
       <div class="opp-card-top">
         ${isFeatured(item) ? `<span class="opp-featured-badge">&#9733; Featured</span>` : ""}
+        ${item.kind === "employer" ? `<span class="opp-employer-badge">Employer post</span>` : ""}
         <span class="opp-type-badge">${escapeHtml(type.label)}</span>
         ${industry && industry !== "Other" ? `<span class="opp-industry">${escapeHtml(industry)}</span>` : ""}
         ${statusBadge}
@@ -288,7 +319,7 @@ function renderCard(item) {
 function render() {
   renderTabs();
   const items = getVisibleItems();
-  const liveTotal = opportunities.filter(isLive).length + projects.length;
+  const liveTotal = livePool().length;
   els.count.textContent = els.mine.checked
     ? `${items.length} of your post${items.length === 1 ? "" : "s"}`
     : `Showing ${items.length} of ${liveTotal} open`;
@@ -426,7 +457,7 @@ document.addEventListener("click", async (event) => {
   if (target.matches("[data-open-opportunity-form]")) return openForm();
   if (target.matches("[data-close-opportunity-form]")) return closeForm();
 
-  const { type, expandOpp, editOpp, closeOpp, reopenOpp, deleteOpp, adminCloseOpp, messageOpp, featureOpp } = target.dataset;
+  const { type, expandOpp, editOpp, closeOpp, reopenOpp, deleteOpp, adminCloseOpp, messageOpp, featureOpp, removeEmployerJob } = target.dataset;
 
   try {
     if (type && target.classList.contains("opp-type-tab")) {
@@ -449,6 +480,11 @@ document.addEventListener("click", async (event) => {
       target.disabled = true;
       target.textContent = "Opening chat...";
       await openConversationWithUser(currentUser.uid, messageOpp);
+    } else if (removeEmployerJob) {
+      if (!window.confirm("Take this employer job off the board?")) return;
+      await updateDoc(doc(db, "employerJobs", removeEmployerJob), { status: "removed", reviewedAt: serverTimestamp(), reviewedBy: currentUser.uid });
+      employerJobs = employerJobs.filter(item => item.id !== removeEmployerJob);
+      render();
     } else if (featureOpp) {
       target.disabled = true;
       target.textContent = "Opening secure checkout...";

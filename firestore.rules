@@ -256,6 +256,23 @@ service cloud.firestore {
       allow delete: if signedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
     }
 
+    // Paid job posts from non-member employers (functions/employer-jobs.js). Created and
+    // marked paid only by the server; admins approve, reject or take them down.
+    match /employerJobs/{jobId} {
+      allow get, list: if (hasActiveMembership() && resource.data.status == "live") || isAdmin();
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "liveUntil", "reviewedAt", "reviewedBy", "reviewNote"])
+        && request.resource.data.status in ["live", "rejected", "removed"];
+      allow create: if false;
+      allow delete: if isAdmin();
+    }
+
+    // The employer's own contact details: admins only.
+    match /employerJobContacts/{jobId} {
+      allow read, delete: if isAdmin();
+      allow write: if false;
+    }
+
     match /projects/{projectId} {
       allow read: if hasActiveMembership();
       allow create: if hasActiveMembership()

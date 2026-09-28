@@ -31,6 +31,7 @@ const {
   verifyStripeSignupSession
 } = require("./shared");
 const { handlePromotionPayment } = require("./promotions");
+const { handleEmployerJobPayment } = require("./employer-jobs");
 
 exports.verifyPaidSignupSession = onRequest(
   {
@@ -822,6 +823,9 @@ exports.stripeWebhook = onRequest(
         // Featured opportunities and business verification (functions/promotions.js).
         if (await handlePromotionPayment(session)) {
           return res.status(200).send("Promotion payment handled");
+        }
+        if (await handleEmployerJobPayment(session)) {
+          return res.status(200).send("Employer job payment handled");
         }
 
         const uid = session.metadata?.uid;
