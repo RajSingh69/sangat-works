@@ -10,8 +10,8 @@ const { FieldValue } = require("firebase-admin/firestore");
 const { Stripe, admin, isValidEmail, onRequest, stripeSecret } = require("./shared");
 const { INDUSTRY_BUCKETS } = require("./site-stats-core");
 
-// Stripe price ID (live, one-off). Leave blank until the product exists.
-const EMPLOYER_JOB_PRICE_ID = "";
+// Stripe price ID (live, one-off).
+const EMPLOYER_JOB_PRICE_ID = "price_1UKf7pDbE6tXsxNUTdZNyWg7"; // £25 one-off
 
 const SITE_URL = "https://sangatworks.co.uk";
 const INDUSTRIES = new Set([...INDUSTRY_BUCKETS.map(bucket => bucket.name), "Other"]);
