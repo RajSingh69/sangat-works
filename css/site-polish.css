@@ -81,3 +81,33 @@
     min-width: 44px;
   }
 }
+
+/* Pricing: email for signed-out visitors, and checkout messages */
+.checkout-email-box {
+  display: grid;
+  gap: 8px;
+  max-width: 460px;
+  margin: 0 0 18px;
+}
+.checkout-email-box label { font-weight: 800; color: var(--text, #172033); }
+.checkout-email-box small { font-weight: 600; color: var(--muted); }
+.checkout-email-box input {
+  min-height: 48px;
+  padding: 0 14px;
+  font: inherit;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+}
+.checkout-email-box input:focus-visible { outline: 3px solid rgba(198, 77, 14, 0.35); outline-offset: 2px; }
+.checkout-message:empty { display: none; }
+.checkout-message {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  font-weight: 700;
+  color: #7a2e0b;
+  background: #fff4ea;
+  border: 1px solid rgba(198, 77, 14, 0.3);
+  border-radius: 12px;
+}
+.checkout-btn:disabled { opacity: 0.75; cursor: progress; }

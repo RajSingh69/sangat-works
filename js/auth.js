@@ -1,4 +1,5 @@
 import { auth, db } from "./firebase.js";
+import { friendlyAuthError } from "./auth-errors.js";
 
 import {
   signInWithEmailAndPassword
@@ -97,7 +98,7 @@ loginForm.addEventListener("submit", async (e) => {
       "Your account is not active yet. Please complete payment to unlock Sangat Works.";
     window.location.href = "pricing.html";
   } catch (error) {
-    authMessage.textContent = error.message;
+    authMessage.textContent = friendlyAuthError(error);
   }
 });
 

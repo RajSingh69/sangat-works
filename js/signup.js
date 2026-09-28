@@ -3,6 +3,7 @@ import { auth, db } from "./firebase.js";
 import {
   createUserWithEmailAndPassword,
   deleteUser,
+  signInWithEmailAndPassword,
   updateProfile
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
@@ -12,6 +13,8 @@ import {
   setDoc,
   Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+import { friendlyAuthError } from "./auth-errors.js";
 
 const VERIFY_SIGNUP_SESSION_URL =
   "https://europe-west1-sangat-works.cloudfunctions.net/verifyPaidSignupSession";
@@ -77,7 +80,9 @@ async function verifySessionForDisplay() {
     if (signupStatus) {
       signupStatus.textContent = inviteToken
         ? `Free Charity Year invite verified for ${verifiedSignup.charityName}. Create your account to unlock Sangat Works for 1 year.`
-        : `Payment verified for ${verifiedSignup.planName} membership. Create your account to unlock Sangat Works.`;
+        : result.alreadyClaimed
+          ? "Your payment is safe and already linked to an account. Enter the same name, email and password to finish setting up."
+          : `Payment verified for ${verifiedSignup.planName} membership. Create your account to unlock Sangat Works.`;
     }
 
     if (signupEmail && verifiedSignup.email) {
@@ -118,7 +123,9 @@ async function claimVerifiedSession(uid) {
   const idToken = await auth.currentUser.getIdToken();
   const isInvite = signupMode === "free_charity_invite";
 
-  const response = await fetch(isInvite ? VERIFY_FREE_INVITE_URL : VERIFY_SIGNUP_SESSION_URL, {
+  let response;
+  try {
+    response = await fetch(isInvite ? VERIFY_FREE_INVITE_URL : VERIFY_SIGNUP_SESSION_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -135,7 +142,11 @@ async function claimVerifiedSession(uid) {
             claimForUid: uid
           }
     )
-  });
+    });
+  } catch (networkError) {
+    // The server may still have linked the payment, so the account must be kept.
+    throw Object.assign(new Error("No connection. Check your internet and tap the button again."), { keepAccount: true });
+  }
 
   const result = await response.json().catch(() => ({}));
 
@@ -162,93 +173,116 @@ paidSignupForm?.addEventListener("submit", async (event) => {
   const fullName = document.getElementById("signupName").value.trim();
   const email = signupEmail.value.trim();
   const password = document.getElementById("signupPassword").value;
+  const submitButton = paidSignupForm.querySelector("button[type=submit]");
 
-  let createdUser = null;
+  let user = null;
+  let createdNow = false;
+  let claimed = false;
+
+  if (submitButton) submitButton.disabled = true;
+  setMessage(
+    signupMode === "free_charity_invite"
+      ? "Creating your Free Charity Year account..."
+      : "Creating your account..."
+  );
 
   try {
-    paidSignupForm.classList.add("hidden");
-    setMessage(
-      signupMode === "free_charity_invite"
-        ? "Creating your Free Charity Year account..."
-        : "Creating your paid account..."
-    );
-
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-
-    createdUser = userCredential.user;
-
-    await updateProfile(createdUser, {
-      displayName: fullName
-    });
-
-    const claimedSignup = await claimVerifiedSession(createdUser.uid);
-
-    if (signupMode === "free_charity_invite") {
-      await setDoc(doc(db, "users", createdUser.uid), {
-        uid: createdUser.uid,
-        fullName,
-        displayName: fullName,
-        email,
-        featuredListing: false,
-        featuredListingStatus: "inactive",
-        featuredExpiresAt: null,
-        hasSeenIntro: false,
-        isPublic: true,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-    } else {
-      const subscriptionExpiresAt = getSubscriptionExpiry(claimedSignup);
-
-      await setDoc(doc(db, "users", createdUser.uid), {
-        uid: createdUser.uid,
-        fullName,
-        displayName: fullName,
-        email,
-        role: "standard",
-        internalAccount: false,
-        accountType: "member",
-        isAdmin: false,
-        isFoundingMember: false,
-        memberNumber: null,
-        hasSubscription: true,
-        subscriptionStatus: "active",
-        subscriptionPlan: claimedSignup.planName,
-        subscriptionBillingType: claimedSignup.billingType,
-        subscriptionExpiresAt,
-        subscriptionUpdatedAt: serverTimestamp(),
-        membershipPlan: claimedSignup.planName,
-        membershipStatus: "active",
-        stripeCustomerId: claimedSignup.stripeCustomerId,
-        stripeSubscriptionId: claimedSignup.stripeSubscriptionId || "",
-        stripePriceId: claimedSignup.priceId,
-        stripeCheckoutSessionId: claimedSignup.checkoutSessionId,
-        featuredListing: false,
-        featuredListingStatus: "inactive",
-        featuredExpiresAt: null,
-        hasSeenIntro: false,
-        isPublic: true,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+    // A second attempt (after a dropped connection) signs back in to the
+    // account made the first time instead of failing on "email already in use".
+    try {
+      user = (await createUserWithEmailAndPassword(auth, email, password)).user;
+      createdNow = true;
+    } catch (error) {
+      if (error.code !== "auth/email-already-in-use") throw error;
+      try {
+        user = (await signInWithEmailAndPassword(auth, email, password)).user;
+      } catch (signInError) {
+        throw new Error("That email already has an account with a different password. Log in instead, or contact us if you've just paid.");
+      }
     }
+
+    await updateProfile(user, { displayName: fullName }).catch(() => {});
+
+    const claimedSignup = await claimVerifiedSession(user.uid);
+    claimed = true;
+
+    const profileData = signupMode === "free_charity_invite"
+      ? {
+          uid: user.uid,
+          fullName,
+          displayName: fullName,
+          email,
+          featuredListing: false,
+          featuredListingStatus: "inactive",
+          featuredExpiresAt: null,
+          hasSeenIntro: false,
+          isPublic: true,
+          updatedAt: serverTimestamp()
+        }
+      : {
+          uid: user.uid,
+          fullName,
+          displayName: fullName,
+          email,
+          role: "standard",
+          internalAccount: false,
+          accountType: "member",
+          isAdmin: false,
+          isFoundingMember: false,
+          memberNumber: null,
+          hasSubscription: true,
+          subscriptionStatus: "active",
+          subscriptionPlan: claimedSignup.planName,
+          subscriptionBillingType: claimedSignup.billingType,
+          subscriptionExpiresAt: getSubscriptionExpiry(claimedSignup),
+          subscriptionUpdatedAt: serverTimestamp(),
+          membershipPlan: claimedSignup.planName,
+          membershipStatus: "active",
+          stripeCustomerId: claimedSignup.stripeCustomerId,
+          stripeSubscriptionId: claimedSignup.stripeSubscriptionId || "",
+          stripePriceId: claimedSignup.priceId,
+          stripeCheckoutSessionId: claimedSignup.checkoutSessionId,
+          featuredListing: false,
+          featuredListingStatus: "inactive",
+          featuredExpiresAt: null,
+          hasSeenIntro: false,
+          isPublic: true,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+
+    // Saving the membership can fail on patchy wifi; try a few times.
+    let lastError = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await setDoc(doc(db, "users", user.uid), profileData, { merge: signupMode === "free_charity_invite" });
+        lastError = null;
+        break;
+      } catch (error) {
+        lastError = error;
+        await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
+      }
+    }
+    if (lastError) throw lastError;
 
     setMessage("Account created. Opening your profile...");
     window.location.href = "profile.html";
   } catch (error) {
-    if (createdUser) {
-      try {
-        await deleteUser(createdUser);
-      } catch (deleteError) {
-        console.error("Could not delete unclaimed signup user:", deleteError);
-      }
+    console.error("Signup failed:", error);
+
+    // Only remove an account made on this attempt, and never once the payment
+    // is linked to it: otherwise the member has paid and can't get back in.
+    if (user && createdNow && !claimed && !error.keepAccount) {
+      await deleteUser(user).catch((deleteError) => console.error("Could not delete unclaimed signup user:", deleteError));
     }
 
-    paidSignupForm.classList.remove("hidden");
-    setMessage(error.message || "Could not create your account.", true);
+    const message = claimed || error.keepAccount
+      ? "Your payment is safe. We couldn't finish setting up your account, so tap the button again. If it keeps failing, contact us."
+      : error.code
+        ? friendlyAuthError(error, "Could not create your account. Please try again.")
+        : error.message || "Could not create your account. Please try again.";
+    setMessage(message, true);
+    if (submitButton) submitButton.disabled = false;
   }
 });
 

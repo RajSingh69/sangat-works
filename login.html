@@ -12,9 +12,15 @@
       max-width: 1150px;
       margin: 48px auto;
       display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
+      grid-template-columns: 0.95fr 1.05fr;
       gap: 28px;
       align-items: stretch;
+    }
+
+    /* The login form comes first: left on desktop, top on phones */
+    .login-form-card {
+      order: -1;
+      align-self: start;
     }
 
     .login-hero-card,
@@ -303,10 +309,10 @@
     </div>
 
     <form id="loginForm" class="auth-form">
-      <input type="email" id="loginEmail" placeholder="Email address" required />
+      <input type="email" id="loginEmail" placeholder="Email address" autocomplete="email" required />
 
       <div class="password-wrap">
-        <input type="password" id="loginPassword" placeholder="Password" required />
+        <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password" required />
         <button class="toggle-password" type="button" data-target="loginPassword">
           Show
         </button>
@@ -321,11 +327,11 @@
     </form>
 
     <form id="registerForm" class="auth-form hidden">
-      <input type="text" id="registerName" placeholder="Full name" required />
-      <input type="email" id="registerEmail" placeholder="Email address" required />
+      <input type="text" id="registerName" placeholder="Full name" autocomplete="name" required />
+      <input type="email" id="registerEmail" placeholder="Email address" autocomplete="email" required />
 
       <div class="password-wrap">
-        <input type="password" id="registerPassword" placeholder="Create password" required />
+        <input type="password" id="registerPassword" placeholder="Create password" autocomplete="new-password" required />
         <button class="toggle-password" type="button" data-target="registerPassword">
           Show
         </button>

@@ -78,6 +78,8 @@ exports.verifyPaidSignupSession = onRequest(
           const usedSnap = await transaction.get(sessionRef);
 
           if (usedSnap.exists) {
+            // The same member retrying after a dropped connection is fine.
+            if (usedSnap.data().uid === claimForUid) return;
             throw new Error("Checkout session has already been used");
           }
 
@@ -103,15 +105,13 @@ exports.verifyPaidSignupSession = onRequest(
 
       const usedSnap = await sessionRef.get();
 
-      if (usedSnap.exists) {
-        return res.status(409).json({
-          error: "Checkout session has already been used"
-        });
-      }
-
+      // Already linked to an account: still show the form, so the member who
+      // paid can finish setting up by signing in with the same details (the
+      // claim above only succeeds for that same account).
       return res.status(200).json({
         verified: true,
         claimed: false,
+        alreadyClaimed: usedSnap.exists,
         signup: safeSessionData
       });
     } catch (error) {

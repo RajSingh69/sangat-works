@@ -30,6 +30,24 @@ function getBillingType(selectedPlan) {
       : "subscription";
 }
 
+const emailBox = document.getElementById("checkoutEmailBox");
+const emailInput = document.getElementById("checkoutEmail");
+const checkoutMessage = document.getElementById("checkoutMessage");
+
+function showCheckoutMessage(text) {
+  if (!checkoutMessage) {
+    if (text) alert(text);
+    return;
+  }
+  checkoutMessage.textContent = text || "";
+  if (text) checkoutMessage.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+// Signed-out visitors type the email for their new account here.
+onAuthStateChanged(auth, (user) => {
+  if (emailBox) emailBox.hidden = Boolean(user);
+});
+
 function sendToLoginWithPlan(selectedPlan) {
   if (MEMBERSHIP_PLANS.includes(selectedPlan)) {
     window.location.href = `pricing.html?checkout=${encodeURIComponent(selectedPlan)}`;
@@ -40,7 +58,7 @@ function sendToLoginWithPlan(selectedPlan) {
   window.location.href = "login.html";
 }
 
-async function startCheckout(selectedPlan) {
+async function startCheckout(selectedPlan, button) {
 
   const user = auth.currentUser;
 
@@ -57,14 +75,20 @@ async function startCheckout(selectedPlan) {
   }
 
   const billingType = getBillingType(selectedPlan);
-  const checkoutEmail = user?.email || window.prompt(
-    "Enter the email address you want to use for your Sangat Works account."
-  );
+  const checkoutEmail = user?.email || emailInput?.value.trim() || "";
 
-  if (!checkoutEmail) {
-    alert("Please enter an email address to continue to checkout.");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(checkoutEmail)) {
+    showCheckoutMessage("Enter your email address above first. It becomes your Sangat Works login.");
+    emailInput?.focus();
     return;
   }
+
+  const buttonLabel = button?.textContent;
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Opening secure checkout...";
+  }
+  showCheckoutMessage("");
 
   try {
     const response = await fetch(FUNCTION_URL, {
@@ -80,25 +104,30 @@ async function startCheckout(selectedPlan) {
       })
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
 
-    if (data.error) {
-      alert(data.error);
-      return;
+    if (!response.ok || !data.url) {
+      throw new Error(data.error || "We couldn't open checkout. Please try again.");
     }
 
-    if (data.url) {
-      window.location.href = data.url;
-    }
+    window.location.href = data.url;
   } catch (error) {
     console.error("Checkout error:", error);
-    alert("Checkout failed.");
+    showCheckoutMessage(
+      error instanceof TypeError
+        ? "No connection. Check your internet and try again."
+        : error.message
+    );
+    if (button) {
+      button.disabled = false;
+      button.textContent = buttonLabel;
+    }
   }
 }
 
 document.querySelectorAll(".checkout-btn").forEach((button) => {
   button.addEventListener("click", () => {
-    startCheckout(button.dataset.plan);
+    startCheckout(button.dataset.plan, button);
   });
 });
 
