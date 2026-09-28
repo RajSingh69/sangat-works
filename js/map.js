@@ -1,4 +1,5 @@
 import { db } from "./firebase.js";
+import { loadErrorHtml } from "./load-error.js";
 import { protectPage } from "./subscription-guard.js";
 import { compareByRanking } from "./ranking.js";
 import { renderFramedPhoto } from "./directory-card.js";
@@ -611,6 +612,9 @@ protectPage({
     }).addTo(map);
 
     attachFilterListeners();
-    loadMapProfiles();
+    loadMapProfiles().catch((error) => {
+      console.error("Could not load map members:", error);
+      if (mapResultsCount) mapResultsCount.innerHTML = loadErrorHtml("members");
+    });
   }
 });

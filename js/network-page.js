@@ -1,4 +1,5 @@
-﻿import { protectPage } from "./subscription-guard.js";
+﻿import { loadErrorHtml } from "./load-error.js";
+import { protectPage } from "./subscription-guard.js";
 import { renderFramedPhoto } from "./directory-card.js";
 import {
   acceptConnection,
@@ -169,9 +170,14 @@ function renderRequestRow(connection, profile, type) {
 
 async function refreshNetwork() {
   setMessage("Loading your network...");
-  rows = await getNetworkConnections(currentUser.uid);
-  await renderRows();
-  setMessage("");
+  try {
+    rows = await getNetworkConnections(currentUser.uid);
+    await renderRows();
+    setMessage("");
+  } catch (error) {
+    console.error("Could not load network:", error);
+    if (networkMessage) networkMessage.innerHTML = loadErrorHtml("your network");
+  }
 }
 
 workspaceTabs.forEach((tab) => {

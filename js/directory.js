@@ -1,4 +1,5 @@
 import { auth, db } from "./firebase.js";
+import { loadErrorHtml } from "./load-error.js";
 import { protectPage } from "./subscription-guard.js";
 import { openConversationWithUser, sendConnectionRequest } from "./member-network.js";
 import { compareByRanking } from "./ranking.js";
@@ -531,14 +532,11 @@ async function loadDirectory() {
     filterProfiles();
 
   } catch (error) {
-    directoryResults.innerHTML = `
-      <div class="empty-state">
-        Error loading profiles: ${error.message}
-      </div>
-    `;
+    console.error("Could not load directory:", error);
+    directoryResults.innerHTML = `<div class="empty-state">${loadErrorHtml("members")}</div>`;
 
     if (directoryCount) {
-      directoryCount.textContent = "Could not load profiles";
+      directoryCount.textContent = "Couldn't load members";
     }
     directoryDataLoaded = true;
     renderDirectoryDiscovery();

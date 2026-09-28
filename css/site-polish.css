@@ -197,3 +197,15 @@
 @media (max-width: 900px) {
   .directory-fan-stage { grid-row: auto; }
 }
+
+/* "Couldn't load" message with a Try again button (js/load-error.js) */
+.load-error {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  color: var(--text, #172033);
+  text-align: left;
+}
+.load-error strong { font-size: 1rem; }
+.load-error > span { color: var(--muted); font-weight: 600; }
+.load-error .btn-small { margin-top: 6px; min-height: 44px; }

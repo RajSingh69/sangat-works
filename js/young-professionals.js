@@ -6,6 +6,7 @@
 */
 
 import { db } from "./firebase.js";
+import { loadErrorHtml } from "./load-error.js";
 import { protectPage } from "./subscription-guard.js";
 import { getPublicProfiles, openConversationWithUser } from "./member-network.js";
 import { compareByRanking } from "./ranking.js";
@@ -343,7 +344,7 @@ protectPage({
       await loadYoungProfessionals();
     } catch (error) {
       console.error("Could not load Young Professionals:", error);
-      els.results.innerHTML = `<div class="opp-empty"><strong>Couldn't load Young Professionals.</strong><span>Please refresh the page.</span></div>`;
+      els.results.innerHTML = `<div class="opp-empty">${loadErrorHtml("Young Professionals")}</div>`;
       els.count.textContent = "";
     }
   }

@@ -6,6 +6,7 @@
 */
 
 import { db } from "./firebase.js";
+import { loadErrorHtml } from "./load-error.js";
 import { protectPage } from "./subscription-guard.js";
 import { getPublicProfiles, openConversationWithUser } from "./member-network.js";
 import { compareByRanking } from "./ranking.js";
@@ -159,7 +160,7 @@ async function loadBoard() {
     render();
   } catch (error) {
     console.error("Could not load opportunities:", error);
-    els.results.innerHTML = `<div class="opp-empty">Couldn't load opportunities. Please refresh the page.</div>`;
+    els.results.innerHTML = `<div class="opp-empty">${loadErrorHtml("opportunities")}</div>`;
     els.count.textContent = "";
   }
 }

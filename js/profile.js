@@ -1,4 +1,5 @@
 ﻿import { auth, db, storage } from "./firebase.js";
+import { loadErrorHtml, isConnectionError } from "./load-error.js";
 
 import {
   onAuthStateChanged
@@ -1151,7 +1152,10 @@ if (profileForm) {
 
       profileMessage.textContent = "Profile saved.";
     } catch (error) {
-      profileMessage.textContent = error.message;
+      console.error("Could not save profile:", error);
+      profileMessage.textContent = isConnectionError(error)
+        ? "Couldn't save. Your changes are still here, so check your connection and tap Save again."
+        : error.message;
     } finally {
       if (saveButton) saveButton.disabled = false;
     }
@@ -1219,7 +1223,8 @@ if (publicProfile) {
         });
       });
     } catch (error) {
-      publicProfile.innerHTML = `<div class="empty-state">Error loading profile: ${error.message}</div>`;
+      console.error("Could not load profile:", error);
+      publicProfile.innerHTML = `<div class="empty-state">${loadErrorHtml("this profile")}</div>`;
     }
   }
 

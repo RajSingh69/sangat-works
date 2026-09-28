@@ -6,6 +6,7 @@
 */
 
 import { db } from "./firebase.js";
+import { loadErrorHtml } from "./load-error.js";
 import { protectPage } from "./subscription-guard.js";
 import { openConversationWithUser, sendConnectionRequest } from "./member-network.js";
 import { compareByRanking } from "./ranking.js";
@@ -300,7 +301,7 @@ protectPage({
       await loadData();
     } catch (error) {
       console.error("Could not load the Gurdwara Network:", error);
-      els.tiles.innerHTML = `<div class="opp-empty"><strong>Couldn't load Gurdwaras.</strong><span>Please refresh the page.</span></div>`;
+      els.tiles.innerHTML = `<div class="opp-empty">${loadErrorHtml("Gurdwaras")}</div>`;
       return;
     }
 
