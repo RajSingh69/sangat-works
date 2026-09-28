@@ -32,7 +32,7 @@
           id="searchInput"
           placeholder="Search businesses, people, skills, services or locations..."
         />
-        <button id="searchBtn" type="button">Search <span aria-hidden="true">-&gt;</span></button>
+        <button id="searchBtn" type="button">Search <span class="home-arrow" aria-hidden="true"></span></button>
       </div>
 
       <div class="directory-industry-tabs" id="directoryIndustryTabs" role="tablist" aria-label="Member categories"></div>
@@ -52,8 +52,8 @@
         <h2 id="directoryDiscoveryTitle">Featured members from across<br>the network.</h2>
       </div>
       <div class="directory-fan-controls">
-        <button type="button" class="directory-fan-btn" id="directoryFanPrev" aria-label="Show previous member" hidden disabled>&lt;</button>
-        <button type="button" class="directory-fan-btn" id="directoryFanNext" aria-label="Show next member" hidden disabled>&gt;</button>
+        <button type="button" class="directory-fan-btn" id="directoryFanPrev" aria-label="Show previous member" hidden disabled><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+        <button type="button" class="directory-fan-btn" id="directoryFanNext" aria-label="Show next member" hidden disabled><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
       </div>
     </div>
     <div class="directory-fan-stage" id="directoryFanStage" tabindex="0" aria-label="Featured directory members"><div class="directory-fan-empty is-loading">Loading members...</div></div>
@@ -142,7 +142,7 @@
 </main>
 
 <footer>
-  <p>Sangat Works — built for community support.</p>
+  <p>Sangat Works. Built for community support.</p>
 </footer>
 
 <script type="module" src="js/nav.js"></script>

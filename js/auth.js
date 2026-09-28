@@ -68,7 +68,7 @@ loginForm.addEventListener("submit", async (e) => {
 
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-    authMessage.textContent = "Login successful.";
+    authMessage.textContent = "Logged in.";
 
     if (selectedMembershipPlan) {
       window.location.href =

@@ -6,7 +6,7 @@
   --gold: #d6a11f;
   --gold-dark: #9b6a00;
   --orange: #ff7a18;
-  --orange-dark: #d95700;
+  --orange-dark: #b34700; /* text on light backgrounds, 5.5:1 on white */
 
   --blue: #123c69;
   --blue-2: #1d5f99;
@@ -16,7 +16,7 @@
   --purple: #7c3aed;
 
   --text: #172033;
-  --muted: #657083;
+  --muted: #5a667a;
   --border: rgba(18, 60, 105, 0.12);
 
   --shadow: 0 18px 50px rgba(18, 60, 105, 0.12);
@@ -185,14 +185,6 @@ button:hover {
   transform: translateY(-2px);
 }
 
-.admin-btn {
-  background: linear-gradient(135deg, var(--blue), var(--blue-2));
-}
-
-.logout-btn {
-  background: linear-gradient(135deg, #222, #444);
-}
-
 .full {
   width: 100%;
   text-align: center;
@@ -318,18 +310,10 @@ button:hover {
   font-weight: 950;
 }
 
-.hero-back-link {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 18px;
-}
-
 /* SECTIONS */
 
 .info-section,
-.pricing-section,
-.search-section,
-.reviews-section {
+.pricing-section {
   width: 86%;
   max-width: var(--max);
   margin: 42px auto;
@@ -341,9 +325,7 @@ button:hover {
 }
 
 .info-section h2,
-.pricing-section h2,
-.search-section h2,
-.reviews-section h2 {
+.pricing-section h2 {
   font-size: clamp(1.8rem, 3vw, 2.4rem);
   color: var(--blue);
   margin-bottom: 12px;
@@ -351,9 +333,7 @@ button:hover {
 }
 
 .info-section > p,
-.pricing-section > p,
-.search-section > p,
-.reviews-section > p {
+.pricing-section > p {
   color: var(--muted);
   max-width: 780px;
   margin-bottom: 26px;
@@ -382,7 +362,6 @@ button:hover {
 
 .feature-grid,
 .pricing-grid,
-.cards-grid,
 .admin-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
@@ -392,7 +371,6 @@ button:hover {
 .feature-card,
 .pricing-card,
 .profile-card,
-.public-profile-card,
 .review-card,
 .admin-user-card {
   background: var(--white);
@@ -457,24 +435,6 @@ button:hover {
 .pricing-card.highlighted {
   background: linear-gradient(160deg, #fff8e7, #ffe3b8);
   border: 2px solid var(--orange);
-}
-
-/* SEARCH */
-
-.search-box {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 28px;
-}
-
-.search-box input {
-  flex: 1;
-}
-
-.search-box button {
-  background: var(--blue);
-  color: white;
-  padding: 12px 22px;
 }
 
 .empty-state {
@@ -560,20 +520,10 @@ textarea {
   resize: vertical;
 }
 
-.two-col,
-.upload-row {
+.two-col {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
-}
-
-.upload-row label {
-  background: linear-gradient(135deg, #fff7df, #eaf5ff);
-  padding: 16px;
-  border-radius: 18px;
-  font-weight: 900;
-  color: var(--blue);
-  border: 1px solid var(--border);
 }
 
 .check-row {
@@ -634,38 +584,8 @@ textarea {
   white-space: nowrap;
 }
 
-/* DASHBOARD / PROFILE BOXES */
-
-.profile-strength-box {
-  background: linear-gradient(135deg, #fff, #fff3d8 55%, #edf7ff);
-  border: 1px solid var(--border);
-  padding: 24px;
-  border-radius: 24px;
-  margin: 24px 0 30px;
-  box-shadow: var(--shadow-soft);
-}
-
-.strength-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  font-weight: 950;
-  margin-bottom: 14px;
-  color: var(--blue);
-}
-
-
 #profileStrengthPercent {
   color: var(--orange-dark);
-}
-
-.strength-bar {
-  width: 100%;
-  height: 12px;
-  background: rgba(18, 60, 105, 0.12);
-  border-radius: 999px;
-  overflow: hidden;
-  margin-bottom: 16px;
 }
 
 #profileStrengthFill,
@@ -704,88 +624,22 @@ textarea {
   margin: 16px 0 20px;
 }
 
-.dashboard-stat {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 18px 12px;
-  text-align: center;
-  box-shadow: var(--shadow-soft);
-}
-
-.dashboard-stat:nth-child(1) {
-  background: #fff1d6;
-}
-
-.dashboard-stat:nth-child(2) {
-  background: #e7f3ff;
-}
-
-.dashboard-stat:nth-child(3) {
-  background: #fff0e5;
-}
-
-.dashboard-stat:nth-child(4) {
-  background: #edfdf4;
-}
-
-.dashboard-number {
-  display: block;
-  font-size: clamp(1.65rem, 4vw, 2.25rem);
-  font-weight: 950;
-  color: var(--blue);
-  line-height: 1;
-}
-
-.dashboard-label {
-  display: block;
-  margin-top: 8px;
-  font-size: 0.82rem;
-  color: var(--muted);
-  font-weight: 900;
-}
-
 /* PROFILE CARDS */
 
-.profile-card,
-.public-profile-card {
+.profile-card {
   border-top: 7px solid var(--orange);
 }
 
-.profile-card h3,
-.public-profile-card h1 {
+.profile-card h3 {
   margin-bottom: 6px;
   color: var(--blue);
   letter-spacing: -0.04em;
 }
 
-.profile-card .service,
-.public-profile-card .service {
+.profile-card .service {
   color: var(--orange-dark);
   font-weight: 950;
   margin-bottom: 10px;
-}
-
-.profile-visual-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 14px;
-}
-
-.profile-image {
-  width: 88px;
-  height: 88px;
-  object-fit: cover;
-  border-radius: 50%;
-  border: 4px solid white;
-  box-shadow: var(--shadow-soft);
-}
-
-.logo-image {
-  width: 84px;
-  max-height: 64px;
-  object-fit: contain;
 }
 
 .tags {
@@ -874,13 +728,6 @@ textarea {
   font-weight: 950;
 }
 
-.map-popup-images {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
 .map-popup-photo {
   width: 48px;
   height: 48px;
@@ -943,30 +790,6 @@ textarea {
   margin-top: 28px;
   padding-top: 22px;
   border-top: 1px solid var(--border);
-}
-
-/* ADMIN */
-
-.admin-dashboard-card {
-  width: 86%;
-  max-width: var(--max);
-  margin: 0 auto 30px;
-  background:
-    radial-gradient(circle at top left, rgba(255, 122, 24, 0.34), transparent 32%),
-    linear-gradient(135deg, var(--blue), #08243f);
-  color: white;
-  padding: 32px;
-  border-radius: 28px;
-  box-shadow: var(--shadow);
-}
-
-.admin-dashboard-card h2 {
-  font-size: 2rem;
-  margin-bottom: 6px;
-}
-
-.admin-dashboard-card p {
-  color: #dbeafe;
 }
 
 .admin-stats-grid div {
@@ -1036,27 +859,6 @@ textarea {
   display: none;
 }
 
-/* FOUNDING */
-
-.founding-counter-box {
-  background: linear-gradient(135deg, #fff4d5, #e7f3ff);
-  border: 1px solid rgba(255, 122, 24, 0.22);
-  padding: 24px;
-  border-radius: 24px;
-  margin: 20px 0 32px;
-  box-shadow: var(--shadow-soft);
-}
-
-.founding-counter-box strong {
-  font-size: 2rem;
-  color: var(--orange-dark);
-}
-
-.founding-counter-box span {
-  font-weight: 950;
-  color: var(--blue);
-}
-
 /* ONBOARDING */
 
 .onboarding-overlay {
@@ -1117,18 +919,8 @@ textarea {
   margin-bottom: 16px;
 }
 
-/* THEME BORDERS */
-
-.theme-green {
-  border-top-color: var(--green);
-}
-
 .theme-blue {
   border-top-color: var(--blue);
-}
-
-.theme-purple {
-  border-top-color: var(--purple);
 }
 
 .theme-gold {
@@ -1163,10 +955,7 @@ footer {
   }
 
   .info-section,
-  .pricing-section,
-  .search-section,
-  .reviews-section,
-  .admin-dashboard-card {
+  .pricing-section {
     width: 90%;
   }
 }
@@ -1206,19 +995,9 @@ footer {
     width: 100%;
   }
 
-  .search-box,
-  .two-col,
-  .upload-row {
+  .two-col {
     grid-template-columns: 1fr;
     flex-direction: column;
-  }
-
-  .search-box {
-    display: grid;
-  }
-
-  .search-box button {
-    width: 100%;
   }
 
   .page-wrap {
@@ -1233,10 +1012,6 @@ footer {
 
   .dashboard-grid {
     grid-template-columns: 1fr;
-  }
-
-  .profile-strength-box {
-    padding: 18px;
   }
 
   .profile-homepage-guide,
@@ -1255,13 +1030,7 @@ footer {
     height: 520px;
   }
 
-  .review-top,
-  .strength-top {
-    flex-direction: column;
-  }
-
-  .profile-visual-row {
-    align-items: flex-start;
+  .review-top {
     flex-direction: column;
   }
 }
@@ -1276,9 +1045,7 @@ footer {
   }
 
   .info-section,
-  .pricing-section,
-  .search-section,
-  .reviews-section {
+  .pricing-section {
     width: 94%;
     padding: 20px;
     border-radius: 20px;
@@ -1286,42 +1053,9 @@ footer {
 
   .pricing-card,
   .feature-card,
-  .profile-card,
-  .public-profile-card {
+  .profile-card {
     padding: 20px;
   }
-}
-
-
-.pool-card {
-  display: block;
-  padding: 1.4rem;
-  border-radius: 18px;
-  background: #ffffff;
-  border: 1px solid rgba(9, 54, 99, 0.12);
-  text-decoration: none;
-  box-shadow: 0 12px 30px rgba(9, 54, 99, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.pool-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 18px 40px rgba(9, 54, 99, 0.14);
-}
-
-.pool-card .dashboard-number {
-  display: block;
-  font-size: 1.25rem;
-  line-height: 1.2;
-  margin-bottom: 0.5rem;
-  color: #073b72;
-}
-
-.pool-card .dashboard-label {
-  display: block;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: #51657a;
 }
 
 #skillsPoolsList {

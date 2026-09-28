@@ -1,0 +1,98 @@
+/*
+  Readable orange (loaded last).
+  The bright brand orange (#ff7a18) only reaches about 2.6:1 against white,
+  so it fails WCAG AA both as text on a light background and as a fill
+  behind white text. These rules swap in deeper oranges at the same
+  specificity as the original rules, so more specific variants (white or
+  outline buttons) keep their own look. Orange on dark navy is fine and
+  isn't touched.
+*/
+:root {
+  --orange-fill: #c64d0e;       /* white text on it: 4.6:1 */
+  --orange-fill-hover: #a63c07; /* white text on it: 6.2:1 */
+  --orange-text: #b34700;       /* on white: 5.5:1, on cream: 5.1:1 */
+  --orange-heading: #d35400;    /* large headings only: 3.9:1 on cream */
+}
+
+/* Orange buttons, badges and counts with white text */
+.btn-primary,
+.btn-small,
+.member-card-primary,
+.map-popup-link,
+.nav-unread-badge,
+.conversation-meta b,
+.sw-hover-button__fill,
+.directory-search-bar button,
+.photo-framer-actions .is-primary,
+.yp-badge.is-you,
+.ep-btn.is-primary,
+.pv-btn.is-primary,
+.pj-page .pj-chips input:checked + span,
+.pj-page .project-card .project-workspace-open-btn {
+  background: var(--orange-fill);
+  border-color: var(--orange-fill);
+}
+
+.btn-primary:hover,
+.btn-small:hover,
+.member-card-primary:hover,
+.map-popup-link:hover,
+.directory-search-bar button:hover,
+.photo-framer-actions .is-primary:hover,
+.ep-btn.is-primary:hover,
+.pv-btn.is-primary:hover,
+.pj-page .project-card .project-workspace-open-btn:hover {
+  background: var(--orange-fill-hover);
+  border-color: var(--orange-fill-hover);
+}
+
+.home-flagship-page .btn-primary,
+.home-membership-note .btn-primary,
+.website-button {
+  background: linear-gradient(135deg, var(--orange-fill), var(--orange-fill-hover));
+}
+
+.home-flagship-page .btn-primary:hover,
+.home-membership-note .btn-primary:hover {
+  background: var(--orange-fill-hover);
+}
+
+.member-badge.is-featured,
+.pv-badge.is-featured,
+.charity-part:nth-of-type(2) .charity-number {
+  background: linear-gradient(135deg, var(--orange-fill), var(--orange-fill-hover));
+}
+
+.opp-card.type-job { --opp-accent: var(--orange-fill); }
+.opp-card.type-volunteering { --opp-accent: #8a6508; }
+
+/* Orange text on light backgrounds */
+.home-section-kicker,
+.member-card-industry,
+.directory-stars,
+.review-top span,
+.story-card-icon,
+.story-text-link,
+.founder-role,
+.founder-links a,
+.membership-option-tick,
+.ep-score,
+.yp-card-id p,
+.pv-facts a,
+.pv-form-note a,
+.pj-support a,
+.network-empty-state a {
+  color: var(--orange-text);
+}
+
+.founder-links a:hover,
+.opp-card a.opp-poster:hover strong,
+.pv-contact-row:hover strong,
+.pv-review-top a:hover {
+  color: var(--orange-text);
+}
+
+/* Highlighted words in large headings on light sections */
+.home-platform-intro h2 span {
+  color: var(--orange-heading);
+}

@@ -114,7 +114,7 @@ async function renderRows() {
     <div class="network-empty-state">
       <strong>Your network starts here.</strong>
       <span>Find professionals, businesses and people across the Sangat.</span>
-      <a href="directory.html">Explore Directory <span aria-hidden="true">-&gt;</span></a>
+      <a href="directory.html">Explore Directory <span class="home-arrow" aria-hidden="true"></span></a>
     </div>`;
 
   lists.requests.innerHTML = incoming.map(({ connection, profile }) => renderRequestRow(connection, profile, "incoming")).join("") || `

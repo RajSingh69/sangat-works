@@ -1502,10 +1502,10 @@ function setProgressMessage(message) {
 }
 
 function renderSignedOutProjectAreas() {
-  if (myProjectsList) myProjectsList.innerHTML = `<div class="empty-state">Login to see your projects.</div>`;
-  if (openProjectsList) openProjectsList.innerHTML = `<div class="empty-state">Login to browse open projects.</div>`;
-  if (myApplicationsList) myApplicationsList.innerHTML = `<div class="empty-state">Login as a member to see your applications.</div>`;
-  if (myTeamsList) myTeamsList.innerHTML = `<div class="empty-state">Login as a member to see your project teams.</div>`;
+  if (myProjectsList) myProjectsList.innerHTML = `<div class="empty-state">Log in to see your projects.</div>`;
+  if (openProjectsList) openProjectsList.innerHTML = `<div class="empty-state">Log in to browse open projects.</div>`;
+  if (myApplicationsList) myApplicationsList.innerHTML = `<div class="empty-state">Log in as a member to see your applications.</div>`;
+  if (myTeamsList) myTeamsList.innerHTML = `<div class="empty-state">Log in as a member to see your project teams.</div>`;
   projectRoleChoiceSection?.classList.add("hidden");
   projectRoleSummarySection?.classList.add("hidden");
   setDashboardSectionsVisible([]);

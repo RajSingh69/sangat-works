@@ -133,7 +133,7 @@ function renderTiles() {
           <small>${escapeHtml([item.address, item.postcode].filter(Boolean).join(", ") || "Address not added")}</small>
         </span>
         <span class="industry-tile-count">${count ? `${count} member${count === 1 ? "" : "s"}` : "No members yet"}</span>
-        <span class="industry-tile-arrow" aria-hidden="true">&rarr;</span>
+        <span class="industry-tile-arrow home-arrow" aria-hidden="true"></span>
       </a>`;
   }).join("");
 }

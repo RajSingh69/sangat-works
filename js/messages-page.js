@@ -101,7 +101,7 @@ async function renderConversationList() {
 
   const unreadTotal = conversations.reduce((total, conversation) => total + Number(conversation.unreadCounts?.[currentUser.uid] || 0), 0);
   if (messagesTabCount) messagesTabCount.textContent = unreadTotal ? String(unreadTotal) : "";
-  conversationList.innerHTML = visible.join("") || `<div class="network-empty-state"><strong>Start a conversation.</strong><span>Connect with someone in the directory or message one of your existing connections.</span><a href="directory.html">Explore Directory <span aria-hidden="true">-&gt;</span></a></div>`;
+  conversationList.innerHTML = visible.join("") || `<div class="network-empty-state"><strong>Start a conversation.</strong><span>Connect with someone in the directory or message one of your existing connections.</span><a href="directory.html">Explore Directory <span class="home-arrow" aria-hidden="true"></span></a></div>`;
 }
 
 function renderConversationRow(conversation, profile) {

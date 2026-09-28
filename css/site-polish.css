@@ -1,0 +1,83 @@
+/*
+  Site-wide polish (loaded after contrast.css):
+  sidebar icons, pages that ran under the sidebar, and phone tap targets.
+*/
+
+/* Sidebar line icons and menu buttons */
+.app-nav-icon svg,
+.sidebar-collapse-btn svg,
+.mobile-menu-btn svg {
+  display: block;
+  flex: none;
+}
+
+.sidebar-collapse-btn,
+.mobile-menu-btn {
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px;
+}
+
+.sidebar-collapse-btn { display: inline-flex; }
+.sidebar-collapsed .sidebar-collapse-btn { display: none; }
+
+/* These pages kept their full width next to the sidebar and ran off the right edge */
+.member-shell-enabled .map-page {
+  max-width: min(1220px, calc(100% - var(--sw-sidebar) - 36px));
+}
+.member-shell-enabled .project-workspace-page {
+  max-width: min(1220px, calc(100% - var(--sw-sidebar) - 36px));
+}
+.member-shell-enabled .yp-page {
+  max-width: min(1240px, calc(100% - var(--sw-sidebar) - 36px));
+}
+.member-shell-enabled.sidebar-collapsed .map-page,
+.member-shell-enabled.sidebar-collapsed .project-workspace-page {
+  max-width: min(1220px, calc(100% - var(--sw-sidebar-collapsed) - 36px));
+}
+.member-shell-enabled.sidebar-collapsed .yp-page {
+  max-width: min(1240px, calc(100% - var(--sw-sidebar-collapsed) - 36px));
+}
+
+@media (max-width: 1020px) {
+  .member-shell-enabled .map-page,
+  .member-shell-enabled .project-workspace-page,
+  .member-shell-enabled .yp-page,
+  .member-shell-enabled.sidebar-collapsed .map-page,
+  .member-shell-enabled.sidebar-collapsed .project-workspace-page,
+  .member-shell-enabled.sidebar-collapsed .yp-page {
+    max-width: none;
+  }
+}
+
+.admin-user-card {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Phone tap targets: at least 44px tall */
+@media (max-width: 760px) {
+  .btn-small,
+  .site-header .logo,
+  .site-header nav a,
+  .directory-filter-close,
+  .directory-view-btn,
+  .network-filter,
+  .pj-back,
+  .story-text-link,
+  .pv-rating {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .directory-filter-close {
+    min-width: 44px;
+  }
+}

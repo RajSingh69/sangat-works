@@ -422,24 +422,3 @@
   border-radius: 0;
   box-shadow: none;
 }
-
-.profile-photo-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.photo-adjust-inline {
-  padding: 5px 10px;
-  font: inherit;
-  font-size: 0.78rem;
-  font-weight: 800;
-  color: #fff;
-  background: rgba(3, 31, 54, 0.85);
-  border: 0;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.photo-adjust-inline:hover { background: #ff7a18; }

@@ -79,6 +79,21 @@ function getInitial(email = "") {
   return (email.trim().slice(0, 1) || "S").toUpperCase();
 }
 
+// Line icons for the sidebar (24px grid, drawn with currentColor).
+const navSvg = (paths) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+const NAV_ICONS = {
+  home: navSvg('<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>'),
+  directory: navSvg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
+  network: navSvg('<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/>'),
+  opportunities: navSvg('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>'),
+  gurdwara: navSvg('<path d="M12 3c2 2 3 3.5 3 5.5H9C9 6.5 10 5 12 3Z"/><path d="M5 21v-8h14v8M3 21h18M9 21v-4a3 3 0 0 1 6 0v4M12 8.5V13"/>'),
+  young: navSvg('<path d="m2 9 10-5 10 5-10 5Z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/>'),
+  profile: navSvg('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>'),
+  admin: navSvg('<path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6Z"/><path d="m9 12 2 2 4-4"/>'),
+  collapse: navSvg('<path d="m15 6-6 6 6 6"/><path d="M20 5v14"/>'),
+  menu: navSvg('<path d="M4 7h16M4 12h16M4 17h16"/>')
+};
+
 function navItem(href, icon, label, extra = "") {
   const currentPage = window.location.pathname.split("/").pop() || "index.html";
   const targetPage = href.split("?")[0];
@@ -86,7 +101,7 @@ function navItem(href, icon, label, extra = "") {
   const active = currentPage === targetPage || networkActive ? "active" : "";
   return `
     <a href="${href}" class="app-nav-item ${active}" ${extra}>
-      <span class="app-nav-icon" aria-hidden="true">${icon}</span>
+      <span class="app-nav-icon" aria-hidden="true">${NAV_ICONS[icon] || ""}</span>
       <span class="app-nav-label">${label}</span>
     </a>
   `;
@@ -112,28 +127,28 @@ function renderAppShell(user, userData = {}) {
         <img class="sidebar-logo-full" src="assets/sangat-works-logo-white.png" alt="Sangat Works" />
         <img class="sidebar-logo-mark" src="assets/sangat-works-emblem-white.png" alt="" />
       </a>
-      <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse navigation">=</button>
+      <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse navigation">${NAV_ICONS.collapse}</button>
     </div>
 
     <nav class="member-sidebar-nav" aria-label="Member navigation">
-      ${navItem("index.html", "H", "Home")}
-      ${navItem("directory.html", "D", "Directory")}
-      ${isPaid ? navItem("network.html", "N", "My Network & Messages", "id=\"networkMessagesNavLink\"") : ""}
-      ${navItem("opportunities.html", "O", "Opportunities")}
-      ${isPaid ? navItem("skills-network.html", "G", "Gurdwara Network") : ""}
-      ${isPaid ? navItem("young-professionals.html", "Y", "Young Professionals") : ""}
+      ${navItem("index.html", "home", "Home")}
+      ${navItem("directory.html", "directory", "Directory")}
+      ${isPaid ? navItem("network.html", "network", "My Network & Messages", "id=\"networkMessagesNavLink\"") : ""}
+      ${navItem("opportunities.html", "opportunities", "Opportunities")}
+      ${isPaid ? navItem("skills-network.html", "gurdwara", "Gurdwara Network") : ""}
+      ${isPaid ? navItem("young-professionals.html", "young", "Young Professionals") : ""}
     </nav>
 
     <nav class="member-sidebar-nav member-sidebar-lower" aria-label="Account navigation">
-      ${navItem("profile.html", "U", "Profile")}
-      ${canAdmin ? navItem("admin.html", "A", "Admin") : ""}
+      ${navItem("profile.html", "profile", "Profile")}
+      ${canAdmin ? navItem("admin.html", "admin", "Admin") : ""}
     </nav>
   `;
 
   document.body.prepend(shell);
 
   accountArea.innerHTML = `
-    <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open navigation">Menu</button>
+    <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open navigation">${NAV_ICONS.menu}<span>Menu</span></button>
     <div class="account-menu">
       <button type="button" class="account-menu-trigger" id="accountMenuTrigger" aria-expanded="false">
         <span class="account-avatar">${escapeHtml(getInitial(user.email))}</span>
@@ -201,7 +216,7 @@ if (accountArea) {
 
       document.body.classList.remove("member-shell-enabled", "sidebar-open", "sidebar-collapsed");
       document.getElementById("memberAppShellNav")?.remove();
-      accountArea.innerHTML = `<a href="login.html" class="btn-small">Login</a>`;
+      accountArea.innerHTML = `<a href="login.html" class="btn-small">Log in</a>`;
       return;
     }
 
@@ -239,7 +254,7 @@ if (accountArea) {
       const total = Number(combinedNetworkActivity.messages || 0) + Number(combinedNetworkActivity.requests || 0);
       const badge = total ? `<span class="nav-unread-badge">${total}</span>` : "";
       networkLink.innerHTML = `
-        <span class="app-nav-icon" aria-hidden="true">N</span>
+        <span class="app-nav-icon" aria-hidden="true">${NAV_ICONS.network}</span>
         <span class="app-nav-label">My Network & Messages</span>
         ${badge}
       `;
