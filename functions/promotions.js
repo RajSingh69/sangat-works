@@ -15,9 +15,9 @@ const {
   verifyRequestUser
 } = require("./shared");
 
-// Stripe price IDs (one-off payments). Set these after creating the products in Stripe.
-const FEATURED_OPPORTUNITY_PRICE_ID = "";
-const BUSINESS_VERIFICATION_PRICE_ID = "";
+// Stripe price IDs (live, one-off payments).
+const FEATURED_OPPORTUNITY_PRICE_ID = "price_1UKeWRDbE6tXsxNUiI0qh7Wd"; // £5 one-off
+const BUSINESS_VERIFICATION_PRICE_ID = "price_1UKeXdDbE6tXsxNUCuMHpGUi"; // £15 one-off
 const FEATURED_OPPORTUNITY_DAYS = 14;
 
 const SITE_URL = "https://sangatworks.co.uk";
