@@ -272,7 +272,7 @@
 
 /* Homepage "Our Community & Mission" cards */
 .feature-developers .feature-media { background-image: linear-gradient(135deg, rgba(7, 54, 92, 0.1), rgba(255, 122, 24, 0.25)), url("../assets/rajanLA.jpeg"); background-position: center 33%; }
-.feature-sayvah .feature-media { background-image: linear-gradient(135deg, rgba(7, 54, 92, 0.05), rgba(255, 122, 24, 0.15)), url("../assets/sayvah/SayVah-Banner.jpg"); }
+.feature-sayvah .feature-media { background-image: linear-gradient(135deg, rgba(7, 54, 92, 0.05), rgba(255, 122, 24, 0.15)), url("../assets/sayvah/SayVah-Banner-web.jpg"); }
 .feature-charities .feature-media { background-image: radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.25), transparent 45%), linear-gradient(135deg, #ff7a18, #d95700 55%, #07365c); }
 
 @media (max-width: 900px) {

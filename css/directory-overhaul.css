@@ -480,7 +480,7 @@ body:has(.directory-page) {
   background-image:
     linear-gradient(90deg, rgba(4, 23, 39, 0.94) 0%, rgba(5, 31, 54, 0.84) 32%, rgba(7, 30, 51, 0.34) 68%, rgba(7, 30, 51, 0.18) 100%),
     linear-gradient(180deg, rgba(7, 30, 51, 0.20), rgba(7, 30, 51, 0.58)),
-    url("../assets/directory-header-image.png");
+    url("../assets/directory-header-image.jpg");
   background-size: cover;
   background-position: center;
   color: #fff;

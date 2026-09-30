@@ -138,7 +138,7 @@
 .feature-skills .feature-media { background-image: linear-gradient(135deg, rgba(7,54,92,.08), rgba(22,163,120,.22)), url("../assets/home-skills-placeholder.png"); }
 .feature-young .feature-media { background-image: linear-gradient(135deg, rgba(7,54,92,.08), rgba(124,58,237,.22)), url("../assets/home-young-professionals-placeholder.png"); }
 .feature-property .feature-media { background-image: linear-gradient(135deg, rgba(7,54,92,.08), rgba(247,147,30,.22)), url("../assets/home-property-placeholder.png"); }
-.feature-community .feature-media { background-image: linear-gradient(135deg, rgba(7,54,92,.08), rgba(255,122,24,.22)), url("../assets/home-community-placeholder.png"); }
+.feature-community .feature-media { background-image: linear-gradient(135deg, rgba(7,54,92,.08), rgba(255,122,24,.22)), url("../assets/home-community-placeholder.jpg"); }
 .feature-body { padding: 20px 24px 24px; }
 .feature-body h3 { margin: 0 0 8px; color: var(--home-ink); font-size: 1.24rem; }
 .feature-body p { min-height: 48px; margin: 0 0 16px; color: var(--home-muted); line-height: 1.45; }
@@ -216,7 +216,7 @@
   background-image:
     linear-gradient(180deg, rgba(3,31,54,0) 62%, rgba(3,31,54,.76) 100%),
     linear-gradient(90deg, rgba(3,31,54,.96) 0%, rgba(3,31,54,.9) 30%, rgba(3,31,54,.52) 55%, rgba(3,31,54,.1) 100%),
-    url("../assets/directory-header-image.png");
+    url("../assets/directory-header-image.jpg");
   background-size: cover;
   background-position: center right 34%;
   box-shadow: 0 18px 54px rgba(4, 42, 73, 0.24);
@@ -329,7 +329,7 @@
     border-radius: 10px;
     background-image:
       linear-gradient(180deg, rgba(3,31,54,.92) 0%, rgba(3,31,54,.78) 56%, rgba(3,31,54,.92) 100%),
-      url("../assets/directory-header-image.png");
+      url("../assets/directory-header-image.jpg");
     background-position: center right 28%;
   }
   .home-flagship-page .home-flagship-hero-inner {
