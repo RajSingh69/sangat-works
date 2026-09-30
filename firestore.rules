@@ -297,6 +297,14 @@ service cloud.firestore {
       allow delete: if signedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
     }
 
+    // Invite a friend (functions/referrals.js). Written only by Cloud Functions;
+    // members can see the invites they sent, and their own.
+    match /referrals/{referredUid} {
+      allow read: if signedIn() && (resource.data.referrerUid == request.auth.uid
+        || resource.data.referredUid == request.auth.uid || isAdmin());
+      allow create, update, delete: if false;
+    }
+
     // Reports on listings: any member can file one; only admins read them.
     match /marketplaceReports/{reportId} {
       allow create: if hasActiveMembership()

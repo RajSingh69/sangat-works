@@ -30,6 +30,30 @@ function getBillingType(selectedPlan) {
       : "subscription";
 }
 
+// Invite a friend: pricing.html?invite=<member uid> gives a free first month on
+// Monthly or Yearly (functions/referrals.js). Remembered for 30 days in case the
+// visitor looks around the site first.
+const INVITE_KEY = "swInvite";
+const SUBSCRIPTION_PLANS = ["monthly_subscription", "yearly_subscription"];
+
+function readInvite() {
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get("invite");
+    if (fromUrl && /^[A-Za-z0-9_-]{6,128}$/.test(fromUrl)) {
+      localStorage.setItem(INVITE_KEY, JSON.stringify({ uid: fromUrl, at: Date.now() }));
+      return fromUrl;
+    }
+    const saved = JSON.parse(localStorage.getItem(INVITE_KEY) || "null");
+    if (saved?.uid && Date.now() - saved.at < 30 * 86400000) return saved.uid;
+  } catch {
+    // Storage blocked: the invite only works from the link itself.
+  }
+  return "";
+}
+
+const inviterUid = readInvite();
+const inviteBanner = document.getElementById("inviteBanner");
+
 const emailBox = document.getElementById("checkoutEmailBox");
 const emailInput = document.getElementById("checkoutEmail");
 const checkoutMessage = document.getElementById("checkoutMessage");
@@ -46,6 +70,7 @@ function showCheckoutMessage(text) {
 // Signed-out visitors type the email for their new account here.
 onAuthStateChanged(auth, (user) => {
   if (emailBox) emailBox.hidden = Boolean(user);
+  if (inviteBanner) inviteBanner.hidden = Boolean(user) || !inviterUid || inviterUid === user?.uid;
 });
 
 function sendToLoginWithPlan(selectedPlan) {
@@ -100,7 +125,8 @@ async function startCheckout(selectedPlan, button) {
         priceId: selectedPrice,
         billingType,
         uid: user?.uid || "",
-        email: checkoutEmail.trim()
+        email: checkoutEmail.trim(),
+        referrerUid: !user && SUBSCRIPTION_PLANS.includes(selectedPlan) ? inviterUid : ""
       })
     });
 

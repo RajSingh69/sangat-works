@@ -465,11 +465,21 @@ function getTradesJobAccessExpiryDate() {
   return admin.firestore.Timestamp.fromDate(expiryDate);
 }
 
+// Newer Stripe API versions (2025-03 onwards, incl. the webhook's 2026 "dahlia")
+// moved some fields. These helpers read both the old and new places.
+function getInvoiceSubscriptionId(invoice) {
+  const value = invoice?.subscription || invoice?.parent?.subscription_details?.subscription || "";
+  return typeof value === "string" ? value : value?.id || "";
+}
+
+function getSubscriptionPeriodEnd(subscription) {
+  return subscription?.current_period_end || subscription?.items?.data?.[0]?.current_period_end || 0;
+}
+
 function getSubscriptionExpiryTimestamp(subscription) {
-  if (subscription.current_period_end) {
-    return admin.firestore.Timestamp.fromMillis(
-      subscription.current_period_end * 1000
-    );
+  const periodEnd = getSubscriptionPeriodEnd(subscription);
+  if (periodEnd) {
+    return admin.firestore.Timestamp.fromMillis(periodEnd * 1000);
   }
 
   if (subscription.cancel_at) {
@@ -490,6 +500,9 @@ function getSubscriptionFirestoreStatus(subscription) {
   ) {
     return "cancelling";
   }
+
+  // A free trial (Invite a friend, functions/referrals.js) is full membership.
+  if (subscription.status === "trialing") return "active";
 
   return subscription.status || "unknown";
 }
@@ -664,6 +677,7 @@ module.exports = {
   getPlanFromPriceId,
   getRoleAfterMembershipActivation,
   getSafeSignupSessionData,
+  getInvoiceSubscriptionId,
   getSubscriptionExpiryTimestamp,
   getSubscriptionFirestoreStatus,
   getSuperAdminProfileData,

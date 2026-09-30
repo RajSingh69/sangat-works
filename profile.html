@@ -210,6 +210,21 @@
     </div>
   </form>
 
+  <section class="ep-card ep-invite" id="inviteCard" aria-labelledby="inviteTitle" hidden>
+    <div class="ep-invite-copy">
+      <h2 id="inviteTitle">Invite friends, get a free month</h2>
+      <p class="ep-small">Share your link. Friends who join on Monthly or Yearly get their first month free, and once they make their first payment, you get a month free too.</p>
+    </div>
+    <div class="ep-invite-share">
+      <label class="ep-invite-link"><span class="sr-only">Your invite link</span><input type="text" id="inviteLink" readonly /></label>
+      <div class="ep-invite-actions">
+        <button type="button" class="ep-btn" id="inviteCopy">Copy link</button>
+        <a class="ep-btn is-primary" id="inviteWhatsApp" href="#" target="_blank" rel="noopener">Share on WhatsApp</a>
+      </div>
+      <p class="ep-small" id="inviteStats" aria-live="polite"></p>
+    </div>
+  </section>
+
   <section class="ep-overview ep-offers" aria-label="Boost your profile">
     <div class="ep-card ep-featured" id="featuredListingBox">
       <div>
@@ -243,5 +258,6 @@
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/profile.js"></script>
 <script type="module" src="js/onboarding.js"></script>
+<script type="module" src="js/invites.js"></script>
 </body>
 </html>

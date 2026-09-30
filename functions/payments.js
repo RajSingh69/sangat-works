@@ -13,6 +13,7 @@ const {
   getPlanFromPriceId,
   getRoleAfterMembershipActivation,
   getSafeSignupSessionData,
+  getInvoiceSubscriptionId,
   getSubscriptionExpiryTimestamp,
   getSubscriptionFirestoreStatus,
   getSuperAdminProfileData,
@@ -32,6 +33,7 @@ const {
 } = require("./shared");
 const { handlePromotionPayment } = require("./promotions");
 const { handleEmployerJobPayment } = require("./employer-jobs");
+const { REFERRAL_TRIAL_DAYS, getValidReferrer, handleReferralInvoicePaid, recordReferral } = require("./referrals");
 
 exports.verifyPaidSignupSession = onRequest(
   {
@@ -96,6 +98,14 @@ exports.verifyPaidSignupSession = onRequest(
           });
         });
 
+        if (session.metadata?.referrerUid) {
+          await recordReferral({
+            referrerUid: session.metadata.referrerUid,
+            referredUid: claimForUid,
+            signup: safeSessionData
+          }).catch((error) => console.error("Could not record referral:", error));
+        }
+
         return res.status(200).json({
           verified: true,
           claimed: true,
@@ -149,7 +159,7 @@ exports.createCheckoutSession = onRequest(
       const body =
         typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
-      const { priceId, billingType, uid, email } = body;
+      const { priceId, billingType, uid, email, referrerUid } = body;
 
       if (!priceId || !billingType || !email) {
         return res.status(400).json({
@@ -199,6 +209,12 @@ exports.createCheckoutSession = onRequest(
         billingType
       };
 
+      // Invited by a member: first month free on Monthly or Yearly (functions/referrals.js).
+      const referrer = billingType === "subscription" && !uid
+        ? await getValidReferrer(referrerUid, email)
+        : "";
+      if (referrer) metadata.referrerUid = referrer;
+
       const session = await stripe.checkout.sessions.create({
         mode: billingType === "subscription" ? "subscription" : "payment",
         customer_email: email,
@@ -226,9 +242,12 @@ exports.createCheckoutSession = onRequest(
         subscription_data:
           billingType === "subscription"
             ? {
-                metadata
+                metadata,
+                ...(referrer ? { trial_period_days: REFERRAL_TRIAL_DAYS } : {})
               }
-            : undefined
+            : undefined,
+        // Card is still taken during the free month, so it rolls on to paid.
+        ...(referrer ? { payment_method_collection: "always" } : {})
       });
 
       return res.status(200).json({
@@ -1067,12 +1086,15 @@ exports.stripeWebhook = onRequest(
         }
       }
 
+      if (event.type === "invoice.paid") {
+        const result = await handleReferralInvoicePaid(stripe, event.data.object);
+        console.log(`Referral check for invoice ${event.data.object.id}: ${result}`);
+      }
+
       if (event.type === "invoice.payment_failed") {
         const invoice = event.data.object;
         const subscriptionId =
-          typeof invoice.subscription === "string"
-            ? invoice.subscription
-            : invoice.subscription?.id || "";
+          getInvoiceSubscriptionId(invoice);
 
         if (!subscriptionId) {
           console.log("Payment failed invoice has no subscription ID");

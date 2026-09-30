@@ -215,3 +215,47 @@
 .home-feature-card .feature-media.is-logo img { object-fit: contain; padding: 4% 8%; box-sizing: border-box; filter: none; }
 .home-feature-card .feature-media.is-logo::before,
 .home-feature-card .feature-media.is-logo::after { display: none; }
+
+/* Invite a friend: profile card and pricing banner */
+.ep-invite {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 16px 28px;
+  align-items: center;
+  margin: 28px 0 0;
+  background: linear-gradient(135deg, #fff, #f3f7fb);
+}
+.ep-invite h2 { margin: 0 0 6px; }
+.ep-invite-share { display: grid; gap: 10px; }
+.ep-invite-link input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--home-ink);
+  background: #fff;
+  border: 1px solid var(--home-border);
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+.ep-invite-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.ep-invite .ep-small:empty { display: none; }
+@media (max-width: 760px) {
+  .ep-invite { grid-template-columns: 1fr; }
+  .ep-invite-actions > * { flex: 1 1 auto; }
+}
+
+.invite-banner {
+  display: grid;
+  gap: 4px;
+  max-width: 720px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  color: #0f3d2a;
+  background: #eaf7ef;
+  border: 1px solid rgba(31, 122, 77, 0.35);
+  border-radius: 12px;
+}
+.invite-banner strong { font-size: 1.05rem; }
+.invite-banner[hidden] { display: none; }
