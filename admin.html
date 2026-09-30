@@ -107,6 +107,27 @@
     <div id="adminReports" class="admin-users"></div>
   </section>
 
+  <section class="form-card wide" id="trialCodesSection">
+    <h2>Free Trial Codes</h2>
+    <p>Create a code for an event. People scan the QR code or open the link, sign up with no card, and get the free trial. The code stops working at the end of its last day or when the sign-up limit is reached.</p>
+    <form id="trialCodeCreateForm" class="trial-code-form">
+      <label>Code <input type="text" id="trialCodeNew" maxlength="32" placeholder="e.g. CAREERS26" autocapitalize="characters" required /></label>
+      <label>Trial length
+        <select id="trialCodeDays">
+          <option value="7">1 week</option>
+          <option value="14" selected>2 weeks</option>
+          <option value="30">1 month</option>
+        </select>
+      </label>
+      <label>Sign-up limit <input type="number" id="trialCodeMax" min="1" max="5000" value="200" required /></label>
+      <label>Last day to sign up <input type="date" id="trialCodeEnd" required /></label>
+      <label>Label <small>(optional, shown on the page)</small> <input type="text" id="trialCodeLabel" maxlength="80" placeholder="e.g. Careers Fair 2026" /></label>
+      <button type="submit" class="btn-small">Create code</button>
+    </form>
+    <p id="trialCodeMessage" role="status"></p>
+    <div id="adminTrialCodes" class="admin-users"></div>
+  </section>
+
   <section class="form-card wide">
     <h2>Learning Hub Reports</h2>
     <p>Posts and replies members have reported. Check each one, then take it down or dismiss the report.</p>
@@ -198,6 +219,7 @@
 
 </main>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/admin.js"></script>
 

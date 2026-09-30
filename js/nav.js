@@ -46,7 +46,10 @@ function escapeHtml(value = "") {
 function plainMembershipLabel(userData = {}) {
   if (!hasActiveSubscription(userData)) return "Not Paid";
   if (isSuperAdmin(userData)) return "Lifetime Member";
-  if (userData.accessType === "admin_granted_free_year") return "Free Charity Year";
+  const freeUntil = userData.freeAccessExpiresAt?.toDate ? userData.freeAccessExpiresAt.toDate() : null;
+  if (userData.accessType === "admin_granted_free_year" && freeUntil && freeUntil > new Date()) {
+    return userData.freeAccessSource === "trial" ? "Free Trial" : "Free Charity Year";
+  }
   if (userData.isFoundingMember === true) return `Founding #${userData.memberNumber || ""}`.trim();
   if (userData.subscriptionPlan === "yearly") return "Yearly Member";
   if (userData.subscriptionPlan === "monthly") return "Monthly Member";

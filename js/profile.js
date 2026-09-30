@@ -238,8 +238,8 @@ function getFreeAccessDaysRemaining(profile) {
 }
 
 function formatSubscriptionPlan(profile) {
-  if (isFreeCharityYear(profile)) {
-    return "Free Charity Year";
+  if (isFreeCharityYear(profile) && getFreeAccessDaysRemaining(profile) > 0) {
+    return profile.freeAccessSource === "trial" ? "Free Trial" : "Free Charity Year";
   }
 
   if (profile.isFoundingMember === true) {

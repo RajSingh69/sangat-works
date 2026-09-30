@@ -1,4 +1,5 @@
-import { auth } from "./firebase.js";
+import { auth, db } from "./firebase.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 import {
   onAuthStateChanged
@@ -68,8 +69,14 @@ function showCheckoutMessage(text) {
 }
 
 // Signed-out visitors type the email for their new account here.
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (emailBox) emailBox.hidden = Boolean(user);
+  const trialEnded = document.getElementById("trialEndedBanner");
+  if (user && trialEnded) {
+    const data = (await getDoc(doc(db, "users", user.uid)).catch(() => null))?.data() || {};
+    const ends = data.freeAccessExpiresAt?.toDate ? data.freeAccessExpiresAt.toDate() : null;
+    trialEnded.hidden = !(data.freeAccessSource === "trial" && ends && ends < new Date() && data.hasSubscription !== true);
+  }
   if (inviteBanner) inviteBanner.hidden = Boolean(user) || !inviterUid || inviterUid === user?.uid;
 });
 

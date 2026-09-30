@@ -58,9 +58,11 @@ export function isListedInDirectory(profile) {
     return true;
   }
 
+  // Free access (Free Charity Year or a free trial) counts while it lasts; after
+  // that, fall through so a paid membership still counts.
   if (profile.accessType === "admin_granted_free_year") {
     const freeAccessExpiryDate = timestampToDate(profile.freeAccessExpiresAt);
-    return Boolean(freeAccessExpiryDate && freeAccessExpiryDate > new Date());
+    if (freeAccessExpiryDate && freeAccessExpiryDate > new Date()) return true;
   }
 
   if (profile.hasSubscription !== true) {

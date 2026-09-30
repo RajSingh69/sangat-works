@@ -57,13 +57,11 @@ export function hasActiveSubscription(userData) {
     return true;
   }
 
+  // Free access (Free Charity Year or a free trial) counts while it lasts; after
+  // that, fall through so a paid membership still counts.
   if (userData.accessType === "admin_granted_free_year") {
     const freeAccessExpiryDate = getFreeAccessExpiryDate(userData);
-
-    return Boolean(
-      freeAccessExpiryDate &&
-      freeAccessExpiryDate > new Date()
-    );
+    if (freeAccessExpiryDate && freeAccessExpiryDate > new Date()) return true;
   }
 
   const expiryDate = getExpiryDate(userData);

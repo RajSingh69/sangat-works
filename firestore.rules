@@ -408,6 +408,27 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // Free trial codes for events (functions/trials.js). Admins create and manage
+    // them; members never read them directly (the freeTrial function checks codes).
+    match /trialCodes/{code} {
+      allow read, delete: if isAdmin();
+      allow create: if isAdmin()
+        && code.matches("[A-Z0-9-]{3,32}")
+        && request.resource.data.keys().hasOnly(["code", "days", "maxUses", "uses", "expiresAt", "active", "label", "createdAt", "createdBy"])
+        && request.resource.data.code == code
+        && request.resource.data.days in [7, 14, 30]
+        && request.resource.data.maxUses is int && request.resource.data.maxUses >= 1 && request.resource.data.maxUses <= 5000
+        && request.resource.data.uses == 0
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.active == true
+        && request.resource.data.label is string && request.resource.data.label.size() <= 80
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["active", "maxUses", "expiresAt", "label"])
+        && request.resource.data.active is bool
+        && request.resource.data.maxUses is int && request.resource.data.maxUses >= 1 && request.resource.data.maxUses <= 5000;
+    }
+
     // Invite a friend (functions/referrals.js). Written only by Cloud Functions;
     // members can see the invites they sent, and their own.
     match /referrals/{referredUid} {

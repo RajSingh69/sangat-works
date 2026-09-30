@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Free Trial | Sangat Works</title>
+  <meta name="description" content="Try Sangat Works free: the Sikh business and professional network. No card needed." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">Sangat Works</a>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="login.html" class="btn-small">Log in</a>
+  </nav>
+</header>
+
+<main class="page-wrap trial-page">
+  <section class="form-card trial-card">
+    <p class="eyebrow" id="trialEyebrow">Free trial</p>
+    <h1 id="trialTitle">Try Sangat Works free</h1>
+    <p class="trial-lead" id="trialLead">Checking your trial code...</p>
+
+    <ul class="trial-points" id="trialPoints" hidden>
+      <li>Find Sikh businesses, tradespeople and professionals near you</li>
+      <li>Jobs, mentoring and opportunities from the Sangat</li>
+      <li>Your own profile in the Directory</li>
+    </ul>
+
+    <!-- Only shown when the link has no code, or the code is wrong -->
+    <form id="trialCodeForm" class="auth-form" hidden>
+      <label for="trialCodeInput">Trial code</label>
+      <input type="text" id="trialCodeInput" autocomplete="off" autocapitalize="characters" placeholder="e.g. CAREERS26" required />
+      <button type="submit" class="btn-primary full">Check code</button>
+    </form>
+
+    <form id="trialSignupForm" class="auth-form" novalidate hidden>
+      <input type="text" id="trialName" placeholder="Full name" autocomplete="name" required />
+      <input type="email" id="trialEmail" placeholder="Email address" autocomplete="email" required />
+      <div class="password-wrap">
+        <input type="password" id="trialPassword" placeholder="Create a password (6+ characters)" autocomplete="new-password" required />
+        <button class="toggle-password" type="button" data-target="trialPassword">Show</button>
+      </div>
+      <button type="submit" class="btn-primary full" id="trialSubmit">Start my free trial</button>
+      <p class="trial-small">No card needed. We won't charge you anything. When your trial ends you can choose a plan to stay.</p>
+    </form>
+
+    <p id="trialMessage" class="message" role="status"></p>
+    <p class="trial-small" id="trialLogin">Already have an account? <a href="login.html">Log in</a></p>
+  </section>
+</main>
+
+<script type="module" src="js/trial.js"></script>
+<script>
+  document.querySelectorAll(".toggle-password").forEach((button) => {
+    button.addEventListener("click", () => {
+      const input = document.getElementById(button.getAttribute("data-target"));
+      if (!input) return;
+      const isPassword = input.type === "password";
+      input.type = isPassword ? "text" : "password";
+      button.textContent = isPassword ? "Hide" : "Show";
+    });
+  });
+</script>
+</body>
+</html>

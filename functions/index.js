@@ -13,5 +13,6 @@ Object.assign(
   { createPromotionCheckout: require("./promotions").createPromotionCheckout },
   { createEmployerJobCheckout: require("./employer-jobs").createEmployerJobCheckout },
   require("./founder-connect"),
-  require("./learning")
+  require("./learning"),
+  { freeTrial: require("./trials").freeTrial }
 );

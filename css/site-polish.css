@@ -268,3 +268,49 @@
   --home-border: rgba(8, 46, 80, 0.12);
   --home-orange: #ff7a18;
 }
+
+/* Free trial: sign-up page and admin codes */
+.trial-card { max-width: 560px; margin-inline: auto; }
+.trial-card [hidden] { display: none !important; }
+.trial-lead { font-size: 1.05rem; }
+.trial-points { display: grid; gap: 6px; margin: 0 0 18px; padding-left: 20px; color: var(--text, #172033); }
+.trial-small { margin: 12px 0 0; font-size: 0.9rem; color: var(--muted); }
+.trial-small:empty { display: none; }
+.trial-ended-banner { color: #3b2a00; background: #fff6df; border-color: rgba(155, 106, 0, 0.35); }
+.trial-code-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  align-items: end;
+  margin: 14px 0 8px;
+}
+.trial-code-form label { display: grid; gap: 6px; font-weight: 700; }
+.trial-code-form small { font-weight: 500; color: var(--muted); }
+.trial-code-form input,
+.trial-code-form select { min-height: 44px; padding: 0 10px; font: inherit; border: 1px solid var(--border); border-radius: 10px; }
+.trial-code-form .btn-small { min-height: 44px; }
+.trial-qr { margin-top: 12px; }
+.trial-qr-image img,
+.trial-qr-image canvas { width: min(260px, 100%); height: auto; padding: 12px; background: #fff; border: 1px solid var(--border); border-radius: 12px; }
+
+/* Password box with its Show button inside (trial and paid sign-up pages) */
+.form-card .password-wrap { position: relative; }
+.form-card .password-wrap input { width: 100%; padding-right: 84px; box-sizing: border-box; }
+.form-card .toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  min-height: 34px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--blue, #123c69);
+  background: #eaf4ff;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+  cursor: pointer;
+}
+.form-card .toggle-password:hover { background: #ddecff; transform: translateY(-50%); }

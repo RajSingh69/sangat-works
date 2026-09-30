@@ -139,9 +139,9 @@ function isActiveMember(userData) {
 
   if (isAdminUser(userData)) return true;
 
+  // Free access (Free Charity Year or a free trial) counts while it lasts; after
+  // that, a paid membership still counts.
   if (hasActiveFreeCharityYear(userData)) return true;
-
-  if (userData.accessType === "admin_granted_free_year") return false;
 
   if (userData.hasSubscription !== true) return false;
 

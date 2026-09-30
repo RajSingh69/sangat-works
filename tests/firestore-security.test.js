@@ -837,6 +837,33 @@ describe("Firestore security rules: ranking fields are admin/server only", () =>
     await assertSucceeds(getDoc(doc(modDb, "learnReports/lr1")));
   });
 
+  it("lets only admins create and manage free trial codes", async () => {
+    await testEnv.clearFirestore();
+    await seed(testEnv, "users/alice", { uid: "alice", role: "member", hasSubscription: true, subscriptionStatus: "active" });
+    await seed(testEnv, "users/mod", { uid: "mod", role: "admin" });
+    const { Timestamp } = require("firebase/firestore");
+    const code = (extra = {}) => ({
+      code: "CAREERS26", days: 14, maxUses: 100, uses: 0, expiresAt: Timestamp.fromMillis(Date.now() + 7 * 86400000),
+      active: true, label: "Careers fair", createdAt: serverTimestamp(), createdBy: "mod", ...extra
+    });
+    const aliceDb = testEnv.authenticatedContext("alice").firestore();
+    const modDb = testEnv.authenticatedContext("mod").firestore();
+
+    await assertFails(setDoc(doc(aliceDb, "trialCodes/CAREERS26"), code({ createdBy: "alice" })));
+    await assertFails(getDoc(doc(aliceDb, "trialCodes/CAREERS26")));
+    await assertFails(setDoc(doc(modDb, "trialCodes/CAREERS26"), code({ days: 365 })));
+    await assertFails(setDoc(doc(modDb, "trialCodes/CAREERS26"), code({ uses: 50 })));
+    await assertFails(setDoc(doc(modDb, "trialCodes/lowercase"), code({ code: "lowercase" })));
+    await assertSucceeds(setDoc(doc(modDb, "trialCodes/CAREERS26"), code()));
+    await assertSucceeds(updateDoc(doc(modDb, "trialCodes/CAREERS26"), { active: false }));
+    await assertFails(updateDoc(doc(modDb, "trialCodes/CAREERS26"), { uses: 5 }));
+    await assertFails(updateDoc(doc(modDb, "trialCodes/CAREERS26"), { days: 30 }));
+
+    // Trial fields on a member's own record can't be set by the member
+    await assertFails(updateDoc(doc(aliceDb, "users/alice"), { freeAccessSource: "trial" }));
+    await assertFails(updateDoc(doc(aliceDb, "users/alice"), { trialUsedAt: null }));
+  });
+
   it("shows only approved employer jobs to members and keeps employer contacts private", async () => {
     await testEnv.clearFirestore();
     await seed(testEnv, "users/alice", { uid: "alice", role: "member", hasSubscription: true, subscriptionStatus: "active" });

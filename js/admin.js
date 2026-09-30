@@ -20,6 +20,7 @@ import {
   query,
   orderBy,
   serverTimestamp,
+  setDoc,
   where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -147,11 +148,10 @@ function isFreeCharityYearActive(user) {
 
 function getAccountLabel(user) {
   if (isAdminUser(user)) return "Admin";
-  if (isFreeCharityYear(user)) {
-    return isFreeCharityYearActive(user)
-      ? "Free Charity Year"
-      : "Expired Free Access";
+  if (isFreeCharityYearActive(user)) {
+    return user.freeAccessSource === "trial" ? "Free Trial" : "Free Charity Year";
   }
+  if (isFreeCharityYear(user) && !isPaidUser(user)) return "Expired Free Access";
 
   return isPaidUser(user) ? "Paid Member" : "Not Paid";
 }
@@ -915,6 +915,148 @@ function setupVerificationActions() {
   });
 }
 
+// Free trial codes for events (trialCodes; claimed through functions/trials.js).
+const TRIAL_LENGTHS = { 7: "1 week", 14: "2 weeks", 30: "1 month" };
+const trialLink = code => `https://sangatworks.co.uk/trial.html?code=${encodeURIComponent(code)}`;
+
+async function loadTrialCodes() {
+  const container = document.getElementById("adminTrialCodes");
+  if (!container) return;
+
+  try {
+    const snap = await getDocs(collection(db, "trialCodes"));
+    const codes = snap.docs.map(codeSnap => codeSnap.data())
+      .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+    if (!codes.length) {
+      container.innerHTML = `<div class="empty-state">No trial codes yet. Create one above.</div>`;
+      return;
+    }
+    const now = new Date();
+    container.innerHTML = codes.map(code => {
+      const ends = code.expiresAt?.toDate ? code.expiresAt.toDate() : null;
+      const ended = ends && ends < now;
+      const full = (code.uses || 0) >= code.maxUses;
+      const state = !code.active ? "Switched off" : ended ? "Ended" : full ? "Limit reached" : "Live";
+      const link = trialLink(code.code);
+      return `
+        <details class="admin-user-card trial-code-card" ${state === "Live" ? "open" : ""}>
+          <summary><strong>${escapeHtml(code.code)}</strong> &middot; ${escapeHtml(TRIAL_LENGTHS[code.days] || `${code.days} days`)} &middot; ${escapeHtml(state)} &middot; ${code.uses || 0} / ${code.maxUses} signed up</summary>
+          ${code.label ? `<p>${escapeHtml(code.label)}</p>` : ""}
+          <p><strong>Sign-ups close:</strong> ${ends ? escapeHtml(ends.toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })) : "Not set"}</p>
+          <p><strong>Link:</strong> <a href="${escapeHtml(link)}" target="_blank" rel="noopener">${escapeHtml(link)}</a></p>
+          <div class="card-links">
+            <button type="button" class="btn-small trial-code-action" data-code="${escapeHtml(code.code)}" data-action="qr">Show QR code</button>
+            <button type="button" class="btn-small trial-code-action" data-code="${escapeHtml(code.code)}" data-action="copy">Copy link</button>
+            <button type="button" class="btn-small trial-code-action" data-code="${escapeHtml(code.code)}" data-action="${code.active ? "off" : "on"}">${code.active ? "Switch off" : "Switch on"}</button>
+          </div>
+          <div class="trial-qr" data-qr-for="${escapeHtml(code.code)}" hidden></div>
+        </details>`;
+    }).join("");
+  } catch (error) {
+    console.error("Could not load trial codes:", error);
+    container.innerHTML = `<div class="empty-state">Could not load trial codes.</div>`;
+  }
+}
+
+function showTrialQr(code) {
+  const box = document.querySelector(`[data-qr-for="${CSS.escape(code)}"]`);
+  if (!box) return;
+  if (!box.hidden) {
+    box.hidden = true;
+    return;
+  }
+  box.hidden = false;
+  box.innerHTML = `<div class="trial-qr-image"></div><p><a class="btn-small" download="sangat-works-trial-${escapeHtml(code)}.png" href="#" data-qr-download>Download QR code</a></p>`;
+  if (typeof window.QRCode !== "function") {
+    box.querySelector(".trial-qr-image").textContent = "The QR code couldn't load. Refresh the page and try again, or share the link instead.";
+    return;
+  }
+  new window.QRCode(box.querySelector(".trial-qr-image"), { text: trialLink(code), width: 512, height: 512, correctLevel: window.QRCode.CorrectLevel.M });
+  // The library draws a canvas (and an image copy); offer it as a download once drawn.
+  setTimeout(() => {
+    const canvas = box.querySelector("canvas");
+    const download = box.querySelector("[data-qr-download]");
+    if (canvas && download) download.href = canvas.toDataURL("image/png");
+  }, 150);
+}
+
+function setupTrialCodes() {
+  const form = document.getElementById("trialCodeCreateForm");
+  const container = document.getElementById("adminTrialCodes");
+  const message = document.getElementById("trialCodeMessage");
+  if (!form || !container) return;
+
+  // Default the last day to the coming Sunday.
+  const endInput = document.getElementById("trialCodeEnd");
+  const sunday = new Date();
+  sunday.setDate(sunday.getDate() + ((7 - sunday.getDay()) % 7));
+  endInput.value = `${sunday.getFullYear()}-${String(sunday.getMonth() + 1).padStart(2, "0")}-${String(sunday.getDate()).padStart(2, "0")}`;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const code = document.getElementById("trialCodeNew").value.trim().toUpperCase().replace(/[^A-Z0-9-]/g, "");
+    const days = Number(document.getElementById("trialCodeDays").value);
+    const maxUses = Math.round(Number(document.getElementById("trialCodeMax").value));
+    const endDate = endInput.value;
+    const label = document.getElementById("trialCodeLabel").value.trim().slice(0, 80);
+
+    if (code.length < 3) { message.textContent = "Codes need at least 3 letters or numbers."; return; }
+    if (!(maxUses >= 1 && maxUses <= 5000)) { message.textContent = "Set a sign-up limit between 1 and 5000."; return; }
+    if (!endDate) { message.textContent = "Pick the last day people can sign up."; return; }
+    // Open until the very end of the chosen day (11:59:59pm).
+    const expiresAt = new Date(`${endDate}T23:59:59`);
+    if (expiresAt < new Date()) { message.textContent = "That day has already passed."; return; }
+
+    const button = form.querySelector("button[type=submit]");
+    button.disabled = true;
+    try {
+      const ref = doc(db, "trialCodes", code);
+      if ((await getDoc(ref)).exists()) {
+        message.textContent = `${code} already exists. Pick a different code.`;
+        return;
+      }
+      await setDoc(ref, {
+        code, days, maxUses, uses: 0, expiresAt, active: true, label,
+        createdAt: serverTimestamp(), createdBy: auth.currentUser?.uid || ""
+      });
+      message.textContent = `${code} created. Show its QR code below.`;
+      form.reset();
+      document.getElementById("trialCodeDays").value = "14";
+      document.getElementById("trialCodeMax").value = "200";
+      endInput.value = endDate;
+      await loadTrialCodes();
+      showTrialQr(code);
+    } catch (error) {
+      console.error("Could not create trial code:", error);
+      message.textContent = "That didn't work. Please try again.";
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  container.addEventListener("click", async (event) => {
+    const button = event.target.closest(".trial-code-action");
+    if (!button) return;
+    const { code, action } = button.dataset;
+    if (action === "qr") return showTrialQr(code);
+    if (action === "copy") {
+      await navigator.clipboard.writeText(trialLink(code)).catch(() => {});
+      button.textContent = "Copied";
+      setTimeout(() => { button.textContent = "Copy link"; }, 2000);
+      return;
+    }
+    button.disabled = true;
+    try {
+      await updateDoc(doc(db, "trialCodes", code), { active: action === "on" });
+      await loadTrialCodes();
+    } catch (error) {
+      console.error("Trial code update failed:", error);
+      message.textContent = "That didn't work. Please try again.";
+      button.disabled = false;
+    }
+  });
+}
+
 // Reported Learning Hub posts and replies (learnReports, filed from learning.html).
 async function loadLearnReports() {
   const container = document.getElementById("adminLearnReports");
@@ -1183,6 +1325,8 @@ async function loadAdminDashboard() {
   setupMarketplaceReportActions();
   await loadLearnReports();
   setupLearnReportActions();
+  await loadTrialCodes();
+  setupTrialCodes();
 }
 
 onAuthStateChanged(auth, async (user) => {
