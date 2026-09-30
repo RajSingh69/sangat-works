@@ -915,6 +915,86 @@ function setupVerificationActions() {
   });
 }
 
+// Reported Marketplace listings (marketplaceReports, filed from marketplace.html).
+async function loadMarketplaceReports() {
+  const container = document.getElementById("adminMarketplaceReports");
+  if (!container) return;
+
+  try {
+    const reportsSnap = await getDocs(query(collection(db, "marketplaceReports"), where("status", "==", "open")));
+    if (reportsSnap.empty) {
+      container.innerHTML = `<div class="empty-state">No open marketplace reports.</div>`;
+      return;
+    }
+
+    const rows = await Promise.all(reportsSnap.docs.map(async reportSnap => {
+      const report = reportSnap.data();
+      const [listingSnap, reporterSnap] = await Promise.all([
+        getDoc(doc(db, "marketplaceListings", report.listingId)).catch(() => null),
+        getDoc(doc(db, "users", report.reporterId)).catch(() => null)
+      ]);
+      return {
+        id: reportSnap.id,
+        report,
+        listing: listingSnap?.exists() ? listingSnap.data() : null,
+        reporter: reporterSnap?.exists() ? reporterSnap.data() : {}
+      };
+    }));
+
+    container.innerHTML = rows.map(({ id, report, listing, reporter }) => {
+      const reported = report.createdAt?.toDate ? report.createdAt.toDate().toLocaleDateString("en-GB") : "";
+      const reporterName = reporter.fullName || reporter.displayName || reporter.email || "A member";
+      const listingLine = listing
+        ? `<a href="marketplace.html?listing=${encodeURIComponent(report.listingId)}" target="_blank" rel="noopener">${escapeHtml(listing.title || "Listing")}</a> &middot; ${escapeHtml(listing.town || "")} &middot; ${escapeHtml(listing.status || "")}`
+        : "Listing already deleted";
+      return `
+        <details class="admin-user-card" open>
+          <summary><strong>${escapeHtml(listing?.title || "Deleted listing")}</strong> &middot; reported ${escapeHtml(reported)}</summary>
+          <p>${listingLine}</p>
+          <p><strong>Reason:</strong> ${escapeHtml(report.reason || "")}</p>
+          <p><strong>Reported by:</strong> ${escapeHtml(reporterName)}</p>
+          <div class="card-links">
+            ${listing && listing.status !== "removed" ? `<button type="button" class="btn-small marketplace-report-action" data-id="${escapeHtml(id)}" data-listing="${escapeHtml(report.listingId)}" data-action="remove">Take listing down</button>` : ""}
+            <button type="button" class="btn-small marketplace-report-action" data-id="${escapeHtml(id)}" data-action="dismiss">${listing && listing.status !== "removed" ? "Dismiss report" : "Close report"}</button>
+          </div>
+        </details>`;
+    }).join("");
+  } catch (error) {
+    console.error("Could not load marketplace reports:", error);
+    container.innerHTML = `<div class="empty-state">Could not load marketplace reports.</div>`;
+  }
+}
+
+function setupMarketplaceReportActions() {
+  const container = document.getElementById("adminMarketplaceReports");
+  if (!container) return;
+
+  container.addEventListener("click", async (event) => {
+    const button = event.target.closest(".marketplace-report-action");
+    if (!button) return;
+    const { id, listing, action } = button.dataset;
+    if (action === "remove" && !window.confirm("Take this listing down? The seller will see it as taken down.")) return;
+
+    button.disabled = true;
+    try {
+      if (action === "remove") {
+        await updateDoc(doc(db, "marketplaceListings", listing), { status: "removed", updatedAt: serverTimestamp() });
+      }
+      await updateDoc(doc(db, "marketplaceReports", id), {
+        status: action === "remove" ? "actioned" : "dismissed",
+        reviewedAt: serverTimestamp(),
+        reviewedBy: auth.currentUser?.uid || ""
+      });
+      adminStatus.textContent = action === "remove" ? "Listing taken down." : "Report closed.";
+      await loadMarketplaceReports();
+    } catch (error) {
+      console.error("Marketplace report action failed:", error);
+      adminStatus.textContent = "That didn't work. Please try again.";
+      button.disabled = false;
+    }
+  });
+}
+
 // Paid job posts from non-member employers (functions/employer-jobs.js).
 async function loadEmployerJobs() {
   const container = document.getElementById("adminEmployerJobs");
@@ -1013,6 +1093,8 @@ async function loadAdminDashboard() {
   setupVerificationActions();
   await loadEmployerJobs();
   setupEmployerJobActions();
+  await loadMarketplaceReports();
+  setupMarketplaceReportActions();
 }
 
 onAuthStateChanged(auth, async (user) => {

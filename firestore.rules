@@ -256,6 +256,60 @@ service cloud.firestore {
       allow delete: if signedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
     }
 
+    // Marketplace (marketplace.html, js/marketplace.js): members sell things to
+    // each other. Buyers message the seller; no payments go through the site.
+    function validListing(data) {
+      return data.keys().hasOnly(["ownerId", "title", "description", "price", "priceType", "category",
+          "condition", "town", "photos", "status", "createdAt", "updatedAt"])
+        && data.keys().hasAll(["ownerId", "title", "description", "price", "priceType", "category",
+          "condition", "town", "photos", "status", "createdAt", "updatedAt"])
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 100
+        && data.description is string && data.description.size() <= 2000
+        && data.price is number && data.price >= 0 && data.price <= 1000000
+        && data.priceType in ["fixed", "offers", "free"]
+        && data.category in ["home-garden", "furniture", "electronics", "vehicles", "clothing",
+          "baby-kids", "sports-leisure", "books-music", "tools-diy", "cultural", "other"]
+        && data.condition in ["new", "like-new", "good", "fair"]
+        && data.town is string && data.town.size() >= 2 && data.town.size() <= 80
+        && data.photos is list && data.photos.size() <= 4
+        && data.status in ["active", "sold"];
+    }
+
+    match /marketplaceListings/{listingId} {
+      allow read: if hasActiveMembership();
+      allow create: if hasActiveMembership()
+        && validListing(request.resource.data)
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.status == "active"
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if hasActiveMembership() && (
+        (resource.data.ownerId == request.auth.uid
+          && resource.data.status != "removed"
+          && validListing(request.resource.data)
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time)
+        || (isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "updatedAt"])
+          && request.resource.data.status in ["active", "removed"])
+      );
+      allow delete: if signedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+
+    // Reports on listings: any member can file one; only admins read them.
+    match /marketplaceReports/{reportId} {
+      allow create: if hasActiveMembership()
+        && request.resource.data.keys().hasOnly(["listingId", "reporterId", "reason", "status", "createdAt"])
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.listingId is string
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() >= 3 && request.resource.data.reason.size() <= 500
+        && request.resource.data.status == "open"
+        && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if isAdmin();
+    }
+
     // Paid job posts from non-member employers (functions/employer-jobs.js). Created and
     // marked paid only by the server; admins approve, reject or take them down.
     match /employerJobs/{jobId} {

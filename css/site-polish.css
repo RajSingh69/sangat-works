@@ -209,3 +209,9 @@
 .load-error strong { font-size: 1rem; }
 .load-error > span { color: var(--muted); font-weight: 600; }
 .load-error .btn-small { margin-top: 6px; min-height: 44px; }
+
+/* Homepage card showing the logo: whole, not cropped like a photo */
+.home-feature-card .feature-media.is-logo { background: #faf3e6; }
+.home-feature-card .feature-media.is-logo img { object-fit: contain; padding: 4% 8%; box-sizing: border-box; filter: none; }
+.home-feature-card .feature-media.is-logo::before,
+.home-feature-card .feature-media.is-logo::after { display: none; }

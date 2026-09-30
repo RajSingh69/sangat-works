@@ -27,6 +27,13 @@ service firebase.storage {
       allow delete: if isOwner(uid);
     }
 
+    // Marketplace listing photos: each member uploads into their own folder.
+    match /marketplacePhotos/{uid}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid) && isImageUpload();
+      allow delete: if isOwner(uid);
+    }
+
     function parivarMessage(messageId) {
       return firestore.get(/databases/(default)/documents/parivarMessages/$(messageId)).data;
     }

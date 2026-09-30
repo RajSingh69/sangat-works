@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marketplace | Sangat Works</title>
+  <meta name="description" content="Buy and sell with Sangat Works members: furniture, electronics, cars, clothes and more." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">Sangat Works</a>
+  <nav>
+    <a href="index.html">Home</a>
+    <div id="accountArea"></div>
+  </nav>
+</header>
+
+<main class="home-flagship-page story-page marketplace-page">
+  <section class="story-hero">
+    <div class="story-wrap">
+      <span class="home-section-kicker">Marketplace</span>
+      <h1>Buy and sell <span>within the Sangat.</span></h1>
+      <p>
+        Furniture, electronics, cars, clothes and more from Sangat Works members.
+        See something you like? Message the seller and sort out payment and collection between you.
+      </p>
+      <div class="story-actions">
+        <button type="button" class="btn-primary" data-open-listing-form>Sell something</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="story-section opp-board-section" aria-labelledby="mkBoardTitle">
+    <div class="story-wrap">
+      <div class="opp-board-head">
+        <div>
+          <span class="home-section-kicker">Browse</span>
+          <h2 id="mkBoardTitle">For sale</h2>
+        </div>
+        <p class="opp-count" id="mkCount" aria-live="polite">Loading...</p>
+      </div>
+
+      <div class="opp-filters mk-filters">
+        <input type="search" id="mkSearch" placeholder="Search items or towns..." aria-label="Search the marketplace" />
+        <select id="mkSort" aria-label="Sort">
+          <option value="newest">Newest</option>
+          <option value="price-low">Price: low to high</option>
+          <option value="price-high">Price: high to low</option>
+        </select>
+        <label class="opp-check"><input type="checkbox" id="mkFree" /> Free only</label>
+        <label class="opp-check"><input type="checkbox" id="mkMine" /> My listings</label>
+      </div>
+
+      <div class="opp-type-tabs" id="mkCategoryTabs" role="tablist" aria-label="Category"></div>
+
+      <div class="mk-grid" id="mkResults" aria-live="polite">
+        <div class="opp-empty">Loading listings...</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Sell / edit form -->
+<div class="opp-modal-backdrop" id="mkFormModal" hidden>
+  <div class="opp-modal" role="dialog" aria-modal="true" aria-labelledby="mkFormTitle">
+    <button type="button" class="opp-modal-close" data-close-listing-form aria-label="Close">&times;</button>
+    <h2 id="mkFormTitle">Sell something</h2>
+    <p class="opp-modal-lead">Members across Sangat Works will see this and can message you about it.</p>
+
+    <form id="mkForm" class="opp-form" novalidate>
+      <div class="mk-photo-picker">
+        <span class="mk-photo-label">Photos <small>(up to 4, the first is the cover)</small></span>
+        <div class="mk-photo-list" id="mkPhotoList"></div>
+        <label class="btn-secondary mk-photo-add" id="mkPhotoAdd">
+          Add photos
+          <input type="file" id="mkPhotoInput" accept="image/*" multiple hidden />
+        </label>
+      </div>
+      <label>What are you selling?
+        <input type="text" id="mkFormTitleInput" maxlength="100" placeholder="e.g. Oak dining table, iPhone 13, Kids' bike" required />
+      </label>
+      <div class="opp-form-row">
+        <label>Category
+          <select id="mkFormCategory" required></select>
+        </label>
+        <label>Condition
+          <select id="mkFormCondition" required>
+            <option value="new">New</option>
+            <option value="like-new">Like new</option>
+            <option value="good" selected>Good</option>
+            <option value="fair">Fair</option>
+          </select>
+        </label>
+      </div>
+      <div class="opp-form-row">
+        <label>Price (£)
+          <input type="number" id="mkFormPrice" min="0" max="1000000" step="0.01" inputmode="decimal" placeholder="e.g. 120" />
+        </label>
+        <label>Pricing
+          <select id="mkFormPriceType">
+            <option value="fixed">Fixed price</option>
+            <option value="offers">Open to offers</option>
+            <option value="free">Free</option>
+          </select>
+        </label>
+      </div>
+      <label>Town
+        <input type="text" id="mkFormTown" maxlength="80" placeholder="e.g. Leicester" required />
+      </label>
+      <label><span>Description <small>(optional)</small></span>
+        <textarea id="mkFormDescription" rows="5" maxlength="2000" placeholder="Size, age, any marks, collection or delivery..."></textarea>
+      </label>
+      <p class="opp-form-message" id="mkFormMessage" role="status"></p>
+      <div class="opp-form-actions">
+        <button type="button" class="btn-secondary" data-close-listing-form>Cancel</button>
+        <button type="submit" class="btn-primary" id="mkFormSubmit">Post listing</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Listing detail -->
+<div class="opp-modal-backdrop" id="mkDetailModal" hidden>
+  <div class="opp-modal mk-detail" role="dialog" aria-modal="true" aria-labelledby="mkDetailTitle">
+    <button type="button" class="opp-modal-close" data-close-listing-detail aria-label="Close">&times;</button>
+    <div id="mkDetailBody"></div>
+  </div>
+</div>
+
+<footer>
+  <p>Sangat Works. Built for community support.</p>
+</footer>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/marketplace.js"></script>
+</body>
+</html>

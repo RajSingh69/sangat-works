@@ -735,6 +735,51 @@ describe("Firestore security rules: ranking fields are admin/server only", () =>
     await assertFails(updateDoc(doc(aliceDb, "opportunities/o8"), { featuredUntil: Timestamp.fromMillis(Date.now() + 90 * 86400000), updatedAt: serverTimestamp() }));
   });
 
+  it("lets members sell on the Marketplace, and only the seller or an admin change listings", async () => {
+    await testEnv.clearFirestore();
+    const member = uid => ({ uid, role: "member", hasSubscription: true, subscriptionStatus: "active" });
+    await seed(testEnv, "users/alice", member("alice"));
+    await seed(testEnv, "users/bob", member("bob"));
+    await seed(testEnv, "users/lapsed", { uid: "lapsed", role: "member", hasSubscription: false });
+    await seed(testEnv, "users/mod", { uid: "mod", role: "admin" });
+    const listing = (ownerId, extra = {}) => ({
+      ownerId, title: "Oak dining table", description: "Seats six, collection only.", price: 120,
+      priceType: "offers", category: "furniture", condition: "good", town: "Leicester", photos: [],
+      status: "active", createdAt: serverTimestamp(), updatedAt: serverTimestamp(), ...extra
+    });
+    const aliceDb = testEnv.authenticatedContext("alice").firestore();
+    const bobDb = testEnv.authenticatedContext("bob").firestore();
+    const modDb = testEnv.authenticatedContext("mod").firestore();
+
+    await assertSucceeds(setDoc(doc(aliceDb, "marketplaceListings/l1"), listing("alice")));
+    await assertFails(setDoc(doc(aliceDb, "marketplaceListings/l2"), listing("bob")));
+    await assertFails(setDoc(doc(aliceDb, "marketplaceListings/l3"), listing("alice", { category: "weapons" })));
+    await assertFails(setDoc(doc(aliceDb, "marketplaceListings/l4"), listing("alice", { price: -5 })));
+    await assertFails(setDoc(doc(aliceDb, "marketplaceListings/l5"), listing("alice", { photos: ["a", "b", "c", "d", "e"] })));
+    await assertFails(setDoc(doc(aliceDb, "marketplaceListings/l6"), listing("alice", { status: "removed" })));
+    await assertFails(setDoc(doc(aliceDb, "marketplaceListings/l7"), listing("alice", { featured: true })));
+    await assertFails(setDoc(doc(testEnv.authenticatedContext("lapsed").firestore(), "marketplaceListings/l8"), listing("lapsed")));
+    await assertFails(getDoc(doc(testEnv.unauthenticatedContext().firestore(), "marketplaceListings/l1")));
+    await assertSucceeds(getDoc(doc(bobDb, "marketplaceListings/l1")));
+
+    await assertFails(updateDoc(doc(bobDb, "marketplaceListings/l1"), { status: "sold", updatedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(doc(aliceDb, "marketplaceListings/l1"), { status: "sold", updatedAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(aliceDb, "marketplaceListings/l1"), { ownerId: "bob", updatedAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(modDb, "marketplaceListings/l1"), { title: "Changed by admin", updatedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(doc(modDb, "marketplaceListings/l1"), { status: "removed", updatedAt: serverTimestamp() }));
+    // A taken-down listing can't be put back up by the seller.
+    await assertFails(updateDoc(doc(aliceDb, "marketplaceListings/l1"), { status: "active", updatedAt: serverTimestamp() }));
+    await assertFails(deleteDoc(doc(bobDb, "marketplaceListings/l1")));
+    await assertSucceeds(deleteDoc(doc(aliceDb, "marketplaceListings/l1")));
+
+    // Reports: members can file them, only admins can read them.
+    const report = { listingId: "l1", reporterId: "bob", reason: "Looks like a scam", status: "open", createdAt: serverTimestamp() };
+    await assertSucceeds(setDoc(doc(bobDb, "marketplaceReports/r1"), report));
+    await assertFails(setDoc(doc(bobDb, "marketplaceReports/r2"), { ...report, reporterId: "alice" }));
+    await assertFails(getDoc(doc(bobDb, "marketplaceReports/r1")));
+    await assertSucceeds(getDoc(doc(modDb, "marketplaceReports/r1")));
+  });
+
   it("shows only approved employer jobs to members and keeps employer contacts private", async () => {
     await testEnv.clearFirestore();
     await seed(testEnv, "users/alice", { uid: "alice", role: "member", hasSubscription: true, subscriptionStatus: "active" });
