@@ -314,3 +314,50 @@
   cursor: pointer;
 }
 .form-card .toggle-password:hover { background: #ddecff; transform: translateY(-50%); }
+
+/* "Have a trial code?" box on pricing and login */
+.redeem-code {
+  display: grid;
+  gap: 8px;
+  max-width: 460px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  background: #f3f7fb;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.redeem-code label { font-weight: 800; color: var(--text, #172033); }
+.redeem-code-row { display: flex; gap: 8px; }
+.redeem-code .redeem-code-row input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  font: inherit;
+  text-transform: uppercase;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.redeem-code .redeem-code-row button.btn-secondary { flex: none; width: auto; margin: 0; min-height: 44px; padding: 0 16px; white-space: nowrap; }
+.redeem-code-message { margin: 0; font-weight: 700; color: #b42318; }
+.redeem-code-message:empty { display: none; }
+.login-form-card .redeem-code { margin: 18px 0 0; max-width: none; }
+
+.trial-quick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0 12px;
+  padding: 12px 14px;
+  background: #f3f7fb;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.trial-quick p { margin: 2px 0 0; color: var(--muted); font-size: 0.9rem; }
+.trial-quick-actions { display: flex; gap: 8px; }
+.trial-quick-actions select { min-height: 44px; padding: 0 10px; font: inherit; border: 1px solid var(--border); border-radius: 10px; }
+.trial-quick-actions .btn-small { min-height: 44px; }
+.trial-new-code { font-size: 1.2rem; letter-spacing: 0.06em; }

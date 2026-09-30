@@ -356,6 +356,15 @@
     <p class="auth-switch-note">
       Existing members can log in normally.
     </p>
+
+    <form class="redeem-code" data-redeem-code novalidate>
+      <label for="loginTrialCode">Have a trial code?</label>
+      <div class="redeem-code-row">
+        <input type="text" id="loginTrialCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. SW-7K4P" />
+        <button type="submit" class="btn-secondary">Apply code</button>
+      </div>
+      <p class="redeem-code-message" role="status"></p>
+    </form>
   </section>
 
 </main>
@@ -406,5 +415,6 @@
   });
 </script>
 
+<script type="module" src="js/redeem-code.js"></script>
 </body>
 </html>

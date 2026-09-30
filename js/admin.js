@@ -980,7 +980,56 @@ function showTrialQr(code) {
   }, 150);
 }
 
+// Short, easy-to-read code (no 0/O or 1/I mix-ups), e.g. SW-7K4P.
+function randomTrialCode() {
+  const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(4));
+  return `SW-${[...bytes].map(byte => letters[byte % letters.length]).join("")}`;
+}
+
+async function generateOnePersonCode(days, message) {
+  // Usable for the next 30 days, until 11:59pm on the last day.
+  const lastDay = new Date();
+  lastDay.setDate(lastDay.getDate() + 30);
+  lastDay.setHours(23, 59, 59, 0);
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = randomTrialCode();
+    const ref = doc(db, "trialCodes", code);
+    if ((await getDoc(ref)).exists()) continue;
+    await setDoc(ref, {
+      code, days, maxUses: 1, uses: 0, expiresAt: lastDay, active: true, label: "",
+      createdAt: serverTimestamp(), createdBy: auth.currentUser?.uid || ""
+    });
+    return { code, lastDay };
+  }
+  throw new Error("Couldn't make a unique code. Try again.");
+}
+
 function setupTrialCodes() {
+  const quickButton = document.getElementById("trialQuickBtn");
+  quickButton?.addEventListener("click", async () => {
+    const message = document.getElementById("trialCodeMessage");
+    const days = Number(document.getElementById("trialQuickDays").value);
+    quickButton.disabled = true;
+    try {
+      const { code, lastDay } = await generateOnePersonCode(days, message);
+      message.innerHTML = `<strong class="trial-new-code">${escapeHtml(code)}</strong> is ready: ${escapeHtml(TRIAL_LENGTHS[days])} free, for one person, use by ${escapeHtml(lastDay.toLocaleDateString("en-GB", { day: "numeric", month: "long" }))}. They enter it at sangatworks.co.uk/trial.html or under "Have a trial code?" on pricing. <button type="button" class="btn-small" data-copy-new-code="${escapeHtml(code)}">Copy code</button>`;
+      await loadTrialCodes();
+    } catch (error) {
+      console.error("Could not generate a code:", error);
+      message.textContent = "That didn't work. Please try again.";
+    } finally {
+      quickButton.disabled = false;
+    }
+  });
+  document.getElementById("trialCodeMessage")?.addEventListener("click", async (event) => {
+    const copy = event.target.closest("[data-copy-new-code]");
+    if (!copy) return;
+    await navigator.clipboard.writeText(copy.dataset.copyNewCode).catch(() => {});
+    copy.textContent = "Copied";
+  });
+
   const form = document.getElementById("trialCodeCreateForm");
   const container = document.getElementById("adminTrialCodes");
   const message = document.getElementById("trialCodeMessage");

@@ -107,6 +107,15 @@
       </p>
     </div>
 
+    <form class="redeem-code" data-redeem-code novalidate>
+      <label for="pricingTrialCode">Have a trial code?</label>
+      <div class="redeem-code-row">
+        <input type="text" id="pricingTrialCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. SW-7K4P" />
+        <button type="submit" class="btn-secondary">Apply code</button>
+      </div>
+      <p class="redeem-code-message" role="status"></p>
+    </form>
+
     <div class="invite-banner trial-ended-banner" id="trialEndedBanner" hidden>
       <strong>Your free trial has ended.</strong>
       <span>Thanks for trying Sangat Works. Choose a plan below to keep your profile in the Directory and carry on using everything.</span>
@@ -236,6 +245,7 @@
 
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="./js/checkout.js?v=1008"></script>
+<script type="module" src="js/redeem-code.js"></script>
 <script type="module" src="./js/pricing.js?v=1001"></script>
 
 </body>

@@ -124,6 +124,20 @@
       <label>Label <small>(optional, shown on the page)</small> <input type="text" id="trialCodeLabel" maxlength="80" placeholder="e.g. Careers Fair 2026" /></label>
       <button type="submit" class="btn-small">Create code</button>
     </form>
+    <div class="trial-quick">
+      <div>
+        <strong>One-person code</strong>
+        <p>For giving to someone directly. Works once and must be used within 30 days.</p>
+      </div>
+      <div class="trial-quick-actions">
+        <select id="trialQuickDays" aria-label="Trial length">
+          <option value="7">1 week</option>
+          <option value="14" selected>2 weeks</option>
+          <option value="30">1 month</option>
+        </select>
+        <button type="button" class="btn-small" id="trialQuickBtn">Generate code</button>
+      </div>
+    </div>
     <p id="trialCodeMessage" role="status"></p>
     <div id="adminTrialCodes" class="admin-users"></div>
   </section>
