@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Learning Hub | Sangat Works</title>
+  <meta name="description" content="Ask the Sangat and share what you know: maths, English, science, coding, DIY, business, careers and more." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">Sangat Works</a>
+  <nav>
+    <a href="index.html">Home</a>
+    <div id="accountArea"></div>
+  </nav>
+</header>
+
+<main class="home-flagship-page story-page learning-page">
+  <section class="story-hero">
+    <div class="story-wrap">
+      <span class="home-section-kicker">Learning Hub</span>
+      <h1>Ask the Sangat. <span>Share what you know.</span></h1>
+      <p>
+        Stuck on GCSE maths, a leaking tap or your first line of code? Ask a question, share a guide or a
+        useful link, and upvote the answers that help.
+      </p>
+      <div class="story-actions">
+        <button type="button" class="btn-primary" data-open-post-form="question">Ask a question</button>
+        <button type="button" class="btn-secondary" data-open-post-form="guide">Share a guide</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="story-section opp-board-section" aria-labelledby="lhBoardTitle">
+    <div class="story-wrap">
+      <div class="opp-board-head">
+        <div>
+          <span class="home-section-kicker">Browse</span>
+          <h2 id="lhBoardTitle">Questions and guides</h2>
+        </div>
+        <p class="opp-count" id="lhCount" aria-live="polite">Loading...</p>
+      </div>
+
+      <div class="opp-filters lh-filters">
+        <input type="search" id="lhSearch" placeholder="Search questions and guides..." aria-label="Search the Learning Hub" />
+        <select id="lhKind" aria-label="Type">
+          <option value="">Questions and guides</option>
+          <option value="question">Questions</option>
+          <option value="guide">Guides</option>
+        </select>
+        <select id="lhSort" aria-label="Sort">
+          <option value="active">Most active</option>
+          <option value="newest">Newest</option>
+          <option value="top">Top voted</option>
+          <option value="unanswered">Unanswered</option>
+        </select>
+        <label class="opp-check"><input type="checkbox" id="lhMine" /> My posts</label>
+      </div>
+
+      <div class="opp-type-tabs" id="lhTopicTabs" role="tablist" aria-label="Topic"></div>
+
+      <div class="lh-list" id="lhResults" aria-live="polite">
+        <div class="opp-empty">Loading posts...</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Ask / share / edit form -->
+<div class="opp-modal-backdrop" id="lhFormModal" hidden>
+  <div class="opp-modal" role="dialog" aria-modal="true" aria-labelledby="lhFormTitle">
+    <button type="button" class="opp-modal-close" data-close-post-form aria-label="Close">&times;</button>
+    <h2 id="lhFormTitle">Ask a question</h2>
+    <p class="opp-modal-lead">Members across Sangat Works will see this and can reply.</p>
+
+    <form id="lhForm" class="opp-form" novalidate>
+      <div class="opp-form-row">
+        <label>Type
+          <select id="lhFormKind">
+            <option value="question">Question</option>
+            <option value="guide">Guide or tip</option>
+          </select>
+        </label>
+        <label>Topic
+          <select id="lhFormTopic" required></select>
+        </label>
+      </div>
+      <label>Title
+        <input type="text" id="lhFormTitleInput" maxlength="150" placeholder="e.g. How do I change a radiator valve?" required />
+      </label>
+      <label><span>Details <small>(optional)</small></span>
+        <textarea id="lhFormBody" rows="7" maxlength="5000" placeholder="Give people the full picture: what you've tried, what you're stuck on, or the steps in your guide."></textarea>
+      </label>
+      <label><span>Link <small>(optional: a video, article or resource)</small></span>
+        <input type="url" id="lhFormLink" maxlength="300" placeholder="https://..." />
+      </label>
+      <p class="opp-form-message" id="lhFormMessage" role="status"></p>
+      <div class="opp-form-actions">
+        <button type="button" class="btn-secondary" data-close-post-form>Cancel</button>
+        <button type="submit" class="btn-primary" id="lhFormSubmit">Post</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Post with replies -->
+<div class="opp-modal-backdrop" id="lhDetailModal" hidden>
+  <div class="opp-modal lh-detail" role="dialog" aria-modal="true" aria-labelledby="lhDetailTitle">
+    <button type="button" class="opp-modal-close" data-close-post-detail aria-label="Close">&times;</button>
+    <div id="lhDetailBody"></div>
+  </div>
+</div>
+
+<footer>
+  <p>Sangat Works. Built for community support.</p>
+</footer>
+
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/learning.js"></script>
+</body>
+</html>

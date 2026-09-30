@@ -780,6 +780,63 @@ describe("Firestore security rules: ranking fields are admin/server only", () =>
     await assertSucceeds(getDoc(doc(modDb, "marketplaceReports/r1")));
   });
 
+  it("lets members post and reply in the Learning Hub, with one server-counted upvote each", async () => {
+    await testEnv.clearFirestore();
+    const member = uid => ({ uid, role: "member", hasSubscription: true, subscriptionStatus: "active" });
+    await seed(testEnv, "users/alice", member("alice"));
+    await seed(testEnv, "users/bob", member("bob"));
+    await seed(testEnv, "users/lapsed", { uid: "lapsed", role: "member", hasSubscription: false });
+    await seed(testEnv, "users/mod", { uid: "mod", role: "admin" });
+    const post = (ownerId, extra = {}) => ({
+      ownerId, kind: "question", topic: "maths", title: "How do I revise GCSE algebra?",
+      body: "Any good resources?", link: "", status: "active",
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp(), ...extra
+    });
+    const reply = (ownerId, extra = {}) => ({
+      ownerId, body: "Try Corbettmaths, it's free.", link: "https://corbettmaths.com", status: "active",
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp(), ...extra
+    });
+    const aliceDb = testEnv.authenticatedContext("alice").firestore();
+    const bobDb = testEnv.authenticatedContext("bob").firestore();
+    const modDb = testEnv.authenticatedContext("mod").firestore();
+
+    await assertSucceeds(setDoc(doc(aliceDb, "learnPosts/p1"), post("alice")));
+    await assertFails(setDoc(doc(aliceDb, "learnPosts/p2"), post("bob")));
+    await assertFails(setDoc(doc(aliceDb, "learnPosts/p3"), post("alice", { topic: "gambling" })));
+    await assertFails(setDoc(doc(aliceDb, "learnPosts/p4"), post("alice", { link: "javascript:alert(1)" })));
+    await assertFails(setDoc(doc(aliceDb, "learnPosts/p5"), post("alice", { voteCount: 500 })));
+    await assertFails(setDoc(doc(testEnv.authenticatedContext("lapsed").firestore(), "learnPosts/p6"), post("lapsed")));
+    await assertFails(getDoc(doc(testEnv.unauthenticatedContext().firestore(), "learnPosts/p1")));
+    await assertSucceeds(getDoc(doc(bobDb, "learnPosts/p1")));
+
+    // Replies
+    await assertSucceeds(setDoc(doc(bobDb, "learnPosts/p1/replies/r1"), reply("bob")));
+    await assertFails(setDoc(doc(bobDb, "learnPosts/p1/replies/r2"), reply("alice")));
+    await assertFails(setDoc(doc(bobDb, "learnPosts/p1/replies/r3"), reply("bob", { voteCount: 9 })));
+    await assertFails(updateDoc(doc(aliceDb, "learnPosts/p1/replies/r1"), { body: "Edited by someone else", updatedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(doc(bobDb, "learnPosts/p1/replies/r1"), { body: "Try Corbettmaths and Maths Genie.", updatedAt: serverTimestamp() }));
+
+    // Votes: one per member, only as yourself, counts can't be set by hand
+    await assertSucceeds(setDoc(doc(bobDb, "learnPosts/p1/votes/bob"), { createdAt: serverTimestamp() }));
+    await assertFails(setDoc(doc(bobDb, "learnPosts/p1/votes/alice"), { createdAt: serverTimestamp() }));
+    await assertSucceeds(setDoc(doc(aliceDb, "learnPosts/p1/replies/r1/votes/alice"), { createdAt: serverTimestamp() }));
+    await assertSucceeds(deleteDoc(doc(bobDb, "learnPosts/p1/votes/bob")));
+    await assertFails(updateDoc(doc(aliceDb, "learnPosts/p1"), { voteCount: 100, updatedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(doc(aliceDb, "learnPosts/p1"), { title: "How do I revise GCSE algebra quickly?", updatedAt: serverTimestamp() }));
+
+    // Admin take-down; a removed post can't be replied to or edited back
+    await assertFails(updateDoc(doc(modDb, "learnPosts/p1"), { title: "Changed by admin", updatedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(doc(modDb, "learnPosts/p1"), { status: "removed", updatedAt: serverTimestamp() }));
+    await assertFails(setDoc(doc(bobDb, "learnPosts/p1/replies/r4"), reply("bob")));
+    await assertFails(updateDoc(doc(aliceDb, "learnPosts/p1"), { status: "active", updatedAt: serverTimestamp() }));
+
+    // Reports: members file them, admins read them
+    const report = { postId: "p1", replyId: "", reporterId: "bob", reason: "Spam link", status: "open", createdAt: serverTimestamp() };
+    await assertSucceeds(setDoc(doc(bobDb, "learnReports/lr1"), report));
+    await assertFails(getDoc(doc(bobDb, "learnReports/lr1")));
+    await assertSucceeds(getDoc(doc(modDb, "learnReports/lr1")));
+  });
+
   it("shows only approved employer jobs to members and keeps employer contacts private", async () => {
     await testEnv.clearFirestore();
     await seed(testEnv, "users/alice", { uid: "alice", role: "member", hasSubscription: true, subscriptionStatus: "active" });
@@ -804,7 +861,8 @@ describe("Firestore security rules: ranking fields are admin/server only", () =>
     await assertFails(updateDoc(doc(modDb, "employerJobs/review1"), { title: "Edited by admin" }));
   });
 
-  it("validates employer job posts before payment", () => {
+  it("validates employer job posts before payment", function () {
+    this.timeout(20000); // loading the Cloud Functions code can take a few seconds
     const { validateEmployerJob } = require("../functions/employer-jobs");
     const good = {
       companyName: "Kaur Accounts", title: "Junior Accountant", industry: "Law & Professional Services",

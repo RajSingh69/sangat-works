@@ -259,3 +259,12 @@
 }
 .invite-banner strong { font-size: 1.05rem; }
 .invite-banner[hidden] { display: none; }
+
+/* Pop-ups sit outside <main>, so give them the same colour tokens as the page */
+.opp-modal-backdrop {
+  --home-navy: #07365c;
+  --home-ink: #082e50;
+  --home-muted: #5a667a;
+  --home-border: rgba(8, 46, 80, 0.12);
+  --home-orange: #ff7a18;
+}

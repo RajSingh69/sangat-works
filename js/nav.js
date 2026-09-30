@@ -87,6 +87,7 @@ const NAV_ICONS = {
   network: navSvg('<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/>'),
   opportunities: navSvg('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>'),
   marketplace: navSvg('<path d="M6 7h12l1.5 13h-15Z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/>'),
+  learning: navSvg('<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2Z"/><path d="M4 19V5M19 17H6a2 2 0 0 0 0 4h13"/>'),
   gurdwara: navSvg('<path d="M12 3c2 2 3 3.5 3 5.5H9C9 6.5 10 5 12 3Z"/><path d="M5 21v-8h14v8M3 21h18M9 21v-4a3 3 0 0 1 6 0v4M12 8.5V13"/>'),
   young: navSvg('<path d="m2 9 10-5 10 5-10 5Z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/>'),
   profile: navSvg('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>'),
@@ -137,6 +138,7 @@ function renderAppShell(user, userData = {}) {
       ${isPaid ? navItem("network.html", "network", "My Network & Messages", "id=\"networkMessagesNavLink\"") : ""}
       ${navItem("opportunities.html", "opportunities", "Opportunities")}
       ${isPaid ? navItem("marketplace.html", "marketplace", "Marketplace") : ""}
+      ${isPaid ? navItem("learning.html", "learning", "Learning Hub") : ""}
       ${isPaid ? navItem("skills-network.html", "gurdwara", "Gurdwara Network") : ""}
       ${isPaid ? navItem("young-professionals.html", "young", "Young Professionals") : ""}
     </nav>

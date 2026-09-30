@@ -915,6 +915,92 @@ function setupVerificationActions() {
   });
 }
 
+// Reported Learning Hub posts and replies (learnReports, filed from learning.html).
+async function loadLearnReports() {
+  const container = document.getElementById("adminLearnReports");
+  if (!container) return;
+
+  try {
+    const reportsSnap = await getDocs(query(collection(db, "learnReports"), where("status", "==", "open")));
+    if (reportsSnap.empty) {
+      container.innerHTML = `<div class="empty-state">No open Learning Hub reports.</div>`;
+      return;
+    }
+
+    const rows = await Promise.all(reportsSnap.docs.map(async reportSnap => {
+      const report = reportSnap.data();
+      const targetRef = report.replyId
+        ? doc(db, "learnPosts", report.postId, "replies", report.replyId)
+        : doc(db, "learnPosts", report.postId);
+      const [targetSnap, postSnap, reporterSnap] = await Promise.all([
+        getDoc(targetRef).catch(() => null),
+        report.replyId ? getDoc(doc(db, "learnPosts", report.postId)).catch(() => null) : null,
+        getDoc(doc(db, "users", report.reporterId)).catch(() => null)
+      ]);
+      return {
+        id: reportSnap.id,
+        report,
+        target: targetSnap?.exists() ? targetSnap.data() : null,
+        post: report.replyId ? (postSnap?.exists() ? postSnap.data() : null) : (targetSnap?.exists() ? targetSnap.data() : null),
+        reporter: reporterSnap?.exists() ? reporterSnap.data() : {}
+      };
+    }));
+
+    container.innerHTML = rows.map(({ id, report, target, post, reporter }) => {
+      const reported = report.createdAt?.toDate ? report.createdAt.toDate().toLocaleDateString("en-GB") : "";
+      const reporterName = reporter.fullName || reporter.displayName || reporter.email || "A member";
+      const what = report.replyId ? "Reply" : "Post";
+      const excerpt = target ? (report.replyId ? target.body : target.title) : "Already deleted";
+      const live = target && target.status !== "removed";
+      return `
+        <details class="admin-user-card" open>
+          <summary><strong>${what}:</strong> ${escapeHtml(String(excerpt || "").slice(0, 120))} &middot; reported ${escapeHtml(reported)}</summary>
+          <p>${post ? `In <a href="learning.html?post=${encodeURIComponent(report.postId)}" target="_blank" rel="noopener">${escapeHtml(post.title || "a post")}</a>` : "The post has been deleted"}</p>
+          <p><strong>Reason:</strong> ${escapeHtml(report.reason || "")}</p>
+          <p><strong>Reported by:</strong> ${escapeHtml(reporterName)}</p>
+          <div class="card-links">
+            ${live ? `<button type="button" class="btn-small learn-report-action" data-id="${escapeHtml(id)}" data-post="${escapeHtml(report.postId)}" data-reply="${escapeHtml(report.replyId || "")}" data-action="remove">Take ${what.toLowerCase()} down</button>` : ""}
+            <button type="button" class="btn-small learn-report-action" data-id="${escapeHtml(id)}" data-action="dismiss">${live ? "Dismiss report" : "Close report"}</button>
+          </div>
+        </details>`;
+    }).join("");
+  } catch (error) {
+    console.error("Could not load Learning Hub reports:", error);
+    container.innerHTML = `<div class="empty-state">Could not load Learning Hub reports.</div>`;
+  }
+}
+
+function setupLearnReportActions() {
+  const container = document.getElementById("adminLearnReports");
+  if (!container) return;
+
+  container.addEventListener("click", async (event) => {
+    const button = event.target.closest(".learn-report-action");
+    if (!button) return;
+    const { id, post, reply, action } = button.dataset;
+    if (action === "remove" && !window.confirm("Take this down? It will be hidden from the Learning Hub.")) return;
+
+    button.disabled = true;
+    try {
+      if (action === "remove") {
+        const ref = reply ? doc(db, "learnPosts", post, "replies", reply) : doc(db, "learnPosts", post);
+        await updateDoc(ref, { status: "removed", updatedAt: serverTimestamp() });
+      }
+      await updateDoc(doc(db, "learnReports", id), {
+        status: action === "remove" ? "actioned" : "dismissed",
+        reviewedAt: serverTimestamp(),
+        reviewedBy: auth.currentUser?.uid || ""
+      });
+      adminStatus.textContent = action === "remove" ? "Taken down." : "Report closed.";
+      await loadLearnReports();
+    } catch (error) {
+      console.error("Learning Hub report action failed:", error);
+      adminStatus.textContent = "That didn't work. Please try again.";
+      button.disabled = false;
+    }
+  });
+}
+
 // Reported Marketplace listings (marketplaceReports, filed from marketplace.html).
 async function loadMarketplaceReports() {
   const container = document.getElementById("adminMarketplaceReports");
@@ -1095,6 +1181,8 @@ async function loadAdminDashboard() {
   setupEmployerJobActions();
   await loadMarketplaceReports();
   setupMarketplaceReportActions();
+  await loadLearnReports();
+  setupLearnReportActions();
 }
 
 onAuthStateChanged(auth, async (user) => {

@@ -297,6 +297,117 @@ service cloud.firestore {
       allow delete: if signedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
     }
 
+    // Learning Hub (learning.html, js/learning.js): members ask questions and share
+    // guides, reply, and upvote. voteCount, replyCount and lastActivityAt are kept
+    // up to date by Cloud Functions (functions/learning.js), never by the browser.
+    function validLink(link) {
+      return link is string && link.size() <= 300
+        && (link == "" || link.matches("https?://[^\\s]+"));
+    }
+
+    function validLearnPost(data) {
+      return data.keys().hasOnly(["ownerId", "kind", "topic", "title", "body", "link", "status",
+          "createdAt", "updatedAt", "voteCount", "replyCount", "lastActivityAt"])
+        && data.keys().hasAll(["ownerId", "kind", "topic", "title", "body", "link", "status", "createdAt", "updatedAt"])
+        && data.kind in ["question", "guide"]
+        && data.topic in ["maths", "english", "science", "coding", "diy", "business", "careers", "punjabi-sikhi", "other"]
+        && data.title is string && data.title.size() >= 5 && data.title.size() <= 150
+        && data.body is string && data.body.size() <= 5000
+        && validLink(data.link)
+        && data.status == "active";
+    }
+
+    function validLearnReply(data) {
+      return data.keys().hasOnly(["ownerId", "body", "link", "status", "createdAt", "updatedAt", "voteCount"])
+        && data.keys().hasAll(["ownerId", "body", "link", "status", "createdAt", "updatedAt"])
+        && data.body is string && data.body.size() >= 2 && data.body.size() <= 3000
+        && validLink(data.link)
+        && data.status == "active";
+    }
+
+    function keepsServerCounts(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    match /learnPosts/{postId} {
+      allow read: if hasActiveMembership();
+      allow create: if hasActiveMembership()
+        && validLearnPost(request.resource.data)
+        && !request.resource.data.keys().hasAny(["voteCount", "replyCount", "lastActivityAt"])
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if hasActiveMembership() && (
+        (resource.data.ownerId == request.auth.uid
+          && resource.data.status == "active"
+          && validLearnPost(request.resource.data)
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time
+          && keepsServerCounts(["voteCount", "replyCount", "lastActivityAt"]))
+        || (isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "updatedAt"])
+          && request.resource.data.status in ["active", "removed"])
+      );
+      allow delete: if signedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+
+      match /replies/{replyId} {
+        allow read: if hasActiveMembership();
+        allow create: if hasActiveMembership()
+          && validLearnReply(request.resource.data)
+          && !("voteCount" in request.resource.data)
+          && request.resource.data.ownerId == request.auth.uid
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time
+          && get(/databases/$(database)/documents/learnPosts/$(postId)).data.status == "active";
+        allow update: if hasActiveMembership() && (
+          (resource.data.ownerId == request.auth.uid
+            && resource.data.status == "active"
+            && validLearnReply(request.resource.data)
+            && request.resource.data.ownerId == resource.data.ownerId
+            && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.updatedAt == request.time
+            && keepsServerCounts(["voteCount"]))
+          || (isAdmin()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "updatedAt"])
+            && request.resource.data.status in ["active", "removed"])
+        );
+        allow delete: if signedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+
+        // One upvote per member per reply; the doc ID is the voter's uid.
+        match /votes/{voterId} {
+          allow read: if hasActiveMembership();
+          allow create: if hasActiveMembership() && voterId == request.auth.uid
+            && request.resource.data.keys().hasOnly(["createdAt"])
+            && request.resource.data.createdAt == request.time;
+          allow delete: if signedIn() && voterId == request.auth.uid;
+        }
+      }
+
+      // One upvote per member per post; the doc ID is the voter's uid.
+      match /votes/{voterId} {
+        allow read: if hasActiveMembership();
+        allow create: if hasActiveMembership() && voterId == request.auth.uid
+          && request.resource.data.keys().hasOnly(["createdAt"])
+          && request.resource.data.createdAt == request.time;
+        allow delete: if signedIn() && voterId == request.auth.uid;
+      }
+    }
+
+    // Reports on Learning Hub posts or replies: any member can file one; only admins read them.
+    match /learnReports/{reportId} {
+      allow create: if hasActiveMembership()
+        && request.resource.data.keys().hasOnly(["postId", "replyId", "reporterId", "reason", "status", "createdAt"])
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.postId is string
+        && request.resource.data.replyId is string
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() >= 3 && request.resource.data.reason.size() <= 500
+        && request.resource.data.status == "open"
+        && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if isAdmin();
+    }
+
     // Invite a friend (functions/referrals.js). Written only by Cloud Functions;
     // members can see the invites they sent, and their own.
     match /referrals/{referredUid} {

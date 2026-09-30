@@ -12,5 +12,6 @@ Object.assign(
   // Only the HTTP function; the webhook helper in promotions.js isn't a deployable function.
   { createPromotionCheckout: require("./promotions").createPromotionCheckout },
   { createEmployerJobCheckout: require("./employer-jobs").createEmployerJobCheckout },
-  require("./founder-connect")
+  require("./founder-connect"),
+  require("./learning")
 );
