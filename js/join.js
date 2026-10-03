@@ -23,11 +23,25 @@ import { doc, getDoc, serverTimestamp, setDoc } from "https://www.gstatic.com/fi
 const FUNCTIONS = "https://europe-west1-sangat-works.cloudfunctions.net";
 // Same Stripe prices as js/checkout.js.
 const PLANS = {
-  "month-renew": { priceId: "price_1Tkm19DbE6tXsxNUxU6b7NUI", billingType: "subscription", text: "£3.99 a month, renews monthly. Cancel any time." },
-  "year-renew": { priceId: "price_1Tkm1gDbE6tXsxNU9veTZwPE", billingType: "subscription", text: "£25 a year, renews yearly. Cancel any time." },
-  "month-once": { priceId: "price_1Tl8zyDbE6tXsxNUpynPPWft", billingType: "oneoff", text: "£3.99 once for 30 days. No renewal." },
-  "year-once": { priceId: "price_1Tl90wDbE6tXsxNUPMzfGO5m", billingType: "oneoff", text: "£25 once for 365 days. No renewal." }
+  "month-renew": { priceId: "price_1Tkm19DbE6tXsxNUxU6b7NUI", billingType: "subscription", price: "£3.99", period: "month" },
+  "year-renew": { priceId: "price_1Tkm1gDbE6tXsxNU9veTZwPE", billingType: "subscription", price: "£25", period: "year" },
+  "month-once": { priceId: "price_1Tl8zyDbE6tXsxNUpynPPWft", billingType: "oneoff", price: "£3.99", period: "month", days: 30 },
+  "year-once": { priceId: "price_1Tl90wDbE6tXsxNUPMzfGO5m", billingType: "oneoff", price: "£25", period: "year", days: 365 }
 };
+
+const longDate = date => date.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+const shortDate = date => date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+const addDays = days => new Date(Date.now() + days * 86400000);
+const trialLength = days => (days === 7 ? "1 week" : days === 14 ? "2 weeks" : days === 30 ? "1 month" : `${days} days`);
+
+function planSummary(plan, invited) {
+  if (plan.billingType === "subscription") {
+    return invited
+      ? `First month free. Then ${plan.price} every ${plan.period} until you cancel. Your card is taken now and first charged on ${shortDate(addDays(30))}.`
+      : `${plan.price} charged today, then ${plan.price} every ${plan.period} until you cancel. Cancel any time.`;
+  }
+  return `${plan.price} one-off payment for 1 ${plan.period} of access, until ${shortDate(addDays(plan.days))}. It won't renew and you won't be charged again. To carry on after that, you'll need to pay again.`;
+}
 const INVITE_KEY = "swInvite";
 
 const $ = id => document.getElementById(id);
@@ -107,16 +121,35 @@ function selectedPlanKey() {
 }
 
 function updateSummary() {
-  const key = selectedPlanKey();
-  const plan = PLANS[key];
-  const invited = inviterUid && plan.billingType === "subscription";
-  els.summary.textContent = invited
-    ? `First month free, then ${plan.text.charAt(0).toLowerCase()}${plan.text.slice(1)}`
-    : plan.text;
+  const plan = PLANS[selectedPlanKey()];
+  const length = els.form.querySelector("input[name=joinLength]:checked").value;
+  document.getElementById("joinRenewHint").textContent = `Charged every ${length} until you cancel`;
+  document.getElementById("joinOnceHint").textContent = `Covers 1 ${length} only. Doesn't renew`;
+  els.summary.textContent = planSummary(plan, Boolean(inviterUid) && plan.billingType === "subscription");
   els.invite.hidden = !inviterUid || Boolean(trial);
 }
 
+// What a trial code means, in plain words, before they sign up.
+function showTrialBox() {
+  const box = document.getElementById("joinTrialBox");
+  if (!trial) {
+    box.hidden = true;
+    box.textContent = "";
+    return;
+  }
+  const ends = addDays(trial.days);
+  box.innerHTML = `<strong>This is a free trial code.</strong>
+    <span>Your trial lasts <b></b> and ends on <b></b>.</span>
+    <span>To keep using Sangat Works after that, you'll need to choose a paid plan from <b></b>. We won't charge you anything now, and no card is needed.</span>`;
+  const bold = box.querySelectorAll("b");
+  bold[0].textContent = trialLength(trial.days);
+  bold[1].textContent = longDate(ends);
+  bold[2].textContent = shortDate(ends);
+  box.hidden = false;
+}
+
 function updateMode() {
+  showTrialBox();
   els.planStep.hidden = Boolean(trial);
   els.submit.textContent = trial ? `Start my ${trial.days}-day free trial` : "Continue to secure payment";
   updateSummary();
@@ -140,7 +173,7 @@ async function applyCode() {
     trial = result;
     els.code.value = result.code;
     els.codeMessage.classList.add("is-good");
-    els.codeMessage.textContent = `Code applied: ${result.days} days free, no card needed.${result.label ? ` (${result.label})` : ""}`;
+    els.codeMessage.textContent = `Code applied${result.label ? `: ${result.label}` : ""}.`;
     updateMode();
     return true;
   } catch (error) {

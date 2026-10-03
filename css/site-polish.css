@@ -417,7 +417,19 @@
 .join-option input:checked + span { border-color: var(--orange-fill, #c64d0e); background: #fff6ef; }
 .join-option input:checked + span::before { border-color: var(--orange-fill, #c64d0e); background: radial-gradient(circle, var(--orange-fill, #c64d0e) 0 45%, #fff 50%); }
 .join-option input:focus-visible + span { outline: 3px solid rgba(198, 77, 14, 0.4); outline-offset: 2px; }
-.join-summary { margin: 6px 0 0; font-weight: 800; color: var(--text, #172033); }
+.join-summary { margin: 6px 0 0; font-weight: 700; line-height: 1.5; color: var(--text, #172033); }
+.join-trial-box {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 14px 16px;
+  line-height: 1.5;
+  color: #0f3d2a;
+  background: #eaf7ef;
+  border: 1px solid rgba(31, 122, 77, 0.35);
+  border-radius: 12px;
+}
+.join-trial-box strong { font-size: 1.05rem; }
 .join-note { margin: 0 0 16px; padding: 12px 14px; border-radius: 12px; border: 1px solid; }
 .join-note.is-warning { color: #3b2a00; background: #fff6df; border-color: rgba(155, 106, 0, 0.35); }
 .join-note.is-good { color: #0f3d2a; background: #eaf7ef; border-color: rgba(31, 122, 77, 0.35); }

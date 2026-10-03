@@ -82,6 +82,7 @@
           <button type="button" class="btn-secondary" id="joinCodeApply">Apply</button>
         </div>
         <p class="join-code-message" id="joinCodeMessage" role="status"></p>
+        <div class="join-trial-box" id="joinTrialBox" hidden></div>
       </fieldset>
 
       <!-- 3. Plan (hidden when a free trial code is applied) -->
@@ -92,8 +93,8 @@
           <label class="join-option"><input type="radio" name="joinLength" value="year" /><span><strong>1 year</strong><small>£25 <em>best value</em></small></span></label>
         </div>
         <div class="join-choice" role="radiogroup" aria-label="Payment">
-          <label class="join-option"><input type="radio" name="joinPayment" value="renew" checked /><span><strong>Auto-renew</strong><small>Cancel any time</small></span></label>
-          <label class="join-option"><input type="radio" name="joinPayment" value="once" /><span><strong>Pay once</strong><small>No renewal</small></span></label>
+          <label class="join-option"><input type="radio" name="joinPayment" value="renew" checked /><span><strong>Renews automatically</strong><small id="joinRenewHint">Charged every month until you cancel</small></span></label>
+          <label class="join-option"><input type="radio" name="joinPayment" value="once" /><span><strong>One-off payment</strong><small id="joinOnceHint">Covers 1 month only. Doesn't renew</small></span></label>
         </div>
         <p class="join-summary" id="joinSummary"></p>
       </fieldset>
