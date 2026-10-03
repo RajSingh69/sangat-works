@@ -40,7 +40,7 @@ function showPaidPlanRequiredMessage() {
   authMessage.innerHTML = `
     The free founding member spaces are now full. Please choose a membership plan to continue.
     <br />
-    <a class="btn-primary" href="pricing.html" style="display:inline-block; margin-top:12px;">
+    <a class="btn-primary" href="join.html" style="display:inline-block; margin-top:12px;">
       Choose a membership plan
     </a>
   `;
@@ -55,7 +55,7 @@ showLogin.addEventListener("click", () => {
 
 showRegister.addEventListener("click", () => {
   showPaidPlanRequiredMessage();
-  window.location.href = "pricing.html";
+  window.location.href = "join.html";
 });
 
 loginForm.addEventListener("submit", async (e) => {
@@ -83,7 +83,7 @@ loginForm.addEventListener("submit", async (e) => {
     if (!userSnap.exists()) {
       authMessage.textContent =
         "Your account is not active yet. Please complete payment to unlock Sangat Works.";
-      window.location.href = "pricing.html";
+      window.location.href = "join.html";
       return;
     }
 
@@ -96,7 +96,7 @@ loginForm.addEventListener("submit", async (e) => {
 
     authMessage.textContent =
       "Your account is not active yet. Please complete payment to unlock Sangat Works.";
-    window.location.href = "pricing.html";
+    window.location.href = "join.html";
   } catch (error) {
     authMessage.textContent = friendlyAuthError(error);
   }
@@ -105,5 +105,5 @@ loginForm.addEventListener("submit", async (e) => {
 registerForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   showPaidPlanRequiredMessage();
-  window.location.href = "pricing.html";
+  window.location.href = "join.html";
 });

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Join | Sangat Works</title>
+  <meta name="description" content="Join Sangat Works, the Sikh business and professional network. From £3.99 a month." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">Sangat Works</a>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="login.html" class="btn-small" id="joinHeaderLogin">Log in</a>
+  </nav>
+</header>
+
+<main class="page-wrap join-page">
+  <!-- After paying: switching membership on -->
+  <section class="form-card join-card join-status" id="joinActivating" hidden>
+    <h1>Welcome to Sangat Works</h1>
+    <p class="join-lead" id="joinActivatingText">Payment received. Switching your membership on...</p>
+    <div class="join-spinner" aria-hidden="true"></div>
+    <a class="btn-primary" id="joinActivatingLink" href="profile.html" hidden>Go to my profile</a>
+  </section>
+
+  <!-- Already a member -->
+  <section class="form-card join-card join-status" id="joinMember" hidden>
+    <h1>You're already a member</h1>
+    <p class="join-lead">Your membership is active. Head to your profile to keep it up to date.</p>
+    <a class="btn-primary" href="profile.html">Go to my profile</a>
+  </section>
+
+  <section class="form-card join-card" id="joinFormCard">
+    <h1>Join Sangat Works</h1>
+    <p class="join-lead">The Sikh business and professional network. Set up your account, pick a plan, and you're in.</p>
+
+    <div class="join-note is-warning" id="joinCancelled" hidden>
+      <strong>Payment cancelled.</strong> No money was taken. Your account is saved, so pick a plan and try again whenever you're ready.
+    </div>
+    <div class="join-note is-warning" id="joinTrialEnded" hidden>
+      <strong>Your free trial has ended.</strong> Thanks for trying Sangat Works. Choose a plan below to keep your profile and carry on.
+    </div>
+    <div class="join-note is-good" id="joinInvite" hidden>
+      <strong>You've been invited.</strong> Your first month is free on an auto-renewing plan.
+    </div>
+
+    <form id="joinForm" novalidate>
+      <!-- 1. Account -->
+      <fieldset class="join-step" id="joinAccountStep">
+        <legend><span class="join-step-number">1</span> Your details</legend>
+        <p class="join-signed-in" id="joinSignedIn" hidden></p>
+        <div class="join-fields" id="joinAccountFields">
+          <label>Full name
+            <input type="text" id="joinName" autocomplete="name" maxlength="120" />
+          </label>
+          <label>Email address
+            <input type="email" id="joinEmail" autocomplete="email" inputmode="email" maxlength="200" />
+          </label>
+          <label>Password <small>(at least 6 characters)</small>
+            <span class="password-wrap">
+              <input type="password" id="joinPassword" autocomplete="new-password" />
+              <button class="toggle-password" type="button" data-target="joinPassword">Show</button>
+            </span>
+          </label>
+          <label>Confirm password
+            <span class="password-wrap">
+              <input type="password" id="joinPasswordConfirm" autocomplete="new-password" />
+              <button class="toggle-password" type="button" data-target="joinPasswordConfirm">Show</button>
+            </span>
+          </label>
+        </div>
+      </fieldset>
+
+      <!-- 2. Code -->
+      <fieldset class="join-step">
+        <legend><span class="join-step-number">2</span> Have a code? <small>(optional)</small></legend>
+        <div class="join-code-row">
+          <input type="text" id="joinCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. SW-7K4P" />
+          <button type="button" class="btn-secondary" id="joinCodeApply">Apply</button>
+        </div>
+        <p class="join-code-message" id="joinCodeMessage" role="status"></p>
+      </fieldset>
+
+      <!-- 3. Plan (hidden when a free trial code is applied) -->
+      <fieldset class="join-step" id="joinPlanStep">
+        <legend><span class="join-step-number">3</span> Choose your plan</legend>
+        <div class="join-choice" role="radiogroup" aria-label="Length">
+          <label class="join-option"><input type="radio" name="joinLength" value="month" checked /><span><strong>1 month</strong><small>£3.99</small></span></label>
+          <label class="join-option"><input type="radio" name="joinLength" value="year" /><span><strong>1 year</strong><small>£25 <em>best value</em></small></span></label>
+        </div>
+        <div class="join-choice" role="radiogroup" aria-label="Payment">
+          <label class="join-option"><input type="radio" name="joinPayment" value="renew" checked /><span><strong>Auto-renew</strong><small>Cancel any time</small></span></label>
+          <label class="join-option"><input type="radio" name="joinPayment" value="once" /><span><strong>Pay once</strong><small>No renewal</small></span></label>
+        </div>
+        <p class="join-summary" id="joinSummary"></p>
+      </fieldset>
+
+      <p class="join-message" id="joinMessage" role="status"></p>
+      <button type="submit" class="btn-primary full join-submit" id="joinSubmit">Continue to secure payment</button>
+      <p class="join-small" id="joinSmall">Payments are handled securely by Stripe. Already a member? <a href="login.html">Log in</a></p>
+    </form>
+  </section>
+</main>
+
+<script type="module" src="js/join.js"></script>
+<script>
+  document.querySelectorAll(".toggle-password").forEach((button) => {
+    button.addEventListener("click", () => {
+      const input = document.getElementById(button.getAttribute("data-target"));
+      if (!input) return;
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      button.textContent = show ? "Hide" : "Show";
+    });
+  });
+</script>
+</body>
+</html>

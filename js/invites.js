@@ -1,6 +1,6 @@
 /*
   Invite a friend card on profile.html (rewards handled in functions/referrals.js).
-  Each member's link is pricing.html?invite=<their uid>.
+  Each member's link is join.html?invite=<their uid>.
 */
 
 import { auth, db } from "./firebase.js";
@@ -14,7 +14,7 @@ const whatsappLink = document.getElementById("inviteWhatsApp");
 const stats = document.getElementById("inviteStats");
 
 function inviteUrl(uid) {
-  return `https://sangatworks.co.uk/pricing.html?invite=${encodeURIComponent(uid)}`;
+  return `https://sangatworks.co.uk/join.html?invite=${encodeURIComponent(uid)}`;
 }
 
 async function loadStats(uid) {

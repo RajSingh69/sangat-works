@@ -917,7 +917,7 @@ function setupVerificationActions() {
 
 // Free trial codes for events (trialCodes; claimed through functions/trials.js).
 const TRIAL_LENGTHS = { 7: "1 week", 14: "2 weeks", 30: "1 month" };
-const trialLink = code => `https://sangatworks.co.uk/trial.html?code=${encodeURIComponent(code)}`;
+const trialLink = code => `https://sangatworks.co.uk/join.html?code=${encodeURIComponent(code)}`;
 
 async function loadTrialCodes() {
   const container = document.getElementById("adminTrialCodes");
@@ -1014,7 +1014,7 @@ function setupTrialCodes() {
     quickButton.disabled = true;
     try {
       const { code, lastDay } = await generateOnePersonCode(days, message);
-      message.innerHTML = `<strong class="trial-new-code">${escapeHtml(code)}</strong> is ready: ${escapeHtml(TRIAL_LENGTHS[days])} free, for one person, use by ${escapeHtml(lastDay.toLocaleDateString("en-GB", { day: "numeric", month: "long" }))}. They enter it at sangatworks.co.uk/trial.html or under "Have a trial code?" on pricing. <button type="button" class="btn-small" data-copy-new-code="${escapeHtml(code)}">Copy code</button>`;
+      message.innerHTML = `<strong class="trial-new-code">${escapeHtml(code)}</strong> is ready: ${escapeHtml(TRIAL_LENGTHS[days])} free, for one person, use by ${escapeHtml(lastDay.toLocaleDateString("en-GB", { day: "numeric", month: "long" }))}. They enter it under "Have a code?" at sangatworks.co.uk/join.html. <button type="button" class="btn-small" data-copy-new-code="${escapeHtml(code)}">Copy code</button>`;
       await loadTrialCodes();
     } catch (error) {
       console.error("Could not generate a code:", error);

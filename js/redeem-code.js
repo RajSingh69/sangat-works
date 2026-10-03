@@ -11,6 +11,6 @@ document.querySelectorAll("form[data-redeem-code]").forEach((form) => {
       input.focus();
       return;
     }
-    window.location.href = `trial.html?code=${encodeURIComponent(code)}`;
+    window.location.href = `join.html?code=${encodeURIComponent(code)}`;
   });
 });

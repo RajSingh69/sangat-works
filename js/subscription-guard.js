@@ -83,7 +83,7 @@ export function hasActiveSubscription(userData) {
 }
 
 export function protectPage(options = {}) {
-  const redirectTo = options.redirectTo || "pricing.html";
+  const redirectTo = options.redirectTo || "join.html";
 
   onAuthStateChanged(auth, async (user) => {
     if (!user) {

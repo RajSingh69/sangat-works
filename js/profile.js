@@ -345,7 +345,7 @@ function blockUnpaidProfileAccess(profile) {
   }
 
   setTimeout(() => {
-    window.location.href = "pricing.html?payment_required=1";
+    window.location.href = "join.html";
   }, 1600);
 
   return true;
@@ -990,7 +990,7 @@ if (profileForm) {
     if (!isActiveMember(existingProfile)) {
       profileMessage.textContent =
         "Your account is not active yet. Please complete payment to unlock Sangat Works.";
-      window.location.href = "pricing.html?payment_required=1";
+      window.location.href = "join.html";
       return;
     }
 

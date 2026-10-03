@@ -8,6 +8,13 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
+<script>
+  // Everything now happens on the Join page; keep old trial links and QR codes working.
+  (function () {
+    var code = new URLSearchParams(window.location.search).get("code");
+    window.location.replace(code ? "join.html?code=" + encodeURIComponent(code) : "join.html");
+  })();
+</script>
 
 <header class="site-header">
   <a class="logo" href="index.html">Sangat Works</a>

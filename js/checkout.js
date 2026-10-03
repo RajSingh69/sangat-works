@@ -37,6 +37,10 @@ function getBillingType(selectedPlan) {
 const INVITE_KEY = "swInvite";
 const SUBSCRIPTION_PLANS = ["monthly_subscription", "yearly_subscription"];
 
+// New visitors with an invite link go to the Join page (it keeps the invite).
+const inviteInUrl = new URLSearchParams(window.location.search).get("invite");
+if (inviteInUrl) window.location.replace(`join.html?invite=${encodeURIComponent(inviteInUrl)}`);
+
 function readInvite() {
   try {
     const fromUrl = new URLSearchParams(window.location.search).get("invite");

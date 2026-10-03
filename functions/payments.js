@@ -34,6 +34,7 @@ const {
 const { handlePromotionPayment } = require("./promotions");
 const { handleEmployerJobPayment } = require("./employer-jobs");
 const { REFERRAL_TRIAL_DAYS, getValidReferrer, handleReferralInvoicePaid, recordReferral } = require("./referrals");
+const { activateMembershipFromSession } = require("./membership");
 
 exports.verifyPaidSignupSession = onRequest(
   {
@@ -210,9 +211,12 @@ exports.createCheckoutSession = onRequest(
       };
 
       // Invited by a member: first month free on Monthly or Yearly (functions/referrals.js).
-      const referrer = billingType === "subscription" && !uid
-        ? await getValidReferrer(referrerUid, email)
-        : "";
+      let canUseInvite = billingType === "subscription" && !uid;
+      if (billingType === "subscription" && uid) {
+        const buyer = await admin.firestore().collection("users").doc(uid).get();
+        canUseInvite = !buyer.exists || (!isActiveMember(buyer.data()) && !buyer.data().stripeSubscriptionId);
+      }
+      const referrer = canUseInvite ? await getValidReferrer(referrerUid, email) : "";
       if (referrer) metadata.referrerUid = referrer;
 
       const session = await stripe.checkout.sessions.create({
@@ -228,10 +232,14 @@ exports.createCheckoutSession = onRequest(
         // profile rather than the new-member "finish creating your account" page.
         success_url: billingType === "featured"
           ? "https://sangatworks.co.uk/profile.html?featured=paid"
-          : "https://sangatworks.co.uk/success.html?session_id={CHECKOUT_SESSION_ID}",
+          : uid
+            ? "https://sangatworks.co.uk/join.html?paid=1&session_id={CHECKOUT_SESSION_ID}"
+            : "https://sangatworks.co.uk/success.html?session_id={CHECKOUT_SESSION_ID}",
         cancel_url: billingType === "featured"
           ? "https://sangatworks.co.uk/profile.html"
-          : "https://sangatworks.co.uk/cancel.html",
+          : uid
+            ? "https://sangatworks.co.uk/join.html?cancelled=1"
+            : "https://sangatworks.co.uk/cancel.html",
         metadata,
         payment_intent_data:
           billingType === "oneoff" || billingType === "featured"
@@ -974,73 +982,13 @@ exports.stripeWebhook = onRequest(
           return res.status(200).send("Trades job access activated");
         }
 
-        let expiresAt = null;
-        let stripeSubscriptionId = "";
-        let stripeCustomerId = session.customer || "";
-        let subscriptionStatus = "active";
-        let subscriptionCancelAtPeriodEnd = false;
-
-        if (billingType === "subscription") {
-          const subscription = await stripe.subscriptions.retrieve(
-            session.subscription
-          );
-
-          priceId = subscription.items.data[0]?.price?.id || priceId;
-          stripeSubscriptionId = session.subscription || "";
-          stripeCustomerId = session.customer || "";
-          subscriptionStatus = getSubscriptionFirestoreStatus(subscription);
-          subscriptionCancelAtPeriodEnd =
-            subscription.cancel_at_period_end === true;
-
-          expiresAt = getSubscriptionExpiryTimestamp(subscription);
-        }
-
-        if (billingType === "oneoff") {
-          expiresAt = getPassExpiryDate(priceId);
-          stripeSubscriptionId = "";
-          stripeCustomerId = session.customer || "";
-        }
-
-        const plan = getPlanFromPriceId(priceId);
-
-        if (!uid) {
-          console.log(
-            `Paid membership checkout ${session.id} completed before signup`
-          );
+        // Shared with activateMembership (functions/membership.js).
+        const activated = await activateMembershipFromSession(stripe, session);
+        if (!activated) {
+          console.log(`Paid membership checkout ${session.id} completed before signup`);
           return res.status(200).send("Membership checkout awaiting signup");
         }
-
-        const userRef = admin.firestore().collection("users").doc(uid);
-        const existingUserSnap = await userRef.get();
-        const existingUserData = existingUserSnap.exists
-          ? existingUserSnap.data()
-          : null;
-
-        await userRef.set(
-          {
-            role: getRoleAfterMembershipActivation(existingUserData),
-            hasSubscription: true,
-            subscriptionStatus,
-            membershipStatus: "active",
-            accountType: "member",
-            subscriptionPlan: plan,
-            subscriptionBillingType: billingType,
-            subscriptionExpiresAt: expiresAt,
-            subscriptionCancelAtPeriodEnd,
-            subscriptionCancelledAt: null,
-            stripeCustomerId,
-            stripeSubscriptionId,
-            stripePriceId: priceId,
-            subscriptionUpdatedAt:
-              admin.firestore.FieldValue.serverTimestamp(),
-            email: email || session.customer_details?.email || ""
-          },
-          { merge: true }
-        );
-
-        console.log(
-          `Membership activated for user ${uid} using ${billingType}`
-        );
+        console.log(`Membership activated for user ${activated.uid} using ${activated.billingType}`);
       }
 
       if (event.type === "customer.subscription.updated") {

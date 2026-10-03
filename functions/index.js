@@ -14,5 +14,6 @@ Object.assign(
   { createEmployerJobCheckout: require("./employer-jobs").createEmployerJobCheckout },
   require("./founder-connect"),
   require("./learning"),
-  { freeTrial: require("./trials").freeTrial }
+  { freeTrial: require("./trials").freeTrial },
+  { activateMembership: require("./membership").activateMembership }
 );

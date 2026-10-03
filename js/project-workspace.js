@@ -171,7 +171,7 @@ onAuthStateChanged(auth, async (user) => {
         "Your account is not active yet. Please complete payment to unlock Sangat Works."
       );
       setTimeout(() => {
-        window.location.href = "pricing.html?payment_required=1";
+        window.location.href = "join.html";
       }, 1600);
       return;
     }

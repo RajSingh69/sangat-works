@@ -837,6 +837,17 @@ describe("Firestore security rules: ranking fields are admin/server only", () =>
     await assertSucceeds(getDoc(doc(modDb, "learnReports/lr1")));
   });
 
+  it("lets a new account create its basic record on the Join page, but not give itself membership", async () => {
+    await testEnv.clearFirestore();
+    const newDb = testEnv.authenticatedContext("newbie").firestore();
+    const basic = { uid: "newbie", fullName: "New Person", displayName: "New Person", email: "new@example.com",
+      hasSeenIntro: false, isPublic: true, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+    await assertFails(setDoc(doc(newDb, "users/newbie"), { ...basic, hasSubscription: true, subscriptionStatus: "active" }));
+    await assertFails(setDoc(doc(newDb, "users/newbie"), { ...basic, accessType: "admin_granted_free_year" }));
+    await assertFails(setDoc(doc(newDb, "users/someoneelse"), { ...basic, uid: "someoneelse" }));
+    await assertSucceeds(setDoc(doc(newDb, "users/newbie"), basic));
+  });
+
   it("lets only admins create and manage free trial codes", async () => {
     await testEnv.clearFirestore();
     await seed(testEnv, "users/alice", { uid: "alice", role: "member", hasSubscription: true, subscriptionStatus: "active" });
